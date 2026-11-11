@@ -201,12 +201,13 @@ No premium currency in the MVP. It arrives with in-app purchases (section 4.8).
 **Decided:** in-app purchases, plus ads that are **never forced**: the player
 always chooses to watch one in exchange for a reward. No interstitial or pop-up ads.
 
-The ideas below are proposals for SCRUM-2 and SCRUM-24:
+Both are part of the **vertical slice** (section 5). The details below are proposals for SCRUM-2 and SCRUM-24:
 
 - **In-app purchases:** a premium currency (name TBD) that buys summons,
   starter packs and cosmetic items.
 - **Optional (rewarded) ads:** watch an ad to double an Expedition report's
-  loot, cut time off a running Expedition, or get 1 extra Guardian Ticket per day (capped).
+  loot, or cut time off a running Expedition.
+- **Guardian Tickets can't be bought or earned from ads for now.** We revisit this after playtesting.
 - **Fairness rule:** everything that gates progression (tiers, bosses) can be
   reached without paying. Money and ads speed things up; they never unlock content.
 - **Compliance:** summon odds are shown in game. Some countries restrict paid
@@ -226,7 +227,11 @@ references only; all characters, designs and assets are our own.
   fits the humor: Minions as overworked employees, safety posters, HR memos.
 - **Mobile readability first:** strong silhouettes and outlines help Minions
   and loot read on a small screen, in both portrait and landscape (SCRUM-12).
-- The art pipeline, style guide and first 8 Minions are SCRUM-13.
+- **Format (decided): 2D for now, built from 3D.** Characters and objects are
+  modelled in 3D, then rendered out as 2D sprites with the cel-shaded, outlined
+  look baked in. A few elements may be real-time 3D in the scene.
+  This keeps the game light on phones while making a later move to more 3D easier.
+- The art pipeline (3D model → sprite render), style guide and first 8 Minions are SCRUM-13.
 
 ## 5. MVP plan
 
@@ -234,7 +239,8 @@ references only; all characters, designs and assets are our own.
 
 - **Step A: core loop playtest (SCRUM-8).** Grey-box, Tier 1 + Tier 2.
   Proves that "farm → upgrade → boss → unlock" feels good.
-- **Step B: vertical slice (SCRUM-14).** All 3 tiers with real art, full gacha and equipment.
+- **Step B: vertical slice (SCRUM-14).** All 3 tiers with real art, full gacha and
+  equipment, in-app purchases and optional ads.
 
 | System | Step A: playtest | Step B: vertical slice | Ticket |
 |---|---|---|---|
@@ -247,13 +253,15 @@ references only; all characters, designs and assets are our own.
 | Summon (gacha) | ⚪ flat rates, 4 grey-box Minions | ✅ rarities, pity, star rank, 8 Minions | SCRUM-11, SCRUM-13 |
 | HQ screen (collect, upgrade) | ⚪ basic | ✅ | SCRUM-9 |
 | Save / load | ⚪ local | ✅ local | SCRUM-17 |
+| In-app purchases + premium currency | — | ✅ store, starter pack, test purchases only | SCRUM-24 (pulled forward) |
+| Optional (rewarded) ads | — | ✅ double loot, shorten Expedition | SCRUM-24 (pulled forward) |
 | UI (all four orientations) | Grey-box, works in portrait and landscape | Design system, readable HUD | SCRUM-3, SCRUM-12 |
 
 ✅ = in scope · ⚪ = minimal / stubbed
 
 ## 6. Out of scope for MVP
 
-- Implementing in-app purchases, premium currency and optional ads. They are planned for launch (section 4.8), but built in SCRUM-24 before the soft launch. Unity Purchasing stays unused until then.
+- Buying Guardian Tickets, or getting them from ads (revisit after playtesting)
 - Offline rewards beyond the stockpile cap; quests, achievements (SCRUM-16)
 - Special bosses, events, multiple banners, live ops (SCRUM-27)
 - Cloud save, accounts, analytics (SCRUM-17)
@@ -298,6 +306,7 @@ Run with 5+ testers who haven't seen the game:
 - [ ] All 3 tiers can be cleared with a reachable roster
 - [ ] Full loop with real art for the 8 Minions
 - [ ] Holds 60 fps on a mid-range Android device (SCRUM-20)
+- [ ] A test purchase and an optional ad both complete and give the right reward; no ad ever plays without the player choosing it
 - [ ] Save survives closing and reopening the app, and Expedition timers finish correctly while it's closed
 - [ ] Every screen is usable in all four orientations, and rotating mid-session loses nothing
 
@@ -313,17 +322,13 @@ Run with 5+ testers who haven't seen the game:
 | 6 | Expedition length? | **10 / 20 / 30 min** for Tiers 1–3, tuned in SCRUM-2. Shorter in the playtest build. |
 | 7 | Monetization? | **In-app purchases + optional ads.** No forced ads. See 4.8. |
 | 8 | Art tone? | **Arcane + Borderlands inspired.** See 4.9. |
+| 9 | 2D or 3D? | **2D for now, made from 3D:** 3D models rendered to 2D sprites, plus some 3D elements. |
+| 10 | Purchases and ads in the vertical slice? | **Yes.** |
+| 11 | Can money or ads buy Guardian Tickets? | **Not for now.** Revisit after playtesting. |
 
 ## 10. Open questions
 
-Proposed answers are in *italics*.
+None right now. To revisit after the playtest (SCRUM-8):
 
-1. **2D or 3D?** Both styles can be done either way. 3D with a cel-shading
-   outline shader is closest to Borderlands but costs more to make and to run on
-   phones. Hand-painted 2D with thick outlines is cheaper and still fits.
-   *Proposal: 2D hand-painted sprites with outlines for MVP.* Affects SCRUM-4 and SCRUM-13.
-2. **Should purchases and ads be in the vertical slice, or added just before soft launch?**
-   *Proposal: before soft launch (SCRUM-24). The vertical slice proves the fun first.*
-3. **Can money or ads buy Guardian Tickets?**
-   *Proposal: 1 extra per day from an optional ad, none for money. Paying past the
-   boss gate would weaken the main design principle.*
+- Should money or optional ads give Guardian Tickets?
+- Are the Expedition timers and Guardian Ticket regeneration rate right?
