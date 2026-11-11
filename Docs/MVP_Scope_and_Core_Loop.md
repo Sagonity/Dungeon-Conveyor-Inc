@@ -2,7 +2,7 @@
 
 *Working title. Previously "Dungeon Conveyor Inc."*
 
-**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** Draft for team review
+**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** Final, v1.0 (2026-11-11)
 **Platform:** Android first (iOS later), all four orientations (portrait and landscape) · **Engine:** Unity 6 (6000.6)
 
 > All numbers in this doc are starting points so the prototype can be built.
@@ -41,6 +41,7 @@ farming, never to a dead end.
    is free to do other things in the game meanwhile. Boss fights play themselves.
 4. **Short sessions, readable on a phone, in any orientation.** Every screen
    works in all four rotations, portrait and landscape (SCRUM-3, SCRUM-12).
+   Screen layouts and readability rules: [UI Wireframes & Readability](UI_Wireframes_and_Readability.md).
 
 ## 3. Core loop
 
@@ -255,7 +256,7 @@ references only; all characters, designs and assets are our own.
 | Save / load | ⚪ local | ✅ local | SCRUM-17 |
 | In-app purchases + premium currency | — | ✅ store, starter pack, test purchases only | SCRUM-24 (pulled forward) |
 | Optional (rewarded) ads | — | ✅ double loot, shorten Expedition | SCRUM-24 (pulled forward) |
-| UI (all four orientations) | Grey-box, works in portrait and landscape | Design system, readable HUD | SCRUM-3, SCRUM-12 |
+| UI (all four orientations) | Grey-box screens from the [wireframes](UI_Wireframes_and_Readability.md) | Design system, readable HUD | SCRUM-3, SCRUM-12 |
 
 ✅ = in scope · ⚪ = minimal / stubbed
 
@@ -272,18 +273,22 @@ references only; all characters, designs and assets are our own.
 
 ## 7. Where the current build stands
 
-The current build (v0.0.1 + main menu PR) has:
+As of v0.0.1, the main menu PR and the cleanup in this sprint:
 
-- ~~`GridManager` and `DraggableMinion`~~: the 3×3 grid and drag-to-move were
-  removed. `GameController.SummonMinion()` now spawns a placeholder Minion
-  without the grid.
-- `MinionStats` / `MinionHealth`: base for Minion data. Move stats to a
+- **Done:** main menu, settings (volume / mute), the UI state machine, and UI that
+  scales for portrait and landscape inside the device safe area. The project allows
+  all four rotations. The wireframes for every Step A screen are in
+  [UI Wireframes & Readability](UI_Wireframes_and_Readability.md) (SCRUM-3).
+- **Removed:** the 3×3 grid and drag-to-move (`GridManager`, `DraggableMinion`).
+  `GameController.SummonMinion()` now spawns a placeholder Minion without the grid.
+- **To replace:** `MinionStats` / `MinionHealth`. Minion stats move to a
   `ScriptableObject` (`MinionDefinition`) so Minions are data, not prefabs.
   How this is done is decided in SCRUM-4.
-- `GameController.SummonMinion()` + HUD Summon button: the starting point for SCRUM-11.
-- Main menu, settings (volume / mute) and the UI state machine are done.
-  `GameUIBuilder` already scales the UI for both portrait and landscape, and the
-  project allows all four rotations.
+- **Starting point only:** `GameController.SummonMinion()` and the HUD Summon
+  button, for SCRUM-11.
+- **To change:** `GameController` sets `Time.timeScale = 0` while a menu is open.
+  Mining and Expeditions must keep running in menus and while the app is closed, so
+  their timers will use real (UTC) timestamps instead of game time (SCRUM-4, SCRUM-17).
 
 **Missing for Step A:** Mine + stockpile, Expedition timer + report, auto-combat for bosses,
 Boss Battle + Guardian Tickets, tier unlocks, resource counters, Miner/Adventure
@@ -334,3 +339,9 @@ None right now. To revisit after the playtest (SCRUM-8):
 
 - Should money or optional ads give Guardian Tickets?
 - Are the Expedition timers and Guardian Ticket regeneration rate right?
+
+## 11. Change log
+
+| Version | Date | Change |
+|---|---|---|
+| 1.0 | 2026-11-11 | Scope final. Linked the UI wireframes (SCRUM-3) and updated "Where the current build stands" after the cleanup. |
