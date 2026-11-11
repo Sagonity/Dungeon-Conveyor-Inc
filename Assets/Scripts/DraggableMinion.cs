@@ -4,6 +4,7 @@ public class DraggableMinion : MonoBehaviour
 {
     private Camera mainCamera;
     private GridManager gridManager;
+    private GameController gameController;
     private MinionStats stats;
     private Vector3 startPosition;
     private bool isDragging = false;
@@ -17,12 +18,16 @@ public class DraggableMinion : MonoBehaviour
             mainCamera = FindFirstObjectByType<Camera>();
         }
         gridManager = Object.FindFirstObjectByType<GridManager>();
+        gameController = Object.FindFirstObjectByType<GameController>();
         stats = GetComponent<MinionStats>();
         startPosition = transform.position;
     }
 
     void OnMouseDown()
     {
+        // Ikke la spilleren dra minions mens en meny er åpen
+        if (gameController != null && !gameController.IsGameplayActive) return;
+
         isDragging = true;
         Vector3 mouseWorldPos = GetMouseWorldPosition();
         mouseOffset = transform.position - mouseWorldPos;
