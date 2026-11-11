@@ -37,9 +37,7 @@ farming, never to a dead end.
 3. **Plan, then let them work.** The player's skill is in building and
    upgrading the team. Mining and Expeditions run in the background; the player
    is free to do other things in the game meanwhile. Boss fights play themselves.
-4. **The belt is the signature.** Mined resources ride a conveyor up to HQ. This
-   is the visual identity of the game and the payoff of Mining.
-5. **Short sessions, readable on a phone, in any orientation.** Every screen
+4. **Short sessions, readable on a phone, in any orientation.** Every screen
    works in all four rotations, portrait and landscape (SCRUM-3, SCRUM-12).
 
 ## 3. Core loop
@@ -75,7 +73,7 @@ farming, never to a dead end.
 
 | Loop | Length | What the player does |
 |---|---|---|
-| **Moment** | 5–15 s | Watch ore ride the belt, collect an Expedition report, or watch a boss fight |
+| **Moment** | 5–15 s | Collect the Mine's stockpile, collect an Expedition report, or watch a boss fight |
 | **Session** | 3–8 min | Collect the Mine, collect and resend the Expedition, summon/upgrade, maybe try the boss |
 | **Day** | 2–4 sessions | Use the regenerated Guardian Tickets, push toward the next tier |
 | **Tier** | ~1–3 days (MVP pacing target) | Farm until the team beats the tier boss |
@@ -95,12 +93,12 @@ farming, never to a dead end.
 
 ### 4.1 Mining
 
-- **Miner Minions** assigned to the Mine dig continuously. Only Miner Minions can mine. Output rides the **conveyor
-  belt** up to HQ and fills a **stockpile**, which the player collects.
+- **Miner Minions** assigned to the Mine dig continuously. Only Miner Minions can mine. Output fills a
+  **stockpile**, which the player collects.
 - Runs while the player does other things (Expeditions, menus). Stops when the
   stockpile is full, which is what brings the player back.
 - **Mining power** comes from the assigned Miner Minions' mining stat and their Tool.
-- **Mine upgrades** (paid in Gold + Minerals): dig speed, belt speed, stockpile cap.
+- **Mine upgrades** (paid in Gold + Minerals): dig speed, stockpile cap.
 - Each tier's Mine yields more and adds a new Mineral type.
 - Offline accumulation beyond the stockpile cap is post-MVP (SCRUM-16).
 
@@ -152,7 +150,7 @@ Each upgrade costs rewards from **both** farming systems, so neither one can be 
 |---|---|---|
 | Minion level | Gold + Upgrade Materials (Mining) | Miner: mining power. Adventure: HP, ATK |
 | Equipment upgrade | Gold (Mining) + Rare Materials (Expeditions) | Bigger gear bonuses |
-| Mine upgrade | Gold + Minerals (Mining) | Dig speed, belt speed, stockpile cap |
+| Mine upgrade | Gold + Minerals (Mining) | Dig speed, stockpile cap |
 | Star rank | Duplicate Minions (Gacha) | Higher level cap |
 
 Equipment: Tools for Miner Minions; Weapons and Armor for Adventure Minions. 3 rarities. About 6–8 items in MVP, with fixed stats (no random stats).
@@ -220,7 +218,7 @@ references only; all characters, designs and assets are our own.
 
 - **From Arcane:** painterly, hand-painted textures; moody, high-contrast
   lighting with glowing accents; a grimy industrial-fantasy world. The
-  underground mines, pipes, furnaces and conveyor belts suit this well.
+  underground mines, pipes and furnaces suit this well.
 - **From Borderlands:** cel-shaded look with thick, inked outlines; bold
   comic-book shapes; exaggerated characters; irreverent humor.
 - **Tone:** gritty world, funny characters. The "mining corporation" setting
@@ -244,7 +242,7 @@ references only; all characters, designs and assets are our own.
 
 | System | Step A: playtest | Step B: vertical slice | Ticket |
 |---|---|---|---|
-| Mining + conveyor + stockpile | ✅ grey-box belt | ✅ animated belt, Mine upgrades | SCRUM-5 |
+| Mining + stockpile | ✅ grey-box Mine | ✅ animated Mine, Mine upgrades | SCRUM-5 |
 | Assigning Miners to the Mine, Adventurers to the squad | ✅ simple lists | ✅ polished | SCRUM-6 |
 | Expeditions (background timer + report) | ✅ 2 tiers, short timers | ✅ 3 tiers | SCRUM-7 |
 | Boss Battles + Guardian Tickets | ✅ 2 bosses | ✅ 3 bosses, loss feedback | SCRUM-7 |
@@ -285,7 +283,7 @@ The current build (v0.0.1 + main menu PR) has:
   `GameUIBuilder` already scales the UI for both portrait and landscape, and the
   project allows all four rotations.
 
-**Missing for Step A:** Mine + belt + stockpile, Expedition timer + report, auto-combat for bosses,
+**Missing for Step A:** Mine + stockpile, Expedition timer + report, auto-combat for bosses,
 Boss Battle + Guardian Tickets, tier unlocks, resource counters, Miner/Adventure
 Minion roster and assignment, save/load.
 
@@ -325,6 +323,7 @@ Run with 5+ testers who haven't seen the game:
 | 9 | 2D or 3D? | **2D for now, made from 3D:** 3D models rendered to 2D sprites, plus some 3D elements. |
 | 10 | Purchases and ads in the vertical slice? | **Yes.** |
 | 11 | Can money or ads buy Guardian Tickets? | **Not for now.** Revisit after playtesting. |
+| 12 | Is there a conveyor belt? | **No.** Mined resources go straight to the Mine's stockpile. |
 
 ## 10. Open questions
 
