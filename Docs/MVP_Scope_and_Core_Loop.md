@@ -37,8 +37,8 @@ Use these to settle scope arguments. If a feature doesn't support at least one, 
         └──────┬───────┘
                ▼
         ┌──────────────┐
-        │  2. EQUIP &  │  Give each minion a Tool or Weapon,
-        │   FORMATION  │  place them on the 3×3 squad grid
+        │  2. EQUIP &  │  Pick up to 4 minions for the squad,
+        │    SQUAD     │  give each a Tool or Weapon
         └──────┬───────┘
                ▼
         ┌──────────────┐
@@ -95,7 +95,7 @@ Use these to settle scope arguments. If a feature doesn't support at least one, 
 
 | System | Step A: playtest | Step B: vertical slice | Ticket |
 |---|---|---|---|
-| Squad grid (3×3, drag to place) | ✅ (already in the build) | ✅ polished | SCRUM-6 |
+| Squad select (up to 4 minions from the roster) | ✅ simple list | ✅ polished | SCRUM-6 |
 | Auto-run expedition + combat | ✅ 1 biome, 10 floors, 1 boss | ✅ 3 biomes × 10 floors, 3 bosses | SCRUM-7 |
 | Mining nodes + conveyor delivery | ✅ grey-box belt | ✅ animated belt, upgrade levels | SCRUM-5 |
 | Minion roles & stats | ✅ 3 roles, 4 grey-box minions | ✅ 8 minions | SCRUM-10, SCRUM-13 |
@@ -124,8 +124,9 @@ Each minion has:
 | `level`, `xp` | Progression | ❌ add |
 | Equipment slots | 1 Tool + 1 Weapon | ❌ add |
 
-**Formation rule:** the front row takes hits first. Fighters belong in front,
-Miners and Haulers further back. That gives the 3×3 grid a real decision.
+**Squad rule:** an expedition squad has up to 4 minions. Fighters clear fights,
+Miners clear ore nodes and Haulers speed up the belt, so the choice is how to
+split 4 slots between them. There is no positioning on a board.
 
 **MVP roster (8):** 3 Common, 3 Rare, 2 Epic, spread so each role has at least
 one minion in every rarity. Names and art come from SCRUM-13.
@@ -157,7 +158,7 @@ one minion in every rarity. Names and art come from SCRUM-13.
 | # | Biome | Floors | Boss | Mechanic it teaches |
 |---|---|---|---|---|
 | 1 | Fungal Mines | 1–10 | Spore Foreman | The basics: fight + mine |
-| 2 | Magma Works | 11–20 | Slag Golem | High damage: needs tanky front row |
+| 2 | Magma Works | 11–20 | Slag Golem | High damage: needs more Fighters and better weapons |
 | 3 | Crystal Depths | 21–30 | Prism Wyrm | Rich ore: rewards Miners and Haulers |
 
 Biome names are placeholders until SCRUM-13.
@@ -181,10 +182,9 @@ Listed so nobody builds them early:
 
 The current build (v0.0.1 + main menu PR) already has:
 
-- `GridManager`: 3×3 grid with snapping. **Keep it** as the squad formation board.
-- `DraggableMinion`: drag to move. Dropping onto another minion currently
-  *damages* it. **Change:** in the formation screen, dropping on a minion should
-  **swap** them. Combat moves to the expedition scene.
+- `GridManager` and `DraggableMinion`: the 3×3 grid and drag-to-move. **Not
+  part of the game. Remove them** once squad select exists. `GameController.SummonMinion()`
+  currently places minions on the grid, so that needs to change too.
 - `MinionStats` / `MinionHealth`: base for minion data. Move stats to a
   `ScriptableObject` (`MinionDefinition`) so the 8 minions are data, not prefabs.
   How this is done is decided in SCRUM-4.
@@ -201,7 +201,7 @@ ore nodes, the belt, Gold/Ore counters, and a "return to HQ" results screen.
 Run with 5+ testers who haven't seen the game:
 
 - [ ] Testers can explain the loop back without help after 10 minutes
-- [ ] At least 3 of 5 change their formation or gear on their own to beat a floor
+- [ ] At least 3 of 5 change their squad or gear on their own to beat a floor
 - [ ] Median first session is 10 minutes or longer
 - [ ] At least 3 of 5 say the belt delivery feels good (we ask about it directly)
 - [ ] No tester gets stuck with nothing to spend for more than 2 expeditions in a row
