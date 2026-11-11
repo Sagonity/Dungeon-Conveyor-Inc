@@ -194,7 +194,39 @@ unique areas, Minions or systems come after launch.
 | Equipment | Expeditions, boss first-clear | Equipping Minions |
 | Guardian Tickets | Regenerate over time, first-clear | Boss attempts |
 
-No premium currency in MVP (see Open questions).
+No premium currency in the MVP. It arrives with in-app purchases (section 4.8).
+
+### 4.8 Monetization (at launch)
+
+**Decided:** in-app purchases, plus ads that are **never forced**: the player
+always chooses to watch one in exchange for a reward. No interstitial or pop-up ads.
+
+The ideas below are proposals for SCRUM-2 and SCRUM-24:
+
+- **In-app purchases:** a premium currency (name TBD) that buys summons,
+  starter packs and cosmetic items.
+- **Optional (rewarded) ads:** watch an ad to double an Expedition report's
+  loot, cut time off a running Expedition, or get 1 extra Guardian Ticket per day (capped).
+- **Fairness rule:** everything that gates progression (tiers, bosses) can be
+  reached without paying. Money and ads speed things up; they never unlock content.
+- **Compliance:** summon odds are shown in game. Some countries restrict paid
+  gacha (for example Belgium), which affects the soft-launch markets (SCRUM-23, SCRUM-25).
+
+### 4.9 Art direction
+
+**Decided:** in the spirit of **Arcane** and **Borderlands**. These are style
+references only; all characters, designs and assets are our own.
+
+- **From Arcane:** painterly, hand-painted textures; moody, high-contrast
+  lighting with glowing accents; a grimy industrial-fantasy world. The
+  underground mines, pipes, furnaces and conveyor belts suit this well.
+- **From Borderlands:** cel-shaded look with thick, inked outlines; bold
+  comic-book shapes; exaggerated characters; irreverent humor.
+- **Tone:** gritty world, funny characters. The "mining corporation" setting
+  fits the humor: Minions as overworked employees, safety posters, HR memos.
+- **Mobile readability first:** strong silhouettes and outlines help Minions
+  and loot read on a small screen, in both portrait and landscape (SCRUM-12).
+- The art pipeline, style guide and first 8 Minions are SCRUM-13.
 
 ## 5. MVP plan
 
@@ -221,8 +253,7 @@ No premium currency in MVP (see Open questions).
 
 ## 6. Out of scope for MVP
 
-- Real-money purchases, premium currency, ads (Unity Purchasing stays unused until SCRUM-24)
-- Buying or refilling Guardian Tickets
+- Implementing in-app purchases, premium currency and optional ads. They are planned for launch (section 4.8), but built in SCRUM-24 before the soft launch. Unity Purchasing stays unused until then.
 - Offline rewards beyond the stockpile cap; quests, achievements (SCRUM-16)
 - Special bosses, events, multiple banners, live ops (SCRUM-27)
 - Cloud save, accounts, analytics (SCRUM-17)
@@ -278,15 +309,21 @@ Run with 5+ testers who haven't seen the game:
 | 2 | Can a Minion both mine and go on Expeditions? | **No.** Miner Minions mine; Adventure Minions do Expeditions and Boss Battles. |
 | 3 | Are Expeditions watched live? | **No.** They run in the background on a timer so the player can do other things. |
 | 4 | Screen orientation? | **All four rotations**, portrait and landscape. |
+| 5 | Do Miner and Adventure Minions come from the same summon? | **Yes.** One banner that can give either kind, paid with Summon Shards. |
+| 6 | Expedition length? | **10 / 20 / 30 min** for Tiers 1–3, tuned in SCRUM-2. Shorter in the playtest build. |
+| 7 | Monetization? | **In-app purchases + optional ads.** No forced ads. See 4.8. |
+| 8 | Art tone? | **Arcane + Borderlands inspired.** See 4.9. |
 
 ## 10. Open questions
 
 Proposed answers are in *italics*.
 
-1. **Do Miner and Adventure Minions come from the same summon?**
-   *Proposal: one banner that can give either kind, paid with Summon Shards.*
-2. **Expedition length:** are 10 / 20 / 30 minutes per tier about right?
-   *Proposal: yes for MVP, tuned in SCRUM-2.*
-3. **Monetization at launch:** gacha IAP, ads, or a premium price?
-   *Proposal: decide in SCRUM-2. Nothing in the MVP.*
-4. **Art tone:** cute, gritty or comedic-corporate? *Proposal: comedic-corporate.* Affects SCRUM-13.
+1. **2D or 3D?** Both styles can be done either way. 3D with a cel-shading
+   outline shader is closest to Borderlands but costs more to make and to run on
+   phones. Hand-painted 2D with thick outlines is cheaper and still fits.
+   *Proposal: 2D hand-painted sprites with outlines for MVP.* Affects SCRUM-4 and SCRUM-13.
+2. **Should purchases and ads be in the vertical slice, or added just before soft launch?**
+   *Proposal: before soft launch (SCRUM-24). The vertical slice proves the fun first.*
+3. **Can money or ads buy Guardian Tickets?**
+   *Proposal: 1 extra per day from an optional ad, none for money. Paying past the
+   boss gate would weaken the main design principle.*
