@@ -75,6 +75,28 @@ public class GridManager : MonoBehaviour
         return null;
     }
 
+    // Finner første ledige rute (nederste rad først). Døde minions teller som ledig.
+    public bool TryGetFreeCell(out Vector2Int cell)
+    {
+        if (gridArray != null)
+        {
+            for (int y = 0; y < rows; y++)
+            {
+                for (int x = 0; x < columns; x++)
+                {
+                    if (gridArray[x, y] == null)
+                    {
+                        cell = new Vector2Int(x, y);
+                        return true;
+                    }
+                }
+            }
+        }
+
+        cell = default;
+        return false;
+    }
+
     public bool PlaceMinion(GameObject minion, int x, int y)
     {
         // Først: Rydd opp og fjern minionen fra dens gamle posisjon i rutenettet
