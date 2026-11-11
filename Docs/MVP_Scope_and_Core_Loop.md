@@ -1,4 +1,6 @@
-# Dungeon Conveyor Inc. — MVP Scope & Core Loop
+# Expedition: Deepshaft — MVP Scope & Core Loop
+
+*Working title. Previously "Dungeon Conveyor Inc."*
 
 **Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** Draft for team review
 **Platform:** Android first (iOS later), all four orientations (portrait and landscape) · **Engine:** Unity 6 (6000.6)
@@ -324,6 +326,7 @@ Run with 5+ testers who haven't seen the game:
 | 10 | Purchases and ads in the vertical slice? | **Yes.** |
 | 11 | Can money or ads buy Guardian Tickets? | **Not for now.** Revisit after playtesting. |
 | 12 | Is there a conveyor belt? | **No.** Mined resources go straight to the Mine's stockpile. |
+| 13 | Game name? | **Expedition: Deepshaft** (working title). Check app stores and trademarks before launch (SCRUM-25). |
 
 ## 10. Open questions
 
