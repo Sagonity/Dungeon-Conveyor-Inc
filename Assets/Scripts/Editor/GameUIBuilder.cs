@@ -240,8 +240,6 @@ public static class GameUIBuilder
         SerializedObject so = new SerializedObject(controller);
         SerializedProperty prefab = so.FindProperty("minionPrefab");
         if (prefab.objectReferenceValue == null) prefab.objectReferenceValue = EnsureMinionPrefab();
-        SerializedProperty grid = so.FindProperty("gridManager");
-        if (grid.objectReferenceValue == null) grid.objectReferenceValue = Object.FindFirstObjectByType<GridManager>();
         so.ApplyModifiedProperties();
         return controller;
     }

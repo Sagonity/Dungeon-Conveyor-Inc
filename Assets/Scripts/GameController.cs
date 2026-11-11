@@ -8,12 +8,13 @@ using UnityEngine;
 public class GameController : MonoBehaviour
 {
     [Header("Summoning")]
-    [Tooltip("Minion to spawn when summoning. Should have MinionStats, MinionHealth and DraggableMinion.")]
+    [Tooltip("Minion to spawn when summoning. Should have MinionStats and MinionHealth.")]
     [SerializeField] private GameObject minionPrefab;
-    [Tooltip("Found automatically in Awake if left empty.")]
-    [SerializeField] private GridManager gridManager;
-    [Tooltip("Optional parent for spawned minions, to keep the hierarchy tidy.")]
+    [Tooltip("Optional parent for spawned minions. Its position is where the first minion appears.")]
     [SerializeField] private Transform minionParent;
+    [Tooltip("Placeholder layout until the roster screen exists: minions are laid out in rows.")]
+    [SerializeField, Min(1)] private int minionsPerRow = 4;
+    [SerializeField, Min(0.1f)] private float minionSpacing = 1.5f;
 
     [Header("Pause")]
     [Tooltip("Set Time.timeScale to 0 while gameplay is inactive (menus open).")]
@@ -28,14 +29,6 @@ public class GameController : MonoBehaviour
     public event Action<string> SummonFailed;
     /// <summary>Raised when gameplay is paused or resumed.</summary>
     public event Action<bool> GameplayActiveChanged;
-
-    void Awake()
-    {
-        if (gridManager == null)
-        {
-            gridManager = FindFirstObjectByType<GridManager>();
-        }
-    }
 
     void OnDestroy()
     {
@@ -60,7 +53,10 @@ public class GameController : MonoBehaviour
         GameplayActiveChanged?.Invoke(active);
     }
 
-    /// <summary>Spawns a minion on the first free grid cell. Returns true on success.</summary>
+    /// <summary>
+    /// Spawns a placeholder minion. Returns true on success.
+    /// Temporary: summoning becomes a roster/gacha operation paid with Summon Shards (SCRUM-11).
+    /// </summary>
     public bool SummonMinion()
     {
         if (!IsGameplayActive)
@@ -71,26 +67,24 @@ public class GameController : MonoBehaviour
         {
             return Fail("No minion prefab is assigned on GameController.");
         }
-        if (gridManager == null)
-        {
-            return Fail("No GridManager found in the scene.");
-        }
-        if (!gridManager.TryGetFreeCell(out Vector2Int cell))
-        {
-            return Fail("The board is full.");
-        }
 
-        Vector3 position = gridManager.GetWorldPosition(cell.x, cell.y);
-        GameObject minion = Instantiate(minionPrefab, position, Quaternion.identity, minionParent);
+        GameObject minion = Instantiate(minionPrefab, GetSpawnPosition(SummonedCount), Quaternion.identity, minionParent);
 
         SummonedCount++;
         MinionStats stats = minion.GetComponent<MinionStats>();
         string baseName = stats != null ? stats.minionName : "Minion";
         minion.name = baseName + " #" + SummonedCount;
 
-        gridManager.PlaceMinion(minion, cell.x, cell.y);
         MinionSummoned?.Invoke(minion, SummonedCount);
         return true;
+    }
+
+    Vector3 GetSpawnPosition(int index)
+    {
+        Vector3 origin = minionParent != null ? minionParent.position : Vector3.zero;
+        int column = index % minionsPerRow;
+        int row = index / minionsPerRow;
+        return origin + new Vector3(column * minionSpacing, -row * minionSpacing, 0f);
     }
 
     bool Fail(string reason)

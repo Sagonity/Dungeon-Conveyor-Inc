@@ -274,9 +274,9 @@ references only; all characters, designs and assets are our own.
 
 The current build (v0.0.1 + main menu PR) has:
 
-- `GridManager` and `DraggableMinion`: the 3×3 grid and drag-to-move. **Not
-  part of the game. Remove them.** `GameController.SummonMinion()` currently
-  places minions on the grid, so that needs to change too.
+- ~~`GridManager` and `DraggableMinion`~~: the 3×3 grid and drag-to-move were
+  removed. `GameController.SummonMinion()` now spawns a placeholder Minion
+  without the grid.
 - `MinionStats` / `MinionHealth`: base for Minion data. Move stats to a
   `ScriptableObject` (`MinionDefinition`) so Minions are data, not prefabs.
   How this is done is decided in SCRUM-4.
