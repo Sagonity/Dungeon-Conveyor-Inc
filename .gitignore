@@ -70,9 +70,11 @@ sysinfo.txt
 mono_crash.*
 tmpinst-dir.stamp
 
-# Builds
-/*_BackUpThisFolder_ButDontShipItWithYourGame/
-/*_BurstDebugInformation_DoNotShip/
+# Builds (attach APKs to GitHub Releases instead of committing them)
+/[Aa][Pp][Kk]/
+**/*_BackUpThisFolder_ButDontShipItWithYourGame/
+**/*_BurstDebugInformation_DoNotShip/
+*.apk
 *.aab
 *.obb
 *.unitypackage
