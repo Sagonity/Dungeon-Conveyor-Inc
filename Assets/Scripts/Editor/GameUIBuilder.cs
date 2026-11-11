@@ -27,6 +27,10 @@ public static class GameUIBuilder
     static readonly Color TextColor = new Color(0.95f, 0.93f, 0.88f, 1f);
     static readonly Color BarColor = new Color(0f, 0f, 0f, 0.45f);
 
+    // Smallest height/width for anything tappable, in canvas units at the
+    // 1080x1920 reference (about 48 dp on a typical phone).
+    const float MinTouchTarget = 130f;
+
     static DefaultControls.Resources resources;
     static int uiLayer;
 
@@ -101,7 +105,7 @@ public static class GameUIBuilder
     static MainMenuView BuildMainMenu(Transform parent)
     {
         MainMenuView view = CreateView<MainMenuView>("MainMenuView", parent, true);
-        RectTransform column = CreateColumn("Content", view.transform, 48f);
+        RectTransform column = CreateColumn("Content", CreateSafeArea(view), 48f);
 
         TextMeshProUGUI title = CreateText("Title", column, Application.productName, 120f,
             TitleColor, TextAlignmentOptions.Center, FontStyles.Bold);
@@ -124,9 +128,10 @@ public static class GameUIBuilder
     {
         // No background: the board must stay visible behind the HUD.
         GameHUDView view = CreateView<GameHUDView>("GameHUDView", parent, false);
+        RectTransform safe = CreateSafeArea(view);
 
         // Top bar: menu button left, counter right.
-        RectTransform bar = CreateRect("TopBar", view.transform);
+        RectTransform bar = CreateRect("TopBar", safe);
         bar.anchorMin = new Vector2(0f, 1f);
         bar.anchorMax = new Vector2(1f, 1f);
         bar.pivot = new Vector2(0.5f, 1f);
@@ -136,7 +141,7 @@ public static class GameUIBuilder
         barImage.color = BarColor;
         barImage.raycastTarget = false;
 
-        Button menuButton = CreateButton("MainMenuButton", bar, "Menu", 260f, 120f, ButtonColor);
+        Button menuButton = CreateButton("MainMenuButton", bar, "Menu", 260f, MinTouchTarget, ButtonColor);
         RectTransform menuRect = (RectTransform)menuButton.transform;
         menuRect.anchorMin = menuRect.anchorMax = new Vector2(0f, 0.5f);
         menuRect.pivot = new Vector2(0f, 0.5f);
@@ -151,7 +156,7 @@ public static class GameUIBuilder
         counterRect.offsetMax = new Vector2(-40f, 0f);
 
         // Log above the summon button.
-        TextMeshProUGUI log = CreateText("SummonLog", view.transform, "", 40f,
+        TextMeshProUGUI log = CreateText("SummonLog", safe, "", 40f,
             TextColor, TextAlignmentOptions.BottomLeft, FontStyles.Normal);
         RectTransform logRect = log.rectTransform;
         logRect.anchorMin = new Vector2(0f, 0f);
@@ -160,7 +165,7 @@ public static class GameUIBuilder
         logRect.anchoredPosition = new Vector2(0f, 260f);
         logRect.sizeDelta = new Vector2(-80f, 240f);
 
-        Button summon = CreateButton("SummonButton", view.transform, "Summon Minion", 640f, 170f, AccentColor);
+        Button summon = CreateButton("SummonButton", safe, "Summon Minion", 640f, 170f, AccentColor);
         RectTransform summonRect = (RectTransform)summon.transform;
         summonRect.anchorMin = summonRect.anchorMax = new Vector2(0.5f, 0f);
         summonRect.pivot = new Vector2(0.5f, 0f);
@@ -177,7 +182,7 @@ public static class GameUIBuilder
     static SettingsView BuildSettings(Transform parent)
     {
         SettingsView view = CreateView<SettingsView>("SettingsView", parent, true);
-        RectTransform column = CreateColumn("Content", view.transform, 40f);
+        RectTransform column = CreateColumn("Content", CreateSafeArea(view), 40f);
 
         TextMeshProUGUI header = CreateText("Header", column, "Settings", 96f,
             TitleColor, TextAlignmentOptions.Center, FontStyles.Bold);
@@ -291,6 +296,18 @@ public static class GameUIBuilder
         return view;
     }
 
+    /// <summary>
+    /// Child of a view that is fitted to the device safe area. Put all of a view's
+    /// content here; the view's own background stays full-screen.
+    /// </summary>
+    static RectTransform CreateSafeArea(UIView view)
+    {
+        RectTransform rect = CreateRect("SafeArea", view.transform);
+        Stretch(rect);
+        rect.gameObject.AddComponent<SafeAreaFitter>();
+        return rect;
+    }
+
     static RectTransform CreateColumn(string name, Transform parent, float spacing)
     {
         RectTransform rect = CreateRect(name, parent);
@@ -338,7 +355,12 @@ public static class GameUIBuilder
         go.name = name;
         go.transform.SetParent(parent, false);
         SetLayerRecursively(go);
-        SetPreferredSize(go, 700f, 50f);
+        SetPreferredSize(go, 700f, MinTouchTarget);
+
+        // The default track is only half the slider's height; let the full height catch touches.
+        Image hitArea = go.AddComponent<Image>();
+        hitArea.color = Color.clear;
+        hitArea.raycastTarget = true;
 
         Transform fill = go.transform.Find("Fill Area/Fill");
         if (fill != null) fill.GetComponent<Image>().color = AccentColor;
@@ -346,11 +368,12 @@ public static class GameUIBuilder
         RectTransform handleArea = go.transform.Find("Handle Slide Area") as RectTransform;
         if (handleArea != null)
         {
-            handleArea.offsetMin = new Vector2(28f, 0f);
-            handleArea.offsetMax = new Vector2(-28f, 0f);
+            handleArea.offsetMin = new Vector2(40f, 0f);
+            handleArea.offsetMax = new Vector2(-40f, 0f);
         }
         RectTransform handle = go.transform.Find("Handle Slide Area/Handle") as RectTransform;
-        if (handle != null) handle.sizeDelta = new Vector2(56f, 30f);
+        // The handle stretches to the slider's height, so this makes an 80 x 80 knob.
+        if (handle != null) handle.sizeDelta = new Vector2(80f, 80f - MinTouchTarget);
 
         Slider slider = go.GetComponent<Slider>();
         slider.minValue = 0f;
@@ -365,7 +388,12 @@ public static class GameUIBuilder
         go.name = name;
         go.transform.SetParent(parent, false);
         SetLayerRecursively(go);
-        SetPreferredSize(go, 700f, 80f);
+        SetPreferredSize(go, 700f, MinTouchTarget);
+
+        // Make the whole row (box + label) the tap target, not just the 70x70 box.
+        Image hitArea = go.AddComponent<Image>();
+        hitArea.color = Color.clear;
+        hitArea.raycastTarget = true;
 
         RectTransform background = go.transform.Find("Background") as RectTransform;
         if (background != null)
