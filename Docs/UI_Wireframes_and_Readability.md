@@ -119,16 +119,19 @@ sits on the **left rail** (left thumb).
 ```
 Portrait
 ┌──────────────────────────────────────────┐
-│ $ 1.2K  M 340  U 85  ✦ 12  T 2/3      @  │
+│ $ 1.2K  M 340  U 85  ✦ 12  K 2/3      @  │
 └──────────────────────────────────────────┘
 $ Gold · M Minerals · U Upgrade Materials · ✦ Summon Shards
-T Guardian Tickets · @ Settings
+K Guardian Tickets · @ Settings
 ```
 
 - Tapping a resource shows a small tooltip: name, amount, **where to get more**
   ("Shards come from Expeditions").
 - Tickets show `2/3` and, when not full, a countdown under it (`+1 in 2h 14m`).
 - Minerals show the **current tier's** mineral. All minerals are listed in the tooltip.
+- **Rare Materials** (Spore Silk, Ember Core, Prism Dust) have no slot of their own
+  on the bar. They are listed in the Minerals tooltip under their own heading, with
+  "Found on Expeditions". Locked tiers are hidden until the player reaches them.
 - Landscape: same bar, items spread wider.
 
 ### 3.2 Tab bar (portrait) / side rail (landscape)
@@ -169,7 +172,7 @@ Legend (single letters keep the boxes aligned; real icons come in SCRUM-12):
 
 | In the boxes | Means |
 |---|---|
-| `$` `M` `U` `✦` `T` | Gold, Minerals, Upgrade Materials, Summon Shards, Guardian Tickets |
+| `$` `M` `U` `✦` `K` | Gold, Minerals, Upgrade Materials, Summon Shards, Guardian Tickets |
 | `@` | Settings |
 | `H` `M` `E` `R` `B` (tabs) | HQ, Mine, Expedition, Minions (roster), Boss |
 | `F` `T` `S` (squad) | Fighter, Tank, Support |
@@ -206,7 +209,7 @@ A session should be possible from HQ alone (collect → resend → summon → fi
 ```
 Portrait
 ┌──────────────────────────────┐
-│ $1.2K M340 U85 ✦12 T2/3    @ │
+│ $1.2K M340 U85 ✦12 K2/3    @ │
 ├──────────────────────────────┤
 │ Tier 1 · Fungal Mines        │
 │ ┌──────────────────────────┐ │
@@ -222,7 +225,7 @@ Portrait
 │ ┌──────────────────────────┐ │
 │ │ B BOSS: Spore Foreman    │ │
 │ │ Team 1,850 / Rec. 2,000  │ │
-│ │ T 2/3        [Challenge] │ │
+│ │ K 2/3        [Challenge] │ │
 │ └──────────────────────────┘ │
 │ ┌──────────────────────────┐ │
 │ │ ✦ SUMMON    12 Shards    │ │
@@ -236,7 +239,7 @@ Portrait
 ```
 Landscape
 ┌────┬────────────────────────────────────────────────────────────────┐
-│    │ $1.2K   M340   U85   ✦12   T2/3 (+1 in 2h 14m)               @ │
+│    │ $1.2K   M340   U85   ✦12   K2/3 (+1 in 2h 14m)               @ │
 │ H  ├────────────────────────────────────────────────────────────────┤
 │    │ Tier 1 · Fungal Mines                                          │
 │ M• │ ┌────────────────────────────┐  ┌────────────────────────────┐ │
@@ -247,7 +250,7 @@ Landscape
 │    │ ┌────────────────────────────┐  ┌────────────────────────────┐ │
 │ B  │ │ B BOSS: Spore Foreman      │  │ ✦ SUMMON    12 Shards      │ │
 │    │ │ Team 1,850 / Rec. 2,000    │  │ 1 summon = ✦10 [ Summon ]  │ │
-│    │ │ T 2/3         [Challenge]  │  └────────────────────────────┘ │
+│    │ │ K 2/3         [Challenge]  │  └────────────────────────────┘ │
 │    │ └────────────────────────────┘                                 │
 └────┴────────────────────────────────────────────────────────────────┘
 ```
@@ -263,7 +266,7 @@ Landscape
 ```
 Portrait
 ┌──────────────────────────────┐
-│ $1.2K M340 U85 ✦12 T2/3    @ │
+│ $1.2K M340 U85 ✦12 K2/3    @ │
 ├──────────────────────────────┤
 │ FUNGAL MINES (Tier 1)    ◀ ▶ │
 │ ┌──────────────────────────┐ │
@@ -292,7 +295,7 @@ Portrait
 ```
 Landscape
 ┌────┬────────────────────────────────────────────────────────────────┐
-│    │ $1.2K   M340   U85   ✦12   T2/3                              @ │
+│    │ $1.2K   M340   U85   ✦12   K2/3                              @ │
 │ H  ├────────────────────────────────┬───────────────────────────────┤
 │    │ FUNGAL MINES (Tier 1)    ◀ ▶   │ Stockpile                     │
 │ M  │ ┌────────────────────────────┐ │ ▓▓▓▓▓▓▓▓▓▓░░░░ 340/500        │
@@ -321,7 +324,7 @@ Three states: **pick → running → report.**
 ```
 Portrait — pick
 ┌──────────────────────────────┐
-│ $1.2K M340 U85 ✦12 T2/3    @ │
+│ $1.2K M340 U85 ✦12 K2/3    @ │
 ├──────────────────────────────┤
 │ EXPEDITIONS                  │
 │ ┌──────────────────────────┐ │
@@ -349,7 +352,7 @@ Portrait — pick
 ```
 Landscape — pick
 ┌────┬────────────────────────────────────────────────────────────────┐
-│    │ $1.2K   M340   U85   ✦12   T2/3                              @ │
+│    │ $1.2K   M340   U85   ✦12   K2/3                              @ │
 │ H  ├──────────────────────────────┬─────────────────────────────────┤
 │    │ EXPEDITIONS                  │ SQUAD               Power 1,850 │
 │ M• │ ┌──────────────────────────┐ │ ┌─────┐┌─────┐┌─────┐┌─────┐    │
@@ -394,7 +397,7 @@ Running                             Report (modal, both orientations)
 ```
 Portrait                            Landscape
 ┌──────────────────────────────┐    ┌────┬────────────────────────────────────────────────────────────────┐
-│ $1.2K M340 U85 ✦12 T2/3    @ │    │    │ $1.2K   M340   U85   ✦12   T2/3                              @ │
+│ $1.2K M340 U85 ✦12 K2/3    @ │    │    │ $1.2K   M340   U85   ✦12   K2/3                              @ │
 ├──────────────────────────────┤    │ H  ├────────────────────────────────────────────────────────────────┤
 │ [Adventure (5)] [Miners (3)] │    │    │ [Adventure (5)] [Miners (3)]  [✦ Summon]                       │
 │ Sort: Power ▾     [✦ Summon] │    │ M  │ ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐ ┌────┐                      │
@@ -466,7 +469,7 @@ Portrait                            Landscape
 ```
 Portrait — before the fight
 ┌──────────────────────────────┐
-│ $1.2K M340 U85 ✦12 T2/3    @ │
+│ $1.2K M340 U85 ✦12 K2/3    @ │
 ├──────────────────────────────┤
 │ TIER 1 BOSS                  │
 │ ┌──────────────────────────┐ │
@@ -481,8 +484,8 @@ Portrait — before the fight
 │ └────┘└────┘└────┘└────┘     │
 │ First clear: ✦50 + Rare gear │
 │ Unlocks: Tier 2 Mine + Exp.  │
-│ T 2/3  (+1 in 2h 14m)        │
-│ [   Challenge  (T 1)   ]     │
+│ K 2/3  (+1 in 2h 14m)        │
+│ [   Challenge  (K 1)   ]     │
 ├──────────────────────────────┤
 │  H     M•    E•    R     B   │
 └──────────────────────────────┘
@@ -492,7 +495,7 @@ Portrait — before the fight
 ```
 Landscape — before the fight
 ┌────┬────────────────────────────────────────────────────────────────┐
-│    │ $1.2K   M340   U85   ✦12   T2/3 (+1 in 2h 14m)               @ │
+│    │ $1.2K   M340   U85   ✦12   K2/3 (+1 in 2h 14m)               @ │
 │ H  ├───────────────────────────────┬────────────────────────────────┤
 │    │ ┌───────────────────────────┐ │ Spore Foreman                  │
 │ M• │ │ [ Spore Foreman art ]     │ │ Recommended 2,000              │
@@ -501,7 +504,7 @@ Landscape — before the fight
 │    │ └───────────────────────────┘ │ │  F  ││  T  ││  S  ││  S  │   │
 │ R  │ First clear: ✦50 + Rare gear  │ └─────┘└─────┘└─────┘└─────┘   │
 │    │ Unlocks: Tier 2               │                                │
-│ B  │                               │     [  Challenge  (T 1)  ]     │
+│ B  │                               │     [  Challenge  (K 1)  ]     │
 └────┴───────────────────────────────┴────────────────────────────────┘
 ```
 
