@@ -17,9 +17,9 @@ namespace Deepshaft.Tests
         public void SetUp()
         {
             miner = ScriptableObject.CreateInstance<MinionDefinition>();
-            miner.EditorSetup("test_miner", MinionKind.Miner, MinionRole.Fighter, Rarity.Common);
+            miner.EditorSetup("test_miner", MinionKind.Miner, MinionRole.Fighter, Rarity.Common, MinerTrait.Gold);
             fighter = ScriptableObject.CreateInstance<MinionDefinition>();
-            fighter.EditorSetup("test_fighter", MinionKind.Adventure, MinionRole.Fighter, Rarity.Rare);
+            fighter.EditorSetup("test_fighter", MinionKind.Adventure, MinionRole.Fighter, Rarity.Rare, MinerTrait.Speed);
             database = ScriptableObject.CreateInstance<GameDatabase>();
             database.EditorSetMinions(new[] { miner, fighter });
         }
@@ -55,7 +55,14 @@ namespace Deepshaft.Tests
         }
 
         [Test]
-        public void Stars_RaiseTheLevelCap()
+        public void MinerTrait_OnlyAppliesToMiners()
+        {
+            Assert.AreEqual(MinerTrait.Gold, miner.MinerTrait);
+            Assert.AreEqual(MinerTrait.None, fighter.MinerTrait);
+        }
+
+        [Test]
+        public void Breakthroughs_RaiseTheLevelCap()
         {
             Assert.Greater(fighter.GetMaxLevel(2), fighter.GetMaxLevel(0));
         }

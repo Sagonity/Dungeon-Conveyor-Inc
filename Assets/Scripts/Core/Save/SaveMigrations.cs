@@ -1,3 +1,5 @@
+using System;
+using Deepshaft.Economy;
 using Deepshaft.State;
 
 namespace Deepshaft.Save
@@ -11,8 +13,14 @@ namespace Deepshaft.Save
     {
         public static void Migrate(GameState state)
         {
-            // Example for the first change:
-            // if (state.version == 1) { /* move or rename data */ state.version = 2; }
+            if (state.version == 1)
+            {
+                // v3.4 design: Upgrade Materials and Copper were removed (no ore conversion),
+                // and star rank was replaced by breakthroughs. JsonUtility already ignores the
+                // old "stars" field, so only the retired wallet entries need dropping.
+                state.wallet?.balances?.RemoveAll(b => !Enum.IsDefined(typeof(ResourceId), b.id));
+                state.version = 2;
+            }
 
             state.version = GameState.CurrentVersion;
         }

@@ -2,86 +2,97 @@
 
 *Working title. Previously "Dungeon Conveyor Inc."*
 
-**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** In review, v1.1 (2026-11-12)
+**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** In review, v2.0 (2026-11-12), updated to Game Design Summary v3.4
 **Platform:** Android first (iOS later), all four orientations (portrait and landscape) · **Engine:** Unity 6 (6000.6)
 
-> All numbers in this doc are starting points so the prototype can be built.
-> The simulated economy is in [Economy, Progression & Rewards](Economy_and_Progression.md) (SCRUM-2);
-> final tuning belongs to SCRUM-19 (balancing).
+> **Design source of truth:** [Game Design Summary v3.4](Game_Design_Summary.md).
+> This doc turns it into a build plan. All numbers are starting points;
+> the economy and pacing are SCRUM-2 ([Economy, Progression & Rewards](Economy_and_Progression.md)),
+> final tuning is SCRUM-19.
 
 ---
 
 ## 1. Pitch
 
-**Short version:** Mine and explore to earn resources. Summon and upgrade your
-Minions. Defeat powerful bosses to unlock deeper mines and new expeditions. Repeat.
+**Short version:** Mine to earn Gold and ores. Upgrade your gear at the Smith and
+strengthen your Minions. Defeat each mine tier's boss, clear its Expeditions, then
+automate them to farm rare materials forever, even while your phone is locked.
+Break through and dig deeper. Repeat.
 
 **Long version:** You run a logistics and mining corporation in an underground
-fantasy world. You summon magical helpers and monsters ("Minions"):
-**Miner Minions** work the **Mines**, and **Adventure Minions** go on
-**Expeditions** that run in the background while you do other things. When your
-Adventure team is strong enough, you spend a **Guardian Ticket** to challenge the tier's
-**Boss**. Beat it, and a deeper Mine and a new Expedition open up, with better rewards.
+fantasy world. **Miner Minions** automatically mine the deepest tier you have
+unlocked, while **Adventure Minions** fight. Beat a **Mine Tier Boss** to get its
+unique material and open new **Expeditions**. The first clear of an Expedition is
+a real autobattle that can fail; after that it runs **automatically** and can't
+fail, earning rare materials for as long as you let it. Those materials pay for
+the **breakthroughs** that take your gear, your Minions and your mine to the next tier.
 
 ## 2. The most important design principle
 
-> **Boss Battles are progression gates. Mining and Expeditions are repeatable farming.**
+> **Every session is worthwhile, and being offline is never punished.**
 
-The player always has something useful to do, even if they can't beat the next
-boss yet or are out of Guardian Tickets. A failed boss attempt sends you back to
-farming, never to a dead end.
+Boss fights and Expedition first clears are the progression gates and give
+**permanent unlocks**. Mining and automated Expeditions are the repeatable
+production that keeps running in the background, including offline.
 
-### Supporting pillars
+### Supporting pillars (from v3.4 §7)
 
-1. **Each activity has its own rewards.** Mining and Expeditions never pay out
-   the same thing, so neither becomes the one "efficient" option to farm.
-2. **One boss, one clear unlock.** Each boss win unlocks the next Mining Tier
-   *and* the next Expedition Tier together.
-3. **Plan, then let them work.** The player's skill is in building and
-   upgrading the team. Mining and Expeditions run in the background; the player
-   is free to do other things in the game meanwhile. Boss fights play themselves.
-4. **Short sessions, readable on a phone, in any orientation.** Every screen
-   works in all four rotations, portrait and landscape (SCRUM-3, SCRUM-12).
-   Screen layouts and readability rules: [UI Wireframes & Readability](UI_Wireframes_and_Readability.md).
-   How the code is organised: [Technical Architecture](Technical_Architecture.md) (SCRUM-4).
+1. **Every session contributes to meaningful progression.** There is always a
+   short-term goal (upgrade a Minion) and a long-term goal (beat a new boss and automate its Expedition).
+2. **Mining and Expeditions complement each other.** Mining pays Gold and ores for
+   ordinary upgrades; Expeditions pay the rare materials for breakthroughs. Neither replaces the other.
+3. **Permanent unlocks.** A boss win and an Expedition first clear are never lost.
+4. **Returning after a long absence is rewarding.** Automated Expeditions have no
+   time cap and no diminishing returns.
+5. **Fair to free players.** Every Minion and resource needed to finish every stage
+   can be earned for free. The shop is optional; there are no paywalls.
+6. **Balanced on time to the next meaningful upgrade**, not on how big the numbers get.
+7. **Short sessions, readable on a phone, in any orientation** (SCRUM-3, SCRUM-12).
+   Screen layouts: [UI Wireframes & Readability](UI_Wireframes_and_Readability.md).
+   Code structure: [Technical Architecture](Technical_Architecture.md) (SCRUM-4).
 
 ## 3. Core loop
 
 ```
-   ┌───────────────────────────────────────────────────────────────┐
-   │                                                               │
-   ▼                                                               │
-┌───────────────────────────┐                                      │
-│ 1. MINING & EXPEDITIONS   │  Repeatable farming (auto-runs)      │
-│    Mining  → Gold, Minerals, Upgrade Materials                   │
-│    Expedition → Summon Shards, Rare Materials, Equipment         │
-└─────────────┬─────────────┘                                      │
-              ▼                                                    │
-┌───────────────────────────┐                                      │
-│ 2. SUMMON & UPGRADE       │  New Minions, better gear and stats  │
-└─────────────┬─────────────┘                                      │
-              ▼                                                    │
-┌───────────────────────────┐   lose → keep farming, try again     │
-│ 3. BOSS BATTLE            │  ─────────────────────────────────►  │
-│    costs 1 Guardian Ticket│                                      │
-└─────────────┬─────────────┘                                      │
-              ▼ win                                                │
-┌───────────────────────────┐                                      │
-│ 4. UNLOCK NEW TIER        │  Next Mining Tier + next Expedition  │
-│    + first-clear rewards  │  Tier, with better rewards           │
-└─────────────┬─────────────┘                                      │
-              └────────────────────────────────────────────────────┘
-                     Repeat: stronger Minions, bigger challenges
+   ┌──────────────────────────────────────────────────────────────────┐
+   ▼                                                                  │
+┌──────────────────────────────┐                                      │
+│ 1. MINING (always running)   │  Miners auto-mine the highest tier:  │
+│    Gold + ores               │  Gold, Iron, then Silver, Mithril    │
+└──────────────┬───────────────┘                                      │
+               ▼                                                      │
+┌──────────────────────────────┐                                      │
+│ 2. SMITH & MINIONS           │  Upgrade equipment, level Minions    │
+└──────────────┬───────────────┘                                      │
+               ▼                                                      │
+┌──────────────────────────────┐   lose → keep mining and upgrading   │
+│ 3. MINE TIER BOSS            │  ──────────────────────────────────► │
+│    win: unique boss material │                                      │
+│    + new Expeditions unlock  │                                      │
+└──────────────┬───────────────┘                                      │
+               ▼                                                      │
+┌──────────────────────────────┐   fail → upgrade, try again          │
+│ 4. EXPEDITION FIRST CLEAR    │  ──────────────────────────────────► │
+│    autobattle, bonus rewards │                                      │
+│    unlocks automation        │                                      │
+└──────────────┬───────────────┘                                      │
+               ▼                                                      │
+┌──────────────────────────────┐                                      │
+│ 5. AUTOMATED EXPEDITION      │  Can't fail, no time cap, offline    │
+│    rare materials over time  │                                      │
+└──────────────┬───────────────┘                                      │
+               ▼                                                      │
+   Breakthroughs (Smith + Minions) → next mine tier ──────────────────┘
 ```
 
 ### Loop timings
 
 | Loop | Length | What the player does |
 |---|---|---|
-| **Moment** | 5–15 s | Collect the Mine's stockpile, collect an Expedition report, or watch a boss fight |
-| **Session** | 3–8 min | Collect the Mine, collect and resend the Expedition, summon/upgrade, maybe try the boss |
-| **Day** | 2–4 sessions | Use the regenerated Guardian Tickets, push toward the next tier |
-| **Tier** | ~1–3 days (MVP pacing target) | Farm until the team beats the tier boss |
+| **Moment** | 5–15 s | Collect production, do an upgrade, watch a fight |
+| **Session** | 3–8 min | Collect, upgrade at the Smith, level or summon Minions, maybe try a boss or a first clear |
+| **Day** | 2–4 sessions | Push toward the next boss or breakthrough; automation earns between sessions |
+| **Tier** | To be decided (SCRUM-2) | Pacing per tier is the most important open number (v3.4 §8) |
 
 ## 4. Systems
 
@@ -89,134 +100,130 @@ farming, never to a dead end.
 
 | System | Primary function | Rewards / output |
 |---|---|---|
-| **Mining** | Collect raw materials | Gold, Minerals, Upgrade Materials |
-| **Expeditions** | Acquire special resources | Summon Shards, Rare Materials, Equipment |
-| **Minions / Gacha** | Collect new Minions and build stronger teams | Minions (from Summon Shards) |
-| **Upgrades** | Increase mining efficiency and combat power | Stronger Mines and Minions |
-| **Boss Battles** | Test team strength and unlock new tiers | New tiers, first-clear rewards |
-| **Guardian Tickets** | Limit boss attempts without stopping farming | — |
+| **Mining** | Automatic resource production | Gold, Iron, Silver, Mithril |
+| **Smith** | Equipment upgrades and breakthroughs | Stronger tools and gear |
+| **Minions** | Mining (Miners) and combat (Adventurers) | Production and squad power |
+| **Summoning** | Collect Minions with shards | Minions, Minion Essence (duplicates) |
+| **Mine Tier Boss** | Progression gate | Unique boss material, new Expeditions |
+| **Expeditions** | First clear, then automated farming | Bonus rewards, rare Expedition materials |
 
 ### 4.1 Mining
 
-- **Miner Minions** assigned to the Mine dig continuously. Only Miner Minions can mine. Output fills a
-  **stockpile**, which the player collects.
-- Runs while the player does other things (Expeditions, menus). Stops when the
-  stockpile is full, which is what brings the player back.
-- **Mining power** comes from the assigned Miner Minions' mining stat and their Tool.
-- **Mine upgrades** (paid in Gold + Minerals): dig speed, stockpile cap.
-- Each tier's Mine yields more and adds a new Mineral type.
-- Offline accumulation beyond the stockpile cap is post-MVP (SCRUM-16).
+- **Miner Minions automatically mine the highest unlocked tier.** There is no
+  choice of mine: when a deeper tier unlocks, they move there.
+- **Every tier keeps all earlier resources and produces more of them**, plus new
+  ones (v3.4 §2): Tier 1 Gold + Iron, Tier 2 more Gold + Iron, Tier 3 adds a little
+  Silver, Tier 5 adds Mithril. Illustrative rates per hour (not final):
 
-### 4.2 Expeditions
+| Tier | Gold | Iron | Silver | Mithril |
+|---|---|---|---|---|
+| 1 | 100 | 40 | — | — |
+| 2 | 150 | 65 | — | — |
+| 3 | 220 | 90 | 10 | — |
+| 4–6 | post-MVP | | | |
 
-- The player picks a squad (up to 4 **Adventure Minions**) and an Expedition
-  from an unlocked tier, and sends them off. The Expedition runs on a **timer in
-  the background**; the player is free to mine, summon, upgrade or browse menus.
-- The result is worked out from squad power vs. the Expedition's difficulty. When
-  the timer ends the player collects a short **report** with the loot.
-- Starting durations: 10 min (Tier 1), 20 min (Tier 2), 30 min (Tier 3).
-  The playtest build uses shortened timers. The timer keeps running while the app is closed.
-- MVP has **one squad out at a time**. More parallel squads can come later.
-- Minions out on an Expedition can't be used in a boss fight until they return.
-- **No energy cost.** Expeditions can always be run. This is where the player
-  goes when out of Guardian Tickets.
-- Rewards: **Summon Shards, Rare Materials and Equipment drops.**
-- A squad that is too weak returns early with partial loot, never with nothing.
-- The report also tells the player how strong the team is before they spend a ticket on the boss.
+- **No ore conversion.** Older ores stay available automatically.
+- Mining keeps running while an Expedition runs and while the app is closed.
+- Output depends on the Miners' mining stats and fixed traits (Gold, ore or speed) and their equipment.
+- **Open:** does the Mine still have a stockpile cap? v3.4 says returning after a long
+  absence must be rewarding, so a cap (if any) must be generous. Decided in SCRUM-2.
 
-### 4.3 Minions & Gacha
+### 4.2 Bosses
 
-- Summons cost **Summon Shards**, which come only from Expeditions. This keeps
-  Expeditions essential for growing the roster.
-- Starting rates: Common 75% / Rare 22% / Epic 3%. **Pity:** a guaranteed Epic within 50 summons.
-- Duplicates raise a Minion's **star rank** (higher stat cap). They don't
-  become Summon Shards, to avoid mixing up the two.
-- Drop rates are shown in the game from day one (store compliance, SCRUM-25).
-- **Two kinds of Minion, with separate jobs:**
+- **One Mine Tier Boss per tier.** Bosses follow a Valheim-like model:
+  beating one **guarantees a unique progression material** and **unlocks new Expeditions**.
+- The boss material unlocks advanced progression and new Smith capabilities (§4.5).
+- The fight is an autobattle with the Adventure team, played out on screen (about 30–60 s).
+- A loss costs nothing permanent. The game shows *why* (for example "Boss HP left 32%,
+  your team is below the recommended power") so the player knows what to upgrade (SCRUM-19).
+- **Open:** whether boss attempts stay limited by Guardian Tickets (v1.1 design).
+  v3.4 doesn't include them; until the team decides, the prototype builds bosses without tickets.
+
+### 4.3 Expeditions
+
+Expeditions work differently before and after their first completion:
+
+| | First clear | After first clear (automated) |
+|---|---|---|
+| Can it fail? | Yes, it's a real autobattle | No |
+| Needs | A capable Adventure team | — |
+| Rewards | Bonus rewards (one time) | Rare Expedition materials over time |
+| Result | **Unlocks automation permanently** | Keeps running, including while the phone is locked |
+
+- **Only one Expedition can be active at a time.**
+- The player can **stop an automated Expedition at any time** and collect what it has earned.
+- Automated rewards have **no time cap and no diminishing returns**.
+- Miners keep mining while an Expedition runs.
+- **Open:** whether the Adventure team is locked while automating (for example
+  for a boss fight). Decided with SCRUM-6/SCRUM-7.
+
+### 4.4 Minions
 
 | | Miner Minions | Adventure Minions |
 |---|---|---|
-| Work in | The Mine only | Expeditions and Boss Battles only |
-| Key stats | Mining power, level, star rank | HP, ATK, level, star rank |
-| Gear | Tool | Weapon, Armor |
-| Roles | — | *Fighter* (damage), *Tank* (takes hits), *Support* (buffs the squad) |
+| Purpose | Resource production | Combat (bosses, Expedition first clears) |
+| Specialization | **Fixed trait** per named character: Gold, ore or mining speed | **Combat class:** Tank, Fighter, Archer, Mage, Support |
+| Progression | Mining efficiency and yield | Combat stats and abilities |
+| Acquisition | Summoning shards (Miner pool) | Summoning shards (Adventure pool) |
 
-- Because the two kinds never compete for the same job, there is no choice
-  about who goes where. The choices are which Miners to upgrade, and which 4
-  Adventure Minions make the best squad.
-- **MVP roster:** 8 Minions: 3 Miner and 5 Adventure, spread across Common, Rare
-  and Epic. Art and names come from SCRUM-13.
+**Development tracks** (v3.4 §5):
 
-### 4.4 Upgrades
+1. **Standard levels:** Gold + ores.
+2. **Breakthroughs:** need rare Expedition materials; each raises the level cap.
+3. **Ascension:** optional, paid with Minion Essence. **Open:** in the prototype or not (SCRUM-10).
 
-Each upgrade costs rewards from **both** farming systems, so neither one can be skipped:
+**Open:** how many Miners work and how many Adventurers fight at the same time (SCRUM-6).
 
-| Upgrade | Cost | Effect |
-|---|---|---|
-| Minion level | Gold + Upgrade Materials (Mining) | Miner: mining power. Adventure: HP, ATK |
-| Equipment upgrade | Gold (Mining) + Rare Materials (Expeditions) | Bigger gear bonuses |
-| Mine upgrade | Gold + Minerals (Mining) | Dig speed, stockpile cap |
-| Star rank | Duplicate Minions (Gacha) | Higher level cap |
+### 4.5 Smith and equipment
 
-Equipment: Tools for Miner Minions; Weapons and Armor for Adventure Minions. 3 rarities. About 6–8 items in MVP, with fixed stats (no random stats).
+- **Ordinary upgrades** cost Gold + mined ores.
+- **Breakthrough upgrades** also need a rare Expedition material.
+- The **boss's unique material** unlocks advanced progression or new Smith capabilities.
 
-### 4.5 Boss Battles & Guardian Tickets
+| Pickaxe upgrade | Cost |
+|---|---|
+| Level 1 → 4 | Gold + Iron |
+| Level 4 → 5 (breakthrough) | Gold + Iron + rare Expedition material |
+| Level 5 onward | More normal levels and later breakthroughs |
 
-- Each tier has one Boss. Fighting it costs **1 Guardian Ticket**.
-- The fight is auto-combat with a squad of up to 4 Adventure Minions, played out on screen (about 30–60 s).
-- **Win:** the next Mining Tier and Expedition Tier unlock, plus one-time
-  first-clear rewards (a large batch of Summon Shards plus a guaranteed equipment piece).
-- **Lose:** the ticket is spent. The player goes back to farming and upgrades.
-- **Tickets:** max 3. One regenerates every 4 hours. A few are also given as
-  first-clear rewards. Tickets are never needed for Mining or Expeditions.
-- After a loss, the game shows *why* (for example "Boss HP left: 32%, your
-  team's power is below the recommended level") so the player knows what to farm (SCRUM-19).
+Exact costs and scaling: SCRUM-2. Equipment: tools for Miners, weapons and armor for
+Adventurers, with fixed stats (no random rolls).
 
-### 4.6 Tiers (MVP content)
+### 4.6 Summoning
 
-One boss unlocks both the next Mine and the next Expedition.
+- **Three rarities in the prototype:** Common (basic, dependable), Uncommon
+  (improved traits and abilities), Rare (specialized, valuable).
+- Minions come from **shards**, never Gold or ores. The player **picks the Miner or the Adventure pool**.
+- Proposed rates (for discussion, final in SCRUM-2/SCRUM-11):
 
-| Tier | Zone (placeholder) | Mine yields | Expedition yields | Boss | Win unlocks |
-|---|---|---|---|---|---|
-| 1 | Fungal Mines | Gold, Copper | Shards, Spore Silk, Common gear | Spore Foreman | Tier 2 |
-| 2 | Magma Works | + Iron | + Ember Core, Rare gear | Slag Golem | Tier 3 |
-| 3 | Crystal Depths | + Mithril | + Prism Dust, Epic gear | Prism Wyrm | End of MVP content |
+| Shard | Common | Uncommon | Rare |
+|---|---|---|---|
+| Basic | 75% | 23% | 2% |
+| Advanced | 0% | 85% | 15% |
 
-Zone and item names are placeholders until SCRUM-13. Special bosses that unlock
-unique areas, Minions or systems come after launch.
+- **Duplicates become shared Minion Essence**, used for optional improvements to owned Minions.
+- Named Miner Minions always have the same trait.
+- **Keep it simple for the prototype:** small roster, no complicated pity system.
+  Premium shards and Epic/Legendary rarities come later.
+- Rates are shown in the game (store compliance, SCRUM-25).
+- **Open:** where shards come from and how many free players get (SCRUM-2).
 
-### 4.7 Currencies & resources
+### 4.7 Resources
 
 | Resource | Source | Used for |
 |---|---|---|
-| Gold | Mining | Almost every upgrade |
-| Minerals (one per tier) | Mining | Mine upgrades, gear crafting |
-| Upgrade Materials | Mining | Minion levels |
-| Summon Shards | Expeditions, boss first-clear | Summons |
-| Rare Materials (one per tier) | Expeditions | Equipment upgrades |
-| Equipment | Expeditions, boss first-clear | Equipping Minions |
-| Guardian Tickets | Regenerate over time, first-clear | Boss attempts |
+| Gold | Mining (all tiers) | Almost every upgrade |
+| Iron | Mining (Tier 1+) | Smith and Minion upgrades |
+| Silver | Mining (Tier 3+) | Higher-tier upgrades |
+| Mithril | Mining (Tier 5+, post-MVP) | Higher-tier upgrades |
+| Rare Expedition materials (one per tier) | Expeditions (first clear bonus, automation) | Breakthroughs |
+| Unique boss materials (one per boss) | Mine Tier Boss win (guaranteed) | Advanced progression, Smith capabilities |
+| Basic / Advanced Shards | To be decided (SCRUM-2) | Summoning |
+| Minion Essence | Duplicate summons | Optional Minion improvements (Ascension) |
 
-No premium currency in the MVP. It arrives with in-app purchases (section 4.8).
+Removed in v2.0: Copper, Upgrade Materials, star ranks, Summon Shards as a single type.
 
-### 4.8 Monetization (at launch)
-
-**Decided:** in-app purchases, plus ads that are **never forced**: the player
-always chooses to watch one in exchange for a reward. No interstitial or pop-up ads.
-
-Both are part of the **vertical slice** (section 5). The details below are proposals for SCRUM-2 and SCRUM-24:
-
-- **In-app purchases:** a premium currency (name TBD) that buys summons,
-  starter packs and cosmetic items.
-- **Optional (rewarded) ads:** watch an ad to double an Expedition report's
-  loot, or cut time off a running Expedition.
-- **Guardian Tickets can't be bought or earned from ads for now.** We revisit this after playtesting.
-- **Fairness rule:** everything that gates progression (tiers, bosses) can be
-  reached without paying. Money and ads speed things up; they never unlock content.
-- **Compliance:** summon odds are shown in game. Some countries restrict paid
-  gacha (for example Belgium), which affects the soft-launch markets (SCRUM-23, SCRUM-25).
-
-### 4.9 Art direction
+### 4.8 Art direction
 
 **Decided:** in the spirit of **Arcane** and **Borderlands**. These are style
 references only; all characters, designs and assets are our own.
@@ -236,116 +243,134 @@ references only; all characters, designs and assets are our own.
   This keeps the game light on phones while making a later move to more 3D easier.
 - The art pipeline (3D model → sprite render), style guide and first 8 Minions are SCRUM-13.
 
+### 4.9 Monetization (at launch)
+
+**Decided:** in-app purchases, plus ads that are **never forced** (the player
+always chooses to watch one for a reward). No interstitial or pop-up ads.
+
+- **v3.4 rule:** the shop is optional monetization with **no mandatory paywalls**.
+  Free players can get every Minion and resource needed to finish every stage.
+- **Open:** what the shop sells (premium shard types are one candidate). SCRUM-24.
+- **Compliance:** summon odds are shown in the game. Some countries restrict paid
+  gacha (for example Belgium), which affects the soft-launch markets (SCRUM-23, SCRUM-25).
+
 ## 5. MVP plan
 
 **MVP = the vertical slice (SCRUM-14).** It is built in two steps:
 
-- **Step A: core loop playtest (SCRUM-8).** Grey-box, Tier 1 + Tier 2.
-  Proves that "farm → upgrade → boss → unlock" feels good.
-- **Step B: vertical slice (SCRUM-14).** All 3 tiers with real art, full gacha and
-  equipment, in-app purchases and optional ads.
+- **Step A: economy prototype / core loop playtest (SCRUM-8).** Grey-box. Scope from
+  v3.4: **three mining tiers, three rarities, a small Miner and Adventure roster, one
+  boss per tier, a few Expeditions and a working Smith.** Proves the loop is fun
+  before the roster or systems grow.
+- **Step B: vertical slice (SCRUM-14).** The same loop with real art, polished UI,
+  in-app purchases and optional ads.
 
-| System | Step A: playtest | Step B: vertical slice | Ticket |
+| System | Step A: prototype | Step B: vertical slice | Ticket |
 |---|---|---|---|
-| Mining + stockpile | ✅ grey-box Mine | ✅ animated Mine, Mine upgrades | SCRUM-5 |
-| Assigning Miners to the Mine, Adventurers to the squad | ✅ simple lists | ✅ polished | SCRUM-6 |
-| Expeditions (background timer + report) | ✅ 2 tiers, short timers | ✅ 3 tiers | SCRUM-7 |
-| Boss Battles + Guardian Tickets | ✅ 2 bosses | ✅ 3 bosses, loss feedback | SCRUM-7 |
-| Tier unlocks | ✅ | ✅ | SCRUM-7, SCRUM-9 |
-| Minion stats, levels, equipment | ⚪ levels only, 2 fixed items | ✅ full | SCRUM-10 |
-| Summon (gacha) | ⚪ flat rates, 4 grey-box Minions | ✅ rarities, pity, star rank, 8 Minions | SCRUM-11, SCRUM-13 |
-| HQ screen (collect, upgrade) | ⚪ basic | ✅ | SCRUM-9 |
-| Save / load | ⚪ local | ✅ local | SCRUM-17 |
-| In-app purchases + premium currency | — | ✅ store, starter pack, test purchases only | SCRUM-24 (pulled forward) |
-| Optional (rewarded) ads | — | ✅ double loot, shorten Expedition | SCRUM-24 (pulled forward) |
-| UI (all four orientations) | Grey-box screens from the [wireframes](UI_Wireframes_and_Readability.md) | Design system, readable HUD | SCRUM-3, SCRUM-12 |
+| Mining (auto, highest tier, Gold/Iron/Silver) | ✅ grey-box | ✅ animated | SCRUM-5 |
+| Assigning Miners and the Adventure team | ✅ simple lists | ✅ polished | SCRUM-6 |
+| Mine Tier Bosses (autobattle) | ✅ 3 bosses | ✅ loss feedback | SCRUM-7 |
+| Expeditions: first clear + automation | ✅ a few Expeditions | ✅ | SCRUM-7 |
+| Smith: upgrades + breakthroughs | ✅ pickaxe + a few items | ✅ | SCRUM-9, SCRUM-10 |
+| Minion levels + breakthroughs | ✅ | ✅ | SCRUM-10 |
+| Ascension (Essence) | ⚪ only if decided | ⚪ decide after playtest | SCRUM-10 |
+| Summoning (2 pools, 3 rarities, Essence) | ✅ simple rates, no pity | ✅ rates shown | SCRUM-11 |
+| Tier progression | ✅ | ✅ | SCRUM-2, SCRUM-7 |
+| Save / load, offline progress | ⚪ local | ✅ local | SCRUM-16, SCRUM-17 |
+| In-app purchases + optional ads | — | ✅ test purchases only | SCRUM-24 (pulled forward) |
+| UI (all four orientations) | Grey-box screens | Design system, readable HUD | SCRUM-3, SCRUM-12 |
 
-✅ = in scope · ⚪ = minimal / stubbed
+✅ = in scope · ⚪ = minimal / to decide
 
 ## 6. Out of scope for MVP
 
-- Buying Guardian Tickets, or getting them from ads (revisit after playtesting)
-- Offline rewards beyond the stockpile cap; quests, achievements (SCRUM-16)
-- Special bosses, events, multiple banners, live ops (SCRUM-27)
+- Mine tiers 4–6 (Mithril), more than one active Expedition
+- Epic/Legendary rarities, premium shard types, a large roster, a complex pity system
+- Quests and achievements (SCRUM-16); events and live ops (SCRUM-27)
 - Cloud save, accounts, analytics (SCRUM-17)
 - PvP, guilds, any social features
 - Manual skills during combat, random gear stats, gear sets
-- Auto-repeat or "sweep" of Expeditions, more than one squad out at a time
+- Ore conversion (not planned at all)
 - Localization (SCRUM-25)
 
 ## 7. Where the current build stands
 
-As of v0.0.1, the main menu PR, the cleanup and the core architecture (SCRUM-4) in this sprint:
-
-- **Done:** main menu, settings (volume / mute), the UI state machine, and UI that
-  scales for portrait and landscape inside the device safe area. The project allows
-  all four rotations. The wireframes for every Step A screen are in
-  [UI Wireframes & Readability](UI_Wireframes_and_Readability.md) (SCRUM-3).
-- **Done (SCRUM-4):** the code structure is set in
-  [Technical Architecture](Technical_Architecture.md). The `Deepshaft.Core` assembly
-  has the foundations the Step A systems build on:
-  - `MinionDefinition` (`ScriptableObject`) with Miner / Adventure kind, role,
-    rarity, stat growth and a star-rank level cap, plus `OwnedMinion` for the save
-  - a `Wallet` for every resource in section 4.7
-  - an `IClock` with real (UTC) timestamps, so timers can run in menus and while the app is closed
-  - `GameState` and a local save (`SaveService`) with a backup and versioning
-  - EditMode tests for all of the above
-- **Removed:** the 3×3 grid and drag-to-move (`GridManager`, `DraggableMinion`).
-- **Still to replace:** `MinionStats` / `MinionHealth` and `GameController.SummonMinion()`,
-  which spawns a placeholder Minion. They move to `MinionDefinition` / `OwnedMinion`
-  when the roster and summon tickets land (SCRUM-10, SCRUM-11).
+- **Done:** main menu, settings, UI state machine, safe-area UI for all four rotations,
+  wireframes for the v1.1 screens (SCRUM-3; need updating for v3.4, see that doc).
+- **Done (SCRUM-4), updated for v3.4:** the `Deepshaft.Core` assembly:
+  - `ResourceId`: Gold, Iron, Silver, Mithril, Basic/Advanced Shards, Minion Essence,
+    rare Expedition materials and unique boss materials. Copper and Upgrade Materials are retired.
+  - `MinionDefinition`: Miner/Adventure kind, combat class (Tank, Fighter, Archer, Mage, Support),
+    fixed Miner trait (Gold, ore, speed), rarity (Common, Uncommon, Rare), level cap per breakthrough.
+  - `OwnedMinion`: level and breakthroughs (star rank removed).
+  - Save format version 2, with a migration that drops the retired resources from version 1 saves.
+  - `Wallet`, `IClock` (UTC timestamps for offline progress), `GameState`, `SaveService`, EditMode tests.
+- **Still to replace:** `MinionStats` / `MinionHealth` and `GameController.SummonMinion()`
+  (placeholder Minion), moving to `MinionDefinition` / `OwnedMinion` (SCRUM-10, SCRUM-11).
 - **Still to change:** `GameController` sets `Time.timeScale = 0` while a menu is open.
-  The new systems must use `IClock`, not game time, so this doesn't stop them.
+  New systems must use `IClock`, not game time.
 
-**Missing for Step A:** Mine + stockpile, Expedition timer + report, auto-combat for bosses,
-Boss Battle + Guardian Tickets, tier unlocks, resource counters in the HUD, Miner/Adventure
-Minion roster and assignment, and connecting the save to the game (`GameSession`, SCRUM-17).
+**Missing for Step A:** auto-mining, Smith, Mine Tier Bosses and autobattle, Expedition
+first clear + automation, tier progression, summoning with two pools, resource counters
+in the HUD, and connecting the save to the game (`GameSession`, SCRUM-17).
 
 ## 8. Success criteria
 
-### Step A: core loop playtest (SCRUM-8)
+### Step A: economy prototype / playtest (SCRUM-8)
 
 Run with 5+ testers who haven't seen the game:
 
-- [ ] Testers can explain "farm, upgrade, beat the boss, unlock" without help after 10 minutes
-- [ ] After losing to a boss, at least 4 of 5 go back to farming without being told
-- [ ] Testers keep both farming systems busy: they resend Expeditions and collect the Mine without being reminded
-- [ ] At least 3 of 5 beat the Tier 1 boss in their first session
-- [ ] No tester runs out of useful things to do (out of tickets and nothing worth farming)
+- [ ] Testers can explain "mine, upgrade, beat the boss, clear and automate the Expedition, break through" after 10 minutes
+- [ ] After losing a boss or first clear, at least 4 of 5 go back to upgrading without being told
+- [ ] Testers understand that Expedition materials are needed for breakthroughs
+- [ ] Every session ends with at least one meaningful upgrade
+- [ ] Testers who return after a long break feel rewarded, not punished
+- [ ] All 3 tiers can be cleared without paying
 
 ### Step B: vertical slice (SCRUM-14)
 
-- [ ] All 3 tiers can be cleared with a reachable roster
-- [ ] Full loop with real art for the 8 Minions
+- [ ] All 3 tiers can be cleared with a free roster
+- [ ] Full loop with real art for the prototype roster
 - [ ] Holds 60 fps on a mid-range Android device (SCRUM-20)
 - [ ] A test purchase and an optional ad both complete and give the right reward; no ad ever plays without the player choosing it
-- [ ] Save survives closing and reopening the app, and Expedition timers finish correctly while it's closed
+- [ ] Mining and automated Expeditions progress correctly while the app is closed or the phone is locked
 - [ ] Every screen is usable in all four orientations, and rotating mid-session loses nothing
 
 ## 9. Decisions
 
 | # | Question | Decision |
 |---|---|---|
-| 1 | Does a lost boss fight spend the Guardian Ticket? | **Yes.** Show clear loss feedback so it doesn't feel wasted. |
-| 2 | Can a Minion both mine and go on Expeditions? | **No.** Miner Minions mine; Adventure Minions do Expeditions and Boss Battles. |
-| 3 | Are Expeditions watched live? | **No.** They run in the background on a timer so the player can do other things. |
-| 4 | Screen orientation? | **All four rotations**, portrait and landscape. |
-| 5 | Do Miner and Adventure Minions come from the same summon? | **Yes.** One banner that can give either kind, paid with Summon Shards. |
-| 6 | Expedition length? | **10 / 20 / 30 min** for Tiers 1–3, tuned in SCRUM-2. Shorter in the playtest build. |
-| 7 | Monetization? | **In-app purchases + optional ads.** No forced ads. See 4.8. |
-| 8 | Art tone? | **Arcane + Borderlands inspired.** See 4.9. |
-| 9 | 2D or 3D? | **2D for now, made from 3D:** 3D models rendered to 2D sprites, plus some 3D elements. |
-| 10 | Purchases and ads in the vertical slice? | **Yes.** |
-| 11 | Can money or ads buy Guardian Tickets? | **Not for now.** Revisit after playtesting. |
-| 12 | Is there a conveyor belt? | **No.** Mined resources go straight to the Mine's stockpile. |
-| 13 | Game name? | **Expedition: Deepshaft** (working title). Check app stores and trademarks before launch (SCRUM-25). |
+| 1 | Design source of truth? | **Game Design Summary v3.4** ([doc](Game_Design_Summary.md)). |
+| 2 | Can a Minion both mine and fight? | **No.** Miner Minions mine; Adventure Minions fight. |
+| 3 | Which tier do Miners mine? | **Always the highest unlocked tier**, which keeps all earlier resources. |
+| 4 | Ore conversion? | **No.** Older ores stay available automatically. |
+| 5 | What does a boss win give? | **A guaranteed unique material + new Expeditions.** |
+| 6 | Can Expeditions fail? | **Only the first clear.** Automation can't fail. |
+| 7 | Expeditions at once? | **One.** It can be stopped any time; rewards have no cap or diminishing returns. |
+| 8 | Rarities? | **Common, Uncommon, Rare** in the prototype. Epic/Legendary later. |
+| 9 | Summon pools? | **Player picks Miner or Adventure.** Paid with shards, not Gold or ores. |
+| 10 | Duplicates? | **Become shared Minion Essence.** (Replaces star rank.) |
+| 11 | Adventure classes? | **Tank, Fighter, Archer, Mage, Support.** |
+| 12 | Monetization? | **In-app purchases + optional ads**, no paywalls. What the shop sells is open. |
+| 13 | Screen orientation? | **All four rotations**, portrait and landscape. |
+| 14 | Art? | **Arcane + Borderlands inspired**, 2D sprites made from 3D. See 4.8. |
+| 15 | Conveyor belt? | **No.** |
+| 16 | Game name? | **Expedition: Deepshaft** (working title). Check stores and trademarks (SCRUM-25). |
 
-## 10. Open questions
+## 10. Open questions (v3.4 §8, plus follow-ups)
 
-None right now. To revisit after the playtest (SCRUM-8):
-
-- Should money or optional ads give Guardian Tickets?
-- Are the Expedition timers and Guardian Ticket regeneration rate right?
+| Area | Question | Ticket |
+|---|---|---|
+| Minion capacity | How many Miners work and Adventurers fight at the same time? | SCRUM-6 |
+| Progression pacing | How long should each tier take? **Most important next step.** | SCRUM-2 |
+| Upgrade economy | Exact costs, production rates and scaling | SCRUM-2 |
+| Summoning | Final shard rates, free shard income, pity | SCRUM-11, SCRUM-2 |
+| Ascension | In the initial prototype or not? | SCRUM-10 |
+| Tier progression | Exact prerequisites for the next mine tier (boss win + breakthrough?) | SCRUM-2, SCRUM-7 |
+| Monetization | What does the shop sell? | SCRUM-24 |
+| Guardian Tickets | Keep limiting boss attempts, or drop them? Not in v3.4 | SCRUM-7 |
+| Mine stockpile | Is there a cap on offline mining, and how large? | SCRUM-2, SCRUM-5 |
+| Team lock | Is the Adventure team busy while an Expedition is automated? | SCRUM-6, SCRUM-7 |
 
 ## 11. Change log
 
@@ -353,3 +378,4 @@ None right now. To revisit after the playtest (SCRUM-8):
 |---|---|---|
 | 1.0 | 2026-11-11 | Scope final. Linked the UI wireframes (SCRUM-3) and updated "Where the current build stands" after the cleanup. |
 | 1.1 | 2026-11-12 | Updated "Where the current build stands" after the core architecture (SCRUM-4). Linked the Technical Architecture doc. |
+| 2.0 | 2026-11-12 | Rewritten for Game Design Summary v3.4: auto-mining of the highest tier (Gold, Iron, Silver, Mithril), Smith and breakthroughs, boss materials, Expedition first clear + automation, 3 rarities (Common/Uncommon/Rare), Miner/Adventure summon pools, Minion Essence, 5 combat classes, new prototype scope. Guardian Tickets and the Mine stockpile cap moved to open questions. |

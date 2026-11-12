@@ -8,6 +8,20 @@ These are **grey-box** wireframes: layout, hierarchy and flow only. Colors, font
 icons and art come later in SCRUM-12 and SCRUM-13. Every screen is drawn in
 **portrait** and **landscape**, because the game supports all four rotations.
 
+> ⚠️ **Needs an update for Game Design Summary v3.4 (2026-11-12).** The readability
+> rules (§1), navigation pattern, safe area and device checklist still apply. These
+> wireframes were drawn for the v1.1 design; change them as follows (SCRUM-3, SCRUM-12):
+>
+> | Area | Change |
+> |---|---|
+> | Resource bar (§3.1) | Gold, Iron, Silver (from Tier 3), shards (Basic/Advanced), rare materials on a tooltip. Remove Minerals, Upgrade Materials and Guardian Tickets (tickets are an open question) |
+> | Tabs (§2) | Add a **Smith** screen (upgrades, breakthroughs). HQ may merge into it (SCRUM-9) |
+> | Mine (§4.3) | No mine choice: Miners auto-mine the highest tier. Show every resource the tier produces per hour |
+> | Expedition (§4.4) | Two states: **first clear** (pick team, autobattle, can fail, bonus rewards) and **automated** (running, earned so far, Stop & Collect). Only one active. No timers |
+> | Minion card (§3.3) | Replace star rank with breakthroughs; show class (Tank/Fighter/Archer/Mage/Support) or Miner trait (Gold/ore/speed). Squad size is undecided |
+> | Summon (§4.6) | Choose **Miner or Adventure pool** and **Basic or Advanced shard**; rates Common/Uncommon/Rare; no pity counter; show Essence gained from duplicates |
+> | Boss (§4.7) | Win screen shows the unique boss material and the Expeditions it unlocked. No ticket cost unless the team keeps tickets |
+
 ---
 
 ## 1. Readability rules

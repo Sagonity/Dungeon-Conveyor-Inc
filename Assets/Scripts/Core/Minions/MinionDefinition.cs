@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Deepshaft.Minions
 {
     /// <summary>
-    /// What a kind of Minion is: name, job, rarity and how its stats grow.
+    /// What a kind of Minion is: name, job, class or miner trait, rarity and how its stats grow.
     /// One asset per Minion type (create via Assets → Create → Deepshaft → Minion Definition).
     /// Owned copies are <see cref="OwnedMinion"/> entries in the save, which point here by <see cref="Id"/>.
     /// </summary>
@@ -16,12 +16,14 @@ namespace Deepshaft.Minions
         [SerializeField] MinionKind kind = MinionKind.Adventure;
         [Tooltip("Adventure Minions only. Miners use None.")]
         [SerializeField] MinionRole role = MinionRole.Fighter;
+        [Tooltip("Miner Minions only: fixed specialization (Gold, ore or speed). Adventure Minions use None.")]
+        [SerializeField] MinerTrait minerTrait = MinerTrait.None;
         [SerializeField] Rarity rarity = Rarity.Common;
 
         [Header("Level cap")]
-        [SerializeField, Min(1)] int maxLevelAtZeroStars = 20;
-        [Tooltip("Each star rank raises the level cap by this much (scope doc §4.4).")]
-        [SerializeField, Min(0)] int maxLevelPerStar = 10;
+        [SerializeField, Min(1)] int maxLevelBeforeBreakthrough = 20;
+        [Tooltip("Each rare-material breakthrough raises the level cap by this much (v3.4 §5).")]
+        [SerializeField, Min(0)] int maxLevelPerBreakthrough = 10;
 
         [Header("Miner stats (level 1, then + per level)")]
         [SerializeField, Min(0)] float baseMiningPower = 10f;
@@ -37,9 +39,11 @@ namespace Deepshaft.Minions
         public string DisplayName => displayName;
         public MinionKind Kind => kind;
         public MinionRole Role => kind == MinionKind.Miner ? MinionRole.None : role;
+        public MinerTrait MinerTrait => kind == MinionKind.Miner ? minerTrait : MinerTrait.None;
         public Rarity Rarity => rarity;
 
-        public int GetMaxLevel(int stars) => maxLevelAtZeroStars + Mathf.Max(0, stars) * maxLevelPerStar;
+        public int GetMaxLevel(int breakthroughs) =>
+            maxLevelBeforeBreakthrough + Mathf.Max(0, breakthroughs) * maxLevelPerBreakthrough;
 
         public float GetMiningPower(int level) =>
             kind == MinionKind.Miner ? Grow(baseMiningPower, miningPowerPerLevel, level) : 0f;
@@ -63,12 +67,14 @@ namespace Deepshaft.Minions
         }
 
         /// <summary>For tests and editor tools only.</summary>
-        public void EditorSetup(string newId, MinionKind newKind, MinionRole newRole, Rarity newRarity)
+        public void EditorSetup(string newId, MinionKind newKind, MinionRole newRole, Rarity newRarity,
+            MinerTrait newMinerTrait = MinerTrait.None)
         {
             id = newId;
             kind = newKind;
             role = newRole;
             rarity = newRarity;
+            minerTrait = newMinerTrait;
         }
 #endif
     }
