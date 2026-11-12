@@ -1,0 +1,120 @@
+{
+  "_comment": "First-pass MVP economy (SCRUM-2). Single source of truth for the numbers in Docs/Economy_and_Progression.md. Change values here, then run simulate.py to check pacing.",
+
+  "start": {
+    "resources": { "Gold": 300, "UpgradeMaterials": 20, "SummonShards": 20 },
+    "minions": ["miner_c", "fighter_c", "tank_c"],
+    "firstSummonGuaranteed": "support_r",
+    "guardianTickets": 3
+  },
+
+  "power": {
+    "_comment": "Squad power = sum of (ATK + HP / hpPerPower) for up to 4 Adventure Minions, then x (1 + supportBonus) if the squad has a Support.",
+    "hpPerPower": 10,
+    "supportBonus": 0.10,
+    "squadSize": 4
+  },
+
+  "rarity": {
+    "Common": { "statMultiplier": 1.00, "summonRate": 0.75 },
+    "Rare":   { "statMultiplier": 1.25, "summonRate": 0.22 },
+    "Epic":   { "statMultiplier": 1.60, "summonRate": 0.03 }
+  },
+
+  "adventureBase": {
+    "_comment": "Common, level 1, before role multipliers. Each level adds growthPerLevel x the level-1 value.",
+    "hp": 100, "atk": 10, "growthPerLevel": 0.15
+  },
+  "roles": {
+    "Fighter": { "hp": 0.8, "atk": 1.4 },
+    "Tank":    { "hp": 1.6, "atk": 0.6 },
+    "Support": { "hp": 1.0, "atk": 0.8 }
+  },
+  "minerBase": { "miningPower": 10, "growthPerLevel": 0.15 },
+
+  "levels": {
+    "capAtZeroStars": 20,
+    "capPerStar": 5,
+    "maxStars": 5,
+    "costGoldBase": 30, "costGoldGrowth": 1.12,
+    "costUpgradeMaterialsBase": 1, "costUpgradeMaterialsEveryNLevels": 2
+  },
+
+  "minions": [
+    { "id": "miner_c",   "name": "Pebble Grub",     "kind": "Miner",     "role": null,      "rarity": "Common" },
+    { "id": "fighter_c", "name": "Spore Bruiser",   "kind": "Adventure", "role": "Fighter", "rarity": "Common" },
+    { "id": "tank_c",    "name": "Cart Shield",     "kind": "Adventure", "role": "Tank",    "rarity": "Common" },
+    { "id": "miner_r",   "name": "Drill Sergeant",  "kind": "Miner",     "role": null,      "rarity": "Rare" },
+    { "id": "support_r", "name": "Lamp Chaplain",   "kind": "Adventure", "role": "Support", "rarity": "Rare" },
+    { "id": "fighter_r", "name": "Slag Knight",     "kind": "Adventure", "role": "Fighter", "rarity": "Rare" },
+    { "id": "miner_e",   "name": "Gilded Golem",    "kind": "Miner",     "role": null,      "rarity": "Epic" },
+    { "id": "fighter_e", "name": "Prism Duelist",   "kind": "Adventure", "role": "Fighter", "rarity": "Epic" }
+  ],
+
+  "summon": { "costShards": 10, "pityEpicWithin": 50 },
+
+  "mine": {
+    "_comment": "One Mine that goes deeper when a tier unlocks. Output per point of mining power per hour, by depth (= highest unlocked tier).",
+    "minerSlots": 3,
+    "outputPerPowerPerHour": {
+      "1": { "Gold": 14, "Copper": 1.5, "UpgradeMaterials": 0.30 },
+      "2": { "Gold": 16, "Copper": 0.8, "Iron": 1.5, "UpgradeMaterials": 0.30 },
+      "3": { "Gold": 20, "Iron": 0.8, "Mithril": 1.5, "UpgradeMaterials": 0.35 }
+    },
+    "digSpeed": { "bonusPerLevel": 0.15, "maxLevel": 10, "costGoldBase": 80, "costGoldGrowth": 1.55, "costMineralBase": 8, "costMineralGrowth": 1.45 },
+    "stockpile": { "baseHours": 2, "hoursPerLevel": 1, "maxLevel": 6, "costGoldBase": 120, "costGoldGrowth": 1.7, "costMineralBase": 12, "costMineralGrowth": 1.5 }
+  },
+
+  "tiers": [
+    {
+      "tier": 1, "zone": "Fungal Mines", "mineral": "Copper", "rareMaterial": "SporeSilk",
+      "expedition": { "name": "Spore Caverns", "minutes": 10, "recommendedPower": 60,
+                      "loot": { "SummonShards": 5, "SporeSilk": 3, "Gold": 40 }, "gearChance": 0.25, "gearRarity": "Common" },
+      "boss": { "name": "Spore Foreman", "recommendedPower": 110,
+                "firstClear": { "SummonShards": 40, "GuardianTickets": 1, "gear": "weapon_r" } }
+    },
+    {
+      "tier": 2, "zone": "Magma Works", "mineral": "Iron", "rareMaterial": "EmberCore",
+      "expedition": { "name": "Magma Works", "minutes": 20, "recommendedPower": 200,
+                      "loot": { "SummonShards": 9, "EmberCore": 3, "SporeSilk": 2, "Gold": 120 }, "gearChance": 0.25, "gearRarity": "Rare" },
+      "boss": { "name": "Slag Golem", "recommendedPower": 380,
+                "firstClear": { "SummonShards": 60, "GuardianTickets": 1, "gear": "armor_r" } }
+    },
+    {
+      "tier": 3, "zone": "Crystal Depths", "mineral": "Mithril", "rareMaterial": "PrismDust",
+      "expedition": { "name": "Crystal Depths", "minutes": 30, "recommendedPower": 520,
+                      "loot": { "SummonShards": 14, "PrismDust": 3, "EmberCore": 2, "Gold": 300 }, "gearChance": 0.20, "gearRarity": "Epic" },
+      "boss": { "name": "Prism Wyrm", "recommendedPower": 800,
+                "firstClear": { "SummonShards": 100, "GuardianTickets": 1, "gear": "weapon_e" } }
+    }
+  ],
+
+  "expeditions": {
+    "_comment": "Loot x clamp(power / recommended, minLootShare, 1). A weak squad still gets something.",
+    "minLootShare": 0.25
+  },
+
+  "bossCombat": {
+    "_comment": "Economy stand-in for auto-combat (SCRUM-7): win chance rises linearly from 0 at loseBelow to 1 at winAbove (power / recommended).",
+    "loseBelow": 0.85, "winAbove": 1.00
+  },
+
+  "playtest": {
+    "_comment": "Step A playtest build (SCRUM-8): every timer runs this many times faster.",
+    "timeScale": 10, "sessionMinutes": 45
+  },
+
+  "guardianTickets": { "max": 3, "regenHours": 4 },
+
+  "equipment": {
+    "_comment": "Weapon adds ATK, Armor adds HP, Tool adds mining power. Upgrade cost: Gold + the rare material of the tier the gear comes from.",
+    "slots": { "Adventure": ["weapon", "armor"], "Miner": ["tool"] },
+    "byRarity": {
+      "Common": { "maxLevel": 10, "tier": 1, "weapon": [4, 1.0],  "armor": [40, 10],  "tool": [3, 0.6] },
+      "Rare":   { "maxLevel": 15, "tier": 2, "weapon": [8, 1.6],  "armor": [80, 16],  "tool": [6, 1.0] },
+      "Epic":   { "maxLevel": 20, "tier": 3, "weapon": [14, 2.5], "armor": [140, 25], "tool": [10, 1.6] }
+    },
+    "costGoldBase": 40, "costGoldGrowth": 1.15,
+    "costRareMaterialBase": 1, "costRareMaterialEveryNLevels": 3
+  }
+}
