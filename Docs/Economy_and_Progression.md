@@ -13,11 +13,12 @@
 > |---|---|
 > | Minerals per tier (Copper → Iron → Mithril) + Upgrade Materials | Gold, Iron, Silver, Mithril; each deeper tier keeps all earlier ores and produces more. No Upgrade Materials, no ore conversion |
 > | Expeditions on 10/20/30-min timers with partial loot | First clear is an autobattle that can fail; afterwards automated, can't fail, no time cap, no diminishing returns, one at a time |
-> | Boss win unlocks next Mine + Expedition, costs a Guardian Ticket | Boss win guarantees a unique material and unlocks Expeditions; next mine tier needs prerequisites (TBD). Tickets not in v3.4 |
+> | Boss win unlocks next Mine + Expedition, costs a Guardian Ticket | Boss win guarantees a unique material and unlocks Expeditions; next mine tier needs prerequisites (TBD). **Guardian Tickets scrapped**; attempts are free |
 > | Gear upgrades: Gold + Rare Materials | Smith: Gold + ores for normal levels, rare Expedition materials for breakthroughs, boss materials unlock Smith capabilities |
 > | Common/Rare/Epic, one banner, pity at 50, duplicates → stars | Common/Uncommon/Rare, Miner or Adventure pool, Basic/Advanced shards, duplicates → Minion Essence, simple (no complex pity) |
 > | Roles: Fighter, Tank, Support | Classes: Tank, Fighter, Archer, Mage, Support; Miners have fixed traits (Gold, ore, speed) |
-> | Up to 3 Miners, squad of 4 | Team sizes undecided |
+> | Up to 3 Miners, squad of 4 | Team sizes undecided; the Adventure team is busy while an Expedition is automated |
+> | Stockpile 2 h, up to 8 h | **No stockpile cap**: mining accumulates for as long as the player is away |
 >
 > **Next step (v3.4 §9):** define tier progression pacing and the resource
 > requirements for advancing, balanced on *time to the next meaningful upgrade*.

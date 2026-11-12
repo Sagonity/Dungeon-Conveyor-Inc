@@ -164,6 +164,14 @@ not simply how large resource numbers become.
 | Tier progression | Exact prerequisites for unlocking the next mine tier | SCRUM-2, SCRUM-7 |
 | Monetization | What the shop will sell | SCRUM-24 |
 
+## 8a. Team decisions after v3.4 (2026-11-12)
+
+| Question | Decision |
+|---|---|
+| Guardian Tickets (from the v1.1 design)? | **Scrapped.** Boss attempts are free and unlimited. |
+| Mine stockpile cap? | **None.** Mining accumulates for as long as the player is away. |
+| Is the Adventure team busy while an Expedition is automated? | **Yes.** Stop the Expedition (and collect) to use the team for a boss or a first clear. |
+
 ## 9. Prototype scope recommendation
 
 For an initial playable economy prototype, focus on:

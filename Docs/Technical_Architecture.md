@@ -101,10 +101,9 @@ progress = clamp((clock.UtcNow - startedAt) / duration, 0, 1)
 
 | System | Stored | Worked out on demand |
 |---|---|---|
-| Mining | `lastCollectedAtUnixMs`, mining power at that moment | Stockpile = rate × elapsed, capped |
-| Automated Expedition | which Expedition, `startedAtUnixMs` (or last collect), rate | Rare materials earned = rate × elapsed, **no cap**, no diminishing returns |
+| Mining | `lastCollectedAtUnixMs`, production rate at that moment | Earned = rate × elapsed, **no cap** |
+| Automated Expedition | which Expedition, `startedAtUnixMs` (or last collect), rate | Rare materials earned = rate × elapsed, **no cap**, no diminishing returns. The Adventure team is busy while it runs |
 | Expedition first clear | which Expeditions are cleared (permanent) | Whether automation is unlocked |
-| Guardian Tickets (only if kept, open in v3.4) | `count`, `lastRegenAtUnixMs` | Tickets gained since then |
 
 - **`IClock`** is passed into every system. The game uses `SystemClock.Instance`;
   tests and debug tools use `ManualClock` to jump ahead hours in one line.
@@ -112,7 +111,7 @@ progress = clamp((clock.UtcNow - startedAt) / duration, 0, 1)
   visuals in menus without stopping the economy.
 - **Changes to a production rate** (assigning a Miner, a Smith upgrade, a new mine tier,
   stopping an Expedition): first bank the
-  stockpile earned so far at the old rate, then apply the change. Each system does
+  production earned so far at the old rate, then apply the change. Each system does
   this in one method, so the math is only written once.
 - **Clock cheating** (setting the phone's date forward) is accepted for the MVP: it's
   single-player and offline. If it matters later, use server time (post-MVP, SCRUM-17).
@@ -165,8 +164,8 @@ summons and check the rates and pity guarantee (SCRUM-11).
 
 - **EditMode tests** in `Assets/Tests/EditMode` cover every Core system. Run them in
   *Window → General → Test Runner → EditMode → Run All*.
-- Each system ticket adds tests for its rules (e.g. "stockpile stops at the cap",
-  "a weak squad gets partial loot, never nothing", "losing a boss spends the ticket").
+- Each system ticket adds tests for its rules (e.g. "mining keeps adding up with no cap",
+  "an automated Expedition can't fail", "the team can't fight while an Expedition runs").
 - PlayMode tests only where a MonoBehaviour does real work. The UI is checked by
   hand with the device checklist in the wireframes doc.
 - Tests must not leave errors in the Console: expected warnings/errors use `LogAssert.Expect`.
@@ -193,7 +192,7 @@ summons and check the rates and pity guarantee (SCRUM-11).
 | Unity | 6000.6.x. Everyone uses the version in `ProjectSettings/ProjectVersion.txt` |
 | IDE | VS Code or Rider. Installed packages: `com.unity.ide.rider` and `com.unity.ide.visualstudio` (also used by VS Code). Don't commit machine-specific settings such as `dotnet.defaultSolution` |
 | Branches | One branch per ticket, e.g. `SCRUM-5-mining`. PR into `main`, then delete the branch |
-| Commits | Start with the ticket key: `SCRUM-5: Add mining stockpile` |
+| Commits | Start with the ticket key: `SCRUM-5: Add automatic mining` |
 | PRs | Describe what changed and how to test it. Tests must pass in the Test Runner |
 | Builds | APKs go on GitHub Releases, never into git (`.gitignore` blocks them) |
 | Large files | Turn on **Git LFS** before the first art lands (SCRUM-13): `*.psd`, `*.fbx`, `*.blend`, `*.png`, `*.wav`, `*.mp3`. Not enabled yet, because everyone needs `git lfs install` first |

@@ -14,13 +14,13 @@ icons and art come later in SCRUM-12 and SCRUM-13. Every screen is drawn in
 >
 > | Area | Change |
 > |---|---|
-> | Resource bar (§3.1) | Gold, Iron, Silver (from Tier 3), shards (Basic/Advanced), rare materials on a tooltip. Remove Minerals, Upgrade Materials and Guardian Tickets (tickets are an open question) |
+> | Resource bar (§3.1) | Gold, Iron, Silver (from Tier 3), shards (Basic/Advanced), rare materials on a tooltip. Remove Minerals, Upgrade Materials and Guardian Tickets (tickets are scrapped) |
 > | Tabs (§2) | Add a **Smith** screen (upgrades, breakthroughs). HQ may merge into it (SCRUM-9) |
-> | Mine (§4.3) | No mine choice: Miners auto-mine the highest tier. Show every resource the tier produces per hour |
-> | Expedition (§4.4) | Two states: **first clear** (pick team, autobattle, can fail, bonus rewards) and **automated** (running, earned so far, Stop & Collect). Only one active. No timers |
+> | Mine (§4.3) | No mine choice: Miners auto-mine the highest tier. Show every resource the tier produces per hour. **No stockpile cap**: show the amount waiting to collect, no "full" state, no stockpile upgrade |
+> | Expedition (§4.4) | Two states: **first clear** (pick team, autobattle, can fail, bonus rewards) and **automated** (running, earned so far, Stop & Collect). Only one active. No timers. While it runs, the Adventure team shows "Busy" and Boss / first clear offer "Stop Expedition & Collect" to free the team |
 > | Minion card (§3.3) | Replace star rank with breakthroughs; show class (Tank/Fighter/Archer/Mage/Support) or Miner trait (Gold/ore/speed). Squad size is undecided |
 > | Summon (§4.6) | Choose **Miner or Adventure pool** and **Basic or Advanced shard**; rates Common/Uncommon/Rare; no pity counter; show Essence gained from duplicates |
-> | Boss (§4.7) | Win screen shows the unique boss material and the Expeditions it unlocked. No ticket cost unless the team keeps tickets |
+> | Boss (§4.7) | Win screen shows the unique boss material and the Expeditions it unlocked. **No ticket confirm or ticket counter**: attempts are free and unlimited |
 
 ---
 

@@ -2,7 +2,7 @@
 
 *Working title. Previously "Dungeon Conveyor Inc."*
 
-**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** In review, v2.0 (2026-11-12), updated to Game Design Summary v3.4
+**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** In review, v2.1 (2026-11-12), updated to Game Design Summary v3.4
 **Platform:** Android first (iOS later), all four orientations (portrait and landscape) · **Engine:** Unity 6 (6000.6)
 
 > **Design source of truth:** [Game Design Summary v3.4](Game_Design_Summary.md).
@@ -91,7 +91,7 @@ production that keeps running in the background, including offline.
 |---|---|---|
 | **Moment** | 5–15 s | Collect production, do an upgrade, watch a fight |
 | **Session** | 3–8 min | Collect, upgrade at the Smith, level or summon Minions, maybe try a boss or a first clear |
-| **Day** | 2–4 sessions | Push toward the next boss or breakthrough; automation earns between sessions |
+| **Day** | 2–4 sessions | Push toward the next boss or breakthrough; mining and automation earn between sessions |
 | **Tier** | To be decided (SCRUM-2) | Pacing per tier is the most important open number (v3.4 §8) |
 
 ## 4. Systems
@@ -125,8 +125,8 @@ production that keeps running in the background, including offline.
 - **No ore conversion.** Older ores stay available automatically.
 - Mining keeps running while an Expedition runs and while the app is closed.
 - Output depends on the Miners' mining stats and fixed traits (Gold, ore or speed) and their equipment.
-- **Open:** does the Mine still have a stockpile cap? v3.4 says returning after a long
-  absence must be rewarding, so a cap (if any) must be generous. Decided in SCRUM-2.
+- **No stockpile cap (decided).** Mining keeps adding up for as long as the player is
+  away, the same as automated Expeditions. Returning after a long absence is always rewarding.
 
 ### 4.2 Bosses
 
@@ -136,8 +136,8 @@ production that keeps running in the background, including offline.
 - The fight is an autobattle with the Adventure team, played out on screen (about 30–60 s).
 - A loss costs nothing permanent. The game shows *why* (for example "Boss HP left 32%,
   your team is below the recommended power") so the player knows what to upgrade (SCRUM-19).
-- **Open:** whether boss attempts stay limited by Guardian Tickets (v1.1 design).
-  v3.4 doesn't include them; until the team decides, the prototype builds bosses without tickets.
+- **No Guardian Tickets (decided, scrapped).** Boss attempts are free and unlimited;
+  the only gate is the team's power.
 
 ### 4.3 Expeditions
 
@@ -154,8 +154,9 @@ Expeditions work differently before and after their first completion:
 - The player can **stop an automated Expedition at any time** and collect what it has earned.
 - Automated rewards have **no time cap and no diminishing returns**.
 - Miners keep mining while an Expedition runs.
-- **Open:** whether the Adventure team is locked while automating (for example
-  for a boss fight). Decided with SCRUM-6/SCRUM-7.
+- **The Adventure team is busy while an Expedition is automated (decided).** To fight a
+  boss or try another first clear, the player stops the automated Expedition (collecting its
+  rewards) to free the team. Miners are never affected.
 
 ### 4.4 Minions
 
@@ -347,6 +348,9 @@ Run with 5+ testers who haven't seen the game:
 | 5 | What does a boss win give? | **A guaranteed unique material + new Expeditions.** |
 | 6 | Can Expeditions fail? | **Only the first clear.** Automation can't fail. |
 | 7 | Expeditions at once? | **One.** It can be stopped any time; rewards have no cap or diminishing returns. |
+| 7a | Guardian Tickets? | **Scrapped.** Boss attempts are free and unlimited. |
+| 7b | Mine stockpile cap? | **None.** Mining accumulates for as long as the player is away. |
+| 7c | Is the Adventure team busy while an Expedition is automated? | **Yes.** Stop the Expedition to use the team for a boss or a first clear. |
 | 8 | Rarities? | **Common, Uncommon, Rare** in the prototype. Epic/Legendary later. |
 | 9 | Summon pools? | **Player picks Miner or Adventure.** Paid with shards, not Gold or ores. |
 | 10 | Duplicates? | **Become shared Minion Essence.** (Replaces star rank.) |
@@ -357,7 +361,7 @@ Run with 5+ testers who haven't seen the game:
 | 15 | Conveyor belt? | **No.** |
 | 16 | Game name? | **Expedition: Deepshaft** (working title). Check stores and trademarks (SCRUM-25). |
 
-## 10. Open questions (v3.4 §8, plus follow-ups)
+## 10. Open questions (v3.4 §8)
 
 | Area | Question | Ticket |
 |---|---|---|
@@ -368,9 +372,6 @@ Run with 5+ testers who haven't seen the game:
 | Ascension | In the initial prototype or not? | SCRUM-10 |
 | Tier progression | Exact prerequisites for the next mine tier (boss win + breakthrough?) | SCRUM-2, SCRUM-7 |
 | Monetization | What does the shop sell? | SCRUM-24 |
-| Guardian Tickets | Keep limiting boss attempts, or drop them? Not in v3.4 | SCRUM-7 |
-| Mine stockpile | Is there a cap on offline mining, and how large? | SCRUM-2, SCRUM-5 |
-| Team lock | Is the Adventure team busy while an Expedition is automated? | SCRUM-6, SCRUM-7 |
 
 ## 11. Change log
 
@@ -379,3 +380,4 @@ Run with 5+ testers who haven't seen the game:
 | 1.0 | 2026-11-11 | Scope final. Linked the UI wireframes (SCRUM-3) and updated "Where the current build stands" after the cleanup. |
 | 1.1 | 2026-11-12 | Updated "Where the current build stands" after the core architecture (SCRUM-4). Linked the Technical Architecture doc. |
 | 2.0 | 2026-11-12 | Rewritten for Game Design Summary v3.4: auto-mining of the highest tier (Gold, Iron, Silver, Mithril), Smith and breakthroughs, boss materials, Expedition first clear + automation, 3 rarities (Common/Uncommon/Rare), Miner/Adventure summon pools, Minion Essence, 5 combat classes, new prototype scope. Guardian Tickets and the Mine stockpile cap moved to open questions. |
+| 2.1 | 2026-11-12 | Team decisions: Guardian Tickets scrapped, no Mine stockpile cap, the Adventure team is busy while an Expedition is automated. |
