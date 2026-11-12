@@ -143,7 +143,7 @@ progress = clamp((clock.UtcNow - startedAt) / duration, 0, 1)
 | When | On `OnApplicationPause(true)` and `OnApplicationQuit`, after important actions (summon, boss result, upgrade), and every 30 s while playing. Wired up in SCRUM-17 |
 | Safety | Write to `.tmp`, then swap; the previous save becomes `.bak`. A damaged save falls back to the backup |
 | Versions | `GameState.version`. Older saves are upgraded in `SaveMigrations`. A save from a **newer** build is never overwritten (saving is turned off and the player is told) |
-| Limits of JsonUtility | No dictionaries, no `DateTime`, no polymorphism. Use lists of `[Serializable]` classes and Unix-ms `long`s. If this ever hurts, switch to Newtonsoft JSON (already in the project as a dependency) inside `SaveService` only |
+| Limits of JsonUtility | No dictionaries, no `DateTime`, no polymorphism. Use lists of `[Serializable]` classes and Unix-ms `long`s. If this ever hurts, switch to Newtonsoft JSON inside `SaveService` only. It's only in the project indirectly today (pulled in by `com.unity.ai.assistant` and `com.unity.purchasing`), so add `com.unity.nuget.newtonsoft-json` to `Packages/manifest.json` first |
 | Cloud save | Post-MVP (SCRUM-17). It's another `ISaveStorage` |
 
 ---
@@ -187,7 +187,7 @@ summons and check the rates and pity guarantee (SCRUM-11).
 | Area | Decision |
 |---|---|
 | Unity | 6000.6.x. Everyone uses the version in `ProjectSettings/ProjectVersion.txt` |
-| IDE | VS Code or Rider (both packages installed) |
+| IDE | VS Code or Rider. Installed packages: `com.unity.ide.rider` and `com.unity.ide.visualstudio` (also used by VS Code). Don't commit machine-specific settings such as `dotnet.defaultSolution` |
 | Branches | One branch per ticket, e.g. `SCRUM-5-mining`. PR into `main`, then delete the branch |
 | Commits | Start with the ticket key: `SCRUM-5: Add mining stockpile` |
 | PRs | Describe what changed and how to test it. Tests must pass in the Test Runner |
@@ -206,7 +206,7 @@ summons and check the rates and pity guarantee (SCRUM-11).
 
 **Not built yet (later tickets):** `GameSession` and save timing (SCRUM-17), Mining
 (SCRUM-5), roster and assignment (SCRUM-6), Expeditions, Boss and Guardian Tickets
-(SCRUM-7), Summon (SCRUM-11), Minion levels and gear (SCRUM-10).
+(SCRUM-7), HQ/base upgrades (SCRUM-9), Minion levels and gear (SCRUM-10), Summon (SCRUM-11).
 
 ## 12. Open questions for the team
 
