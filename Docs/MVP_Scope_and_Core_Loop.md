@@ -2,7 +2,7 @@
 
 *Working title. Previously "Dungeon Conveyor Inc."*
 
-**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** Final, v1.0 (2026-11-11)
+**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** In review, v1.1 (2026-11-12)
 **Platform:** Android first (iOS later), all four orientations (portrait and landscape) · **Engine:** Unity 6 (6000.6)
 
 > All numbers in this doc are starting points so the prototype can be built.
@@ -42,6 +42,7 @@ farming, never to a dead end.
 4. **Short sessions, readable on a phone, in any orientation.** Every screen
    works in all four rotations, portrait and landscape (SCRUM-3, SCRUM-12).
    Screen layouts and readability rules: [UI Wireframes & Readability](UI_Wireframes_and_Readability.md).
+   How the code is organised: [Technical Architecture](Technical_Architecture.md) (SCRUM-4).
 
 ## 3. Core loop
 
@@ -273,26 +274,31 @@ references only; all characters, designs and assets are our own.
 
 ## 7. Where the current build stands
 
-As of v0.0.1, the main menu PR and the cleanup in this sprint:
+As of v0.0.1, the main menu PR, the cleanup and the core architecture (SCRUM-4) in this sprint:
 
 - **Done:** main menu, settings (volume / mute), the UI state machine, and UI that
   scales for portrait and landscape inside the device safe area. The project allows
   all four rotations. The wireframes for every Step A screen are in
   [UI Wireframes & Readability](UI_Wireframes_and_Readability.md) (SCRUM-3).
+- **Done (SCRUM-4):** the code structure is set in
+  [Technical Architecture](Technical_Architecture.md). The `Deepshaft.Core` assembly
+  has the foundations the Step A systems build on:
+  - `MinionDefinition` (`ScriptableObject`) with Miner / Adventure kind, role,
+    rarity, stat growth and a star-rank level cap, plus `OwnedMinion` for the save
+  - a `Wallet` for every resource in section 4.7
+  - an `IClock` with real (UTC) timestamps, so timers can run in menus and while the app is closed
+  - `GameState` and a local save (`SaveService`) with a backup and versioning
+  - EditMode tests for all of the above
 - **Removed:** the 3×3 grid and drag-to-move (`GridManager`, `DraggableMinion`).
-  `GameController.SummonMinion()` now spawns a placeholder Minion without the grid.
-- **To replace:** `MinionStats` / `MinionHealth`. Minion stats move to a
-  `ScriptableObject` (`MinionDefinition`) so Minions are data, not prefabs.
-  How this is done is decided in SCRUM-4.
-- **Starting point only:** `GameController.SummonMinion()` and the HUD Summon
-  button, for SCRUM-11.
-- **To change:** `GameController` sets `Time.timeScale = 0` while a menu is open.
-  Mining and Expeditions must keep running in menus and while the app is closed, so
-  their timers will use real (UTC) timestamps instead of game time (SCRUM-4, SCRUM-17).
+- **Still to replace:** `MinionStats` / `MinionHealth` and `GameController.SummonMinion()`,
+  which spawns a placeholder Minion. They move to `MinionDefinition` / `OwnedMinion`
+  when the roster and summon tickets land (SCRUM-10, SCRUM-11).
+- **Still to change:** `GameController` sets `Time.timeScale = 0` while a menu is open.
+  The new systems must use `IClock`, not game time, so this doesn't stop them.
 
 **Missing for Step A:** Mine + stockpile, Expedition timer + report, auto-combat for bosses,
-Boss Battle + Guardian Tickets, tier unlocks, resource counters, Miner/Adventure
-Minion roster and assignment, save/load.
+Boss Battle + Guardian Tickets, tier unlocks, resource counters in the HUD, Miner/Adventure
+Minion roster and assignment, and connecting the save to the game (`GameSession`, SCRUM-17).
 
 ## 8. Success criteria
 
@@ -345,3 +351,4 @@ None right now. To revisit after the playtest (SCRUM-8):
 | Version | Date | Change |
 |---|---|---|
 | 1.0 | 2026-11-11 | Scope final. Linked the UI wireframes (SCRUM-3) and updated "Where the current build stands" after the cleanup. |
+| 1.1 | 2026-11-12 | Updated "Where the current build stands" after the core architecture (SCRUM-4). Linked the Technical Architecture doc. |
