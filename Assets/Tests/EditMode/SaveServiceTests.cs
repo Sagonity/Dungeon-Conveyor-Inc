@@ -148,6 +148,28 @@ namespace Deepshaft.Tests
         }
 
         [Test]
+        public void Version1Save_DropsRetiredResources_AndKeepsTheRest()
+        {
+            // Version 1 had Upgrade Materials (1), Copper (10) and star ranks.
+            storage.Primary = "{\"version\":1,\"wallet\":{\"balances\":[" +
+                              "{\"id\":0,\"amount\":500},{\"id\":1,\"amount\":30}," +
+                              "{\"id\":10,\"amount\":40},{\"id\":20,\"amount\":7}]}," +
+                              "\"nextMinionInstanceId\":2," +
+                              "\"minions\":[{\"instanceId\":1,\"definitionId\":\"x\",\"level\":4,\"stars\":2}]}";
+
+            LoadResult result = service.Load();
+
+            Assert.AreEqual(LoadStatus.Loaded, result.Status);
+            Assert.AreEqual(GameState.CurrentVersion, result.State.version);
+            Assert.AreEqual(2, result.State.wallet.balances.Count);
+            var wallet = new Wallet(result.State.wallet);
+            Assert.AreEqual(500, wallet.Get(ResourceId.Gold));
+            Assert.AreEqual(7, wallet.Get(ResourceId.BasicShard));
+            Assert.AreEqual(4, result.State.minions[0].level);
+            Assert.AreEqual(0, result.State.minions[0].breakthroughs);
+        }
+
+        [Test]
         public void FileStorage_KeepsPreviousSaveAsBackup()
         {
             string dir = Path.Combine(Path.GetTempPath(), "deepshaft-tests-" + Guid.NewGuid().ToString("N"));

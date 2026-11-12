@@ -13,8 +13,9 @@ This doc says how the game's code is organised, so every system ticket
 
 1. **Game rules are testable without the scene.** Mining output, Expedition results,
    costs and save/load are plain C# that runs in EditMode tests in milliseconds.
-2. **Time keeps running.** Mining, Expeditions and Guardian Tickets progress while
-   menus are open and while the app is closed (scope doc §4.1, §4.2, §4.5).
+2. **Time keeps running.** Mining and automated Expeditions progress while menus
+   are open, while the app is closed and while the phone is locked, with no time cap
+   on Expedition rewards (scope doc §4.1, §4.3; Game Design Summary v3.4 §4).
 3. **Content is data.** Minions, tiers, bosses and items are assets designers can
    edit in the Inspector, not prefabs with hard-coded numbers.
 4. **Saves never get lost.** Atomic writes, a backup, versioning and migrations from day one.
@@ -35,7 +36,7 @@ This doc says how the game's code is organised, so every system ticket
 │  pause/quit. The only place that knows about everything.      │
 ├───────────────────────────────────────────────────────────────┤
 │ Systems  (Deepshaft.Core, plain C#)                           │
-│  Wallet, Mining, Expeditions, Roster, Summon, Boss, Tickets   │
+│  Wallet, Mining, Smith, Expeditions, Roster, Summon, Boss     │
 │  Rules only. Get IClock, GameState and content passed in.     │
 ├───────────────────────────────────────────────────────────────┤
 │ State  (Deepshaft.Core, [Serializable] data)                  │
@@ -100,16 +101,17 @@ progress = clamp((clock.UtcNow - startedAt) / duration, 0, 1)
 
 | System | Stored | Worked out on demand |
 |---|---|---|
-| Mining | `lastCollectedAtUnixMs`, mining power at that moment | Stockpile = rate × elapsed, capped |
-| Expedition | `startedAtUnixMs`, duration, squad | Time left, finished or not |
-| Guardian Tickets | `count`, `lastRegenAtUnixMs` | Tickets gained since then (1 per 4 h, max 3) |
+| Mining | `lastCollectedAtUnixMs`, production rate at that moment | Earned = rate × elapsed, **no cap** |
+| Automated Expedition | which Expedition, `startedAtUnixMs` (or last collect), rate | Rare materials earned = rate × elapsed, **no cap**, no diminishing returns. The Adventure team is busy while it runs |
+| Expedition first clear | which Expeditions are cleared (permanent) | Whether automation is unlocked |
 
 - **`IClock`** is passed into every system. The game uses `SystemClock.Instance`;
   tests and debug tools use `ManualClock` to jump ahead hours in one line.
 - Because nothing depends on `Time.timeScale`, `GameController` can keep pausing
   visuals in menus without stopping the economy.
-- **Changes to mining power** (assigning a Miner, upgrading the Mine): first bank the
-  stockpile earned so far at the old rate, then apply the change. Each system does
+- **Changes to a production rate** (assigning a Miner, a Smith upgrade, a new mine tier,
+  stopping an Expedition): first bank the
+  production earned so far at the old rate, then apply the change. Each system does
   this in one method, so the math is only written once.
 - **Clock cheating** (setting the phone's date forward) is accepted for the MVP: it's
   single-player and offline. If it matters later, use server time (post-MVP, SCRUM-17).
@@ -121,7 +123,8 @@ progress = clamp((clock.UtcNow - startedAt) / duration, 0, 1)
 ## 5. Content as data
 
 - One **`MinionDefinition`** asset per Minion type: id, name, kind (Miner/Adventure),
-  role, rarity, stat growth, level cap per star.
+  combat class (Adventure) or fixed trait (Miner), rarity (Common/Uncommon/Rare),
+  stat growth, level cap per breakthrough.
 - All definitions are listed in one **`GameDatabase`** asset. Systems look content up
   by **id**. Tiers, bosses, items and Expeditions get added to the database by their tickets.
 - **Ids are permanent.** Save files store ids such as `"spore_bruiser"`. Renaming the
@@ -161,8 +164,8 @@ summons and check the rates and pity guarantee (SCRUM-11).
 
 - **EditMode tests** in `Assets/Tests/EditMode` cover every Core system. Run them in
   *Window → General → Test Runner → EditMode → Run All*.
-- Each system ticket adds tests for its rules (e.g. "stockpile stops at the cap",
-  "a weak squad gets partial loot, never nothing", "losing a boss spends the ticket").
+- Each system ticket adds tests for its rules (e.g. "mining keeps adding up with no cap",
+  "an automated Expedition can't fail", "the team can't fight while an Expedition runs").
 - PlayMode tests only where a MonoBehaviour does real work. The UI is checked by
   hand with the device checklist in the wireframes doc.
 - Tests must not leave errors in the Console: expected warnings/errors use `LogAssert.Expect`.
@@ -189,7 +192,7 @@ summons and check the rates and pity guarantee (SCRUM-11).
 | Unity | 6000.6.x. Everyone uses the version in `ProjectSettings/ProjectVersion.txt` |
 | IDE | VS Code or Rider. Installed packages: `com.unity.ide.rider` and `com.unity.ide.visualstudio` (also used by VS Code). Don't commit machine-specific settings such as `dotnet.defaultSolution` |
 | Branches | One branch per ticket, e.g. `SCRUM-5-mining`. PR into `main`, then delete the branch |
-| Commits | Start with the ticket key: `SCRUM-5: Add mining stockpile` |
+| Commits | Start with the ticket key: `SCRUM-5: Add automatic mining` |
 | PRs | Describe what changed and how to test it. Tests must pass in the Test Runner |
 | Builds | APKs go on GitHub Releases, never into git (`.gitignore` blocks them) |
 | Large files | Turn on **Git LFS** before the first art lands (SCRUM-13): `*.psd`, `*.fbx`, `*.blend`, `*.png`, `*.wav`, `*.mp3`. Not enabled yet, because everyone needs `git lfs install` first |
@@ -205,8 +208,15 @@ summons and check the rates and pity guarantee (SCRUM-11).
 - `.editorconfig` for consistent formatting.
 
 **Not built yet (later tickets):** `GameSession` and save timing (SCRUM-17), Mining
-(SCRUM-5), roster and assignment (SCRUM-6), Expeditions, Boss and Guardian Tickets
-(SCRUM-7), HQ/base upgrades (SCRUM-9), Minion levels and gear (SCRUM-10), Summon (SCRUM-11).
+(SCRUM-5), roster and assignment (SCRUM-6), Mine Tier Bosses and Expeditions (first clear
++ automation) (SCRUM-7), HQ and Smith (SCRUM-9), Minion levels, breakthroughs and gear
+(SCRUM-10), Summon (SCRUM-11).
+
+**Updated for Game Design Summary v3.4 (save version 2):** `ResourceId` now has Gold,
+Iron, Silver, Mithril, Basic/Advanced Shards, Minion Essence, rare Expedition materials and
+unique boss materials (Copper and Upgrade Materials retired; the v1→v2 migration drops
+them). `Rarity` is Common/Uncommon/Rare, `MinionRole` adds Archer and Mage, Miners get a
+fixed `MinerTrait`, and `OwnedMinion.stars` became `breakthroughs`.
 
 ## 12. Open questions for the team
 

@@ -13,6 +13,11 @@ namespace Deepshaft.Minions
         public int instanceId;
         public string definitionId = "";
         public int level = 1;
-        public int stars;
+
+        /// <summary>
+        /// Rare-material breakthroughs done (v3.4 §5). Each one raises the level cap.
+        /// Replaces the old star rank; duplicates now become Minion Essence instead.
+        /// </summary>
+        public int breakthroughs;
     }
 }

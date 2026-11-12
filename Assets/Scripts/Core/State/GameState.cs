@@ -22,7 +22,7 @@ namespace Deepshaft.State
     public class GameState
     {
         /// <summary>Save format version. Bump it when a migration is needed.</summary>
-        public const int CurrentVersion = 1;
+        public const int CurrentVersion = 2;
 
         /// <summary>
         /// 0 means "not a save" (e.g. empty JSON). Set by <see cref="CreateNew"/> and on every save.
@@ -59,7 +59,7 @@ namespace Deepshaft.State
                 instanceId = nextMinionInstanceId++,
                 definitionId = definitionId,
                 level = 1,
-                stars = 0,
+                breakthroughs = 0,
             };
             minions.Add(minion);
             return minion;
@@ -89,7 +89,7 @@ namespace Deepshaft.State
             foreach (OwnedMinion m in minions)
             {
                 if (m.level < 1) m.level = 1;
-                if (m.stars < 0) m.stars = 0;
+                if (m.breakthroughs < 0) m.breakthroughs = 0;
                 if (m.instanceId > maxId) maxId = m.instanceId;
             }
             if (nextMinionInstanceId <= maxId) nextMinionInstanceId = maxId + 1;
