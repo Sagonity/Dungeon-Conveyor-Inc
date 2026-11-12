@@ -6,7 +6,8 @@
 **Platform:** Android first (iOS later), all four orientations (portrait and landscape) · **Engine:** Unity 6 (6000.6)
 
 > All numbers in this doc are starting points so the prototype can be built.
-> Final tuning belongs to SCRUM-2 (economy) and SCRUM-19 (balancing).
+> The simulated economy is in [Economy, Progression & Rewards](Economy_and_Progression.md) (SCRUM-2);
+> final tuning belongs to SCRUM-19 (balancing).
 
 ---
 

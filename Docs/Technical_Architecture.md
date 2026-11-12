@@ -1,6 +1,6 @@
 # Expedition: Deepshaft — Technical Architecture & Tooling
 
-**Jira:** SCRUM-4 · **Status:** Draft for review
+**Jira:** SCRUM-4 · **Status:** Final, v1.0 (2026-11-12)
 **Engine:** Unity 6 (6000.6), URP 2D · **Platform:** Android first, iOS later
 **Related:** [MVP Scope](MVP_Scope_and_Core_Loop.md) · [UI Wireframes](UI_Wireframes_and_Readability.md)
 

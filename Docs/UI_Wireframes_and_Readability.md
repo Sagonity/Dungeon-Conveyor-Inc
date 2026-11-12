@@ -268,7 +268,7 @@ Portrait
 ┌──────────────────────────────┐
 │ $1.2K M340 U85 ✦12 K2/3    @ │
 ├──────────────────────────────┤
-│ FUNGAL MINES (Tier 1)    ◀ ▶ │
+│ FUNGAL MINES (Depth 1)       │
 │ ┌──────────────────────────┐ │
 │ │     [ Mine art /         │ │
 │ │    grey-box diggers ]    │ │
@@ -297,7 +297,7 @@ Landscape
 ┌────┬────────────────────────────────────────────────────────────────┐
 │    │ $1.2K   M340   U85   ✦12   K2/3                              @ │
 │ H  ├────────────────────────────────┬───────────────────────────────┤
-│    │ FUNGAL MINES (Tier 1)    ◀ ▶   │ Stockpile                     │
+│    │ FUNGAL MINES (Depth 1)         │ Stockpile                     │
 │ M  │ ┌────────────────────────────┐ │ ▓▓▓▓▓▓▓▓▓▓░░░░ 340/500        │
 │    │ │    [ Mine art /            │ │ Gold +120/h · Copper +30/h    │
 │ E• │ │   grey-box diggers ]       │ │ Upgrade Mat. +6/h             │
@@ -310,6 +310,8 @@ Landscape
 └────┴────────────────────────────────┴───────────────────────────────┘
 ```
 
+- There is **one Mine** that goes deeper when a tier unlocks, so there is no Mine
+  switcher ([Economy](Economy_and_Progression.md) §4, decision 1).
 - **Collect** is disabled (greyed, still readable) when the stockpile is empty.
 - **Upgrade Mine** opens a panel with two rows: *Dig speed* and *Stockpile cap*,
   each with current → next value and cost (Gold + Minerals). Unaffordable costs are
