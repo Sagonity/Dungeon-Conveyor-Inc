@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d12cc226b87347e5bb739770f92304ab, type: 3}
+  m_Name: GameDatabase
+  m_EditorClassIdentifier: Deepshaft.Core::Deepshaft.Content.GameDatabase
+  minions:
+  - {fileID: 11400000, guid: 8a433dc98190fa841b468a0ce31bdff1, type: 2}
+  mining:
+    referenceMiningPower: 10
+    goldTraitBonus: 0.25
+    oreTraitBonus: 0.25
+    speedTraitBonus: 0.15
+    tiers:
+    - tier: 1
+      perHour:
+      - id: 0
+        amount: 100
+      - id: 11
+        amount: 40
+    - tier: 2
+      perHour:
+      - id: 0
+        amount: 150
+      - id: 11
+        amount: 65
+    - tier: 3
+      perHour:
+      - id: 0
+        amount: 220
+      - id: 11
+        amount: 90
+      - id: 13
+        amount: 10
+    - tier: 4
+      perHour:
+      - id: 0
+        amount: 320
+      - id: 11
+        amount: 125
+      - id: 13
+        amount: 25
+    - tier: 5
+      perHour:
+      - id: 0
+        amount: 450
+      - id: 11
+        amount: 170
+      - id: 13
+        amount: 45
+      - id: 12
+        amount: 5
+    - tier: 6
+      perHour:
+      - id: 0
+        amount: 600
+      - id: 11
+        amount: 230
+      - id: 13
+        amount: 75
+      - id: 12
+        amount: 15
