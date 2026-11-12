@@ -67,10 +67,11 @@ Assets/
       Economy/    ResourceId, ResourceAmount, WalletData, Wallet
       Minions/    MinionKind/Role/Rarity, MinionDefinition, OwnedMinion
       Content/    GameDatabase
+      Mining/     MiningRules, MiningMath, MiningService, MiningData (SCRUM-5)
       State/      GameState
       Save/       ISaveStorage, FileSaveStorage, MemorySaveStorage,
                   SaveService, SaveMigrations
-      (Mining/, Expeditions/, Boss/, Summon/ … added by their tickets)
+      (Expeditions/, Boss/, Summon/ … added by their tickets)
     UI/                           Assembly-CSharp (views, UIManager, SafeAreaFitter)
     Editor/                       Assembly-CSharp-Editor (GameUIBuilder, tools)
     *.cs                          Assembly-CSharp (GameController, legacy Minion scripts)
@@ -207,8 +208,7 @@ summons and check the rates and pity guarantee (SCRUM-11).
 - `Deepshaft.Core.Tests`: EditMode tests for all of the above.
 - `.editorconfig` for consistent formatting.
 
-**Not built yet (later tickets):** `GameSession` and save timing (SCRUM-17), Mining
-(SCRUM-5), roster and assignment (SCRUM-6), Mine Tier Bosses and Expeditions (first clear
+**Not built yet (later tickets):** `GameSession` and save timing (SCRUM-17), roster and assignment (SCRUM-6), Mine Tier Bosses and Expeditions (first clear
 + automation) (SCRUM-7), HQ and Smith (SCRUM-9), Minion levels, breakthroughs and gear
 (SCRUM-10), Summon (SCRUM-11).
 
@@ -217,6 +217,22 @@ Iron, Silver, Mithril, Basic/Advanced Shards, Minion Essence, rare Expedition ma
 unique boss materials (Copper and Upgrade Materials retired; the v1→v2 migration drops
 them). `Rarity` is Common/Uncommon/Rare, `MinionRole` adds Archer and Mage, Miners get a
 fixed `MinerTrait`, and `OwnedMinion.stars` became `breakthroughs`.
+
+**Mining (SCRUM-5):** `MiningService` runs automatic mining on top of `GameState.mining`
+(last bank time + uncollected output, fractions kept).
+- Every owned Miner mines the **highest unlocked tier**. Assignment and slot count come
+  with SCRUM-6 (`MiningService.GetWorkingMiners`).
+- Output per hour = Σ Miners: tier rate × (mining power ÷ 10) × (1 + tool bonus) × trait bonus.
+  Gold trait +25% Gold, Ore trait +25% Iron/Silver/Mithril, Speed trait +15% everything.
+  Rates and bonuses live in `GameDatabase` → *Mining* (defaults = the v3.4 table; final
+  numbers from SCRUM-2).
+- Tools come in through `IMinerToolBonus`; the Smith (SCRUM-9) implements it. Until then no tools.
+- No cap, works from `IClock`, so it runs in menus, during Expeditions and while the app is closed.
+  A clock set backwards earns nothing until it passes the last bank again.
+- **Rate changes:** call `MiningService.ChangeRate(() => …)` (or `AddMinion` / `UnlockTier`)
+  so the old rate is banked first.
+- `Collect(wallet)` moves whole units into the Wallet.
+- Not yet: on-screen grey-box. The HUD needs the `GameSession` that owns `GameState` (SCRUM-17).
 
 ## 12. Open questions for the team
 

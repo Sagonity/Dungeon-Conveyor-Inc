@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Deepshaft.Economy;
 using Deepshaft.Minions;
+using Deepshaft.Mining;
 using Deepshaft.Time;
 
 namespace Deepshaft.State
@@ -39,6 +40,9 @@ namespace Deepshaft.State
         /// <summary>Highest tier the player can play (1 at start; a boss win raises it).</summary>
         public int highestUnlockedTier = 1;
 
+        /// <summary>Automatic mining progress. Read and changed through <see cref="MiningService"/>.</summary>
+        public MiningData mining = new MiningData();
+
         public static GameState CreateNew(IClock clock)
         {
             long now = UnixTime.ToUnixMs(clock.UtcNow);
@@ -47,6 +51,7 @@ namespace Deepshaft.State
                 version = CurrentVersion,
                 createdAtUnixMs = now,
                 lastSavedAtUnixMs = now,
+                mining = new MiningData { lastBankedAtUnixMs = now },
             };
         }
 
@@ -84,6 +89,8 @@ namespace Deepshaft.State
             if (wallet.balances == null) wallet.balances = new List<ResourceAmount>();
             if (minions == null) minions = new List<OwnedMinion>();
             if (highestUnlockedTier < 1) highestUnlockedTier = 1;
+            if (mining == null) mining = new MiningData();
+            if (mining.pending == null) mining.pending = new List<MinedAmount>();
 
             int maxId = 0;
             foreach (OwnedMinion m in minions)
