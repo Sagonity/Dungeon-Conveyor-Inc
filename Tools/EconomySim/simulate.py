@@ -420,8 +420,7 @@ class Bot:
                 was_full = p.mine_full()
                 p.collect_mine(t)
             if p.exp and t >= p.exp["end"]:
-                p.collect_expedition(t)
-                actions += 1
+                p.collect_expedition(t)  # collecting isn't counted: "actions" = things bought or summoned
             actions += self.spend(t)
             self.try_boss(t)
             if p.exp is None:
