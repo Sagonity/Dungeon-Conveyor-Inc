@@ -14,6 +14,9 @@
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 *.log
+/IOS/
+/Builds/
+
 
 # Memory Profiler generated files
 # MemoryCaptures can get excessive in size
