@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Deepshaft.Economy;
 using Deepshaft.Minions;
 using Deepshaft.Mining;
+using Deepshaft.Roster;
 using Deepshaft.Time;
 
 namespace Deepshaft.State
@@ -42,6 +43,9 @@ namespace Deepshaft.State
 
         /// <summary>Automatic mining progress. Read and changed through <see cref="MiningService"/>.</summary>
         public MiningData mining = new MiningData();
+
+        /// <summary>Who works in the Mine and who is in the Adventure team. Changed through <see cref="RosterService"/>.</summary>
+        public RosterData roster = new RosterData();
 
         public static GameState CreateNew(IClock clock)
         {
@@ -91,6 +95,9 @@ namespace Deepshaft.State
             if (highestUnlockedTier < 1) highestUnlockedTier = 1;
             if (mining == null) mining = new MiningData();
             if (mining.pending == null) mining.pending = new List<MinedAmount>();
+            if (roster == null) roster = new RosterData();
+            if (roster.miners == null) roster.miners = new List<int>();
+            if (roster.adventureTeam == null) roster.adventureTeam = new List<int>();
 
             int maxId = 0;
             foreach (OwnedMinion m in minions)

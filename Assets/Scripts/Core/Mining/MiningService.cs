@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Deepshaft.Content;
 using Deepshaft.Economy;
 using Deepshaft.Minions;
+using Deepshaft.Roster;
 using Deepshaft.State;
 using Deepshaft.Time;
 
@@ -11,16 +12,14 @@ namespace Deepshaft.Mining
     /// <summary>
     /// Automatic mining (Game Design Summary v3.4 §2, Scope §4.1).
     ///
-    /// - Every owned Miner Minion mines the highest unlocked tier. There's no mine choice.
+    /// - The Miners assigned to the Mine (SCRUM-6, <see cref="RosterService"/>) mine the highest
+    ///   unlocked tier. There's no mine choice.
     /// - Output is worked out from the clock, so it keeps running in menus, during an
     ///   Expedition and while the app is closed. Nothing here reads UnityEngine.Time.
     /// - No stockpile cap: output adds up for as long as the player is away.
-    /// - Anything that changes the rate (a new Miner, a level-up, a tool, a new tier) must go
+    /// - Anything that changes the rate (a new or reassigned Miner, a level-up, a tool, a new tier) must go
     ///   through <see cref="ChangeRate"/> (or a helper that uses it), so what was earned at the
     ///   old rate is banked first.
-    ///
-    /// Which Miners work: all owned Miners for now. Assignment and the number of slots
-    /// are SCRUM-6; when that lands, change <see cref="GetWorkingMiners"/>.
     /// </summary>
     public class MiningService
     {
@@ -38,6 +37,8 @@ namespace Deepshaft.Mining
 
             if (state.mining == null) state.mining = new MiningData();
             if (state.mining.pending == null) state.mining.pending = new List<MinedAmount>();
+            // Before any banking: a save from before SCRUM-6 gets its Miners assigned.
+            RosterLogic.EnsureInitialized(state, database);
             // A save from before mining existed: start counting now, don't pay for the past.
             if (state.mining.lastBankedAtUnixMs <= 0) state.mining.lastBankedAtUnixMs = NowMs;
         }
@@ -65,17 +66,12 @@ namespace Deepshaft.Mining
             return MiningMath.GetHourlyRates(Rules, CurrentTier, inputs);
         }
 
-        /// <summary>Owned Minions that are Miners and whose definition still exists.</summary>
-        public List<OwnedMinion> GetWorkingMiners()
-        {
-            var result = new List<OwnedMinion>();
-            foreach (OwnedMinion m in state.minions)
-            {
-                MinionDefinition definition = database.FindMinion(m.definitionId);
-                if (definition != null && definition.Kind == MinionKind.Miner) result.Add(m);
-            }
-            return result;
-        }
+        /// <summary>
+        /// The Miners assigned to the Mine, in slot order: owned, definition still exists,
+        /// at most <see cref="RosterRules.minerSlots"/>. Unassigned Miners don't mine.
+        /// </summary>
+        public List<OwnedMinion> GetWorkingMiners() =>
+            RosterLogic.GetValid(state, database, state.roster.miners, MinionKind.Miner, database.Roster.MinerSlots);
 
         /// <summary>Everything mined and not collected yet, up to now. Doesn't change the save.</summary>
         public List<MinedAmount> GetPending()
@@ -110,11 +106,20 @@ namespace Deepshaft.Mining
             change();
         }
 
-        /// <summary>Adds a new Minion to the roster; if it's a Miner it starts mining now.</summary>
+        /// <summary>
+        /// Adds a new Minion to the roster. A Miner takes a free Miner slot, if there is one,
+        /// and starts mining now. Use <see cref="RosterService.AddMinion"/> in the game so an
+        /// Adventure Minion also joins the team.
+        /// </summary>
         public OwnedMinion AddMinion(string definitionId)
         {
             OwnedMinion added = null;
-            ChangeRate(() => added = state.AddMinion(definitionId));
+            ChangeRate(() =>
+            {
+                added = state.AddMinion(definitionId);
+                RosterLogic.TryFill(state, database, state.roster.miners, MinionKind.Miner,
+                    database.Roster.MinerSlots, added);
+            });
             return added;
         }
 

@@ -208,7 +208,7 @@ summons and check the rates and pity guarantee (SCRUM-11).
 - `Deepshaft.Core.Tests`: EditMode tests for all of the above.
 - `.editorconfig` for consistent formatting.
 
-**Not built yet (later tickets):** `GameSession` and save timing (SCRUM-17), roster and assignment (SCRUM-6), Mine Tier Bosses and Expeditions (first clear
+**Not built yet (later tickets):** `GameSession` and save timing (SCRUM-17), Mine Tier Bosses and Expeditions (first clear
 + automation) (SCRUM-7), HQ and Smith (SCRUM-9), Minion levels, breakthroughs and gear
 (SCRUM-10), Summon (SCRUM-11).
 
@@ -220,8 +220,8 @@ fixed `MinerTrait`, and `OwnedMinion.stars` became `breakthroughs`.
 
 **Mining (SCRUM-5):** `MiningService` runs automatic mining on top of `GameState.mining`
 (last bank time + uncollected output, fractions kept).
-- Every owned Miner mines the **highest unlocked tier**. Assignment and slot count come
-  with SCRUM-6 (`MiningService.GetWorkingMiners`).
+- The **assigned** Miners (SCRUM-6, below) mine the **highest unlocked tier**
+  (`MiningService.GetWorkingMiners`).
 - Output per hour = Σ Miners: tier rate × (mining power ÷ 10) × (1 + tool bonus) × trait bonus.
   Gold trait +25% Gold, Ore trait +25% Iron/Silver/Mithril, Speed trait +15% everything.
   Rates and bonuses live in `GameDatabase` → *Mining* (defaults = the v3.4 table; final
@@ -233,6 +233,27 @@ fixed `MinerTrait`, and `OwnedMinion.stars` became `breakthroughs`.
   so the old rate is banked first.
 - `Collect(wallet)` moves whole units into the Wallet.
 - Not yet: on-screen grey-box. The HUD needs the `GameSession` that owns `GameState` (SCRUM-17).
+
+**Assignment (SCRUM-6):** `RosterService` decides who works. There is no movement or
+placement: the player only picks Minions for slots.
+- `GameState.roster` saves the Miner slots and the Adventure team as lists of Minion
+  instance ids, in slot order.
+- Miner Minions only go in Miner slots; Adventure Minions only go in the team
+  (`AssignResult.WrongKind`). Only assigned Miners mine.
+- Slot counts live in `GameDatabase` → *Roster* (`minerSlots`, `adventureSlots`).
+  **Placeholders: 3 and 3** until the playtest (v3.4 §8). If a count is lowered, only the
+  first slots work.
+- Changing the Miners goes through `MiningService.ChangeRate`, so the old rate is banked first.
+- New Minions take a free slot of their kind automatically (`RosterService.AddMinion`); the
+  player can swap them with `AssignMiner` / `UnassignMiner` / `AssignToTeam` / `RemoveFromTeam`.
+  Every call returns an `AssignResult` the UI can explain (`NoFreeSlot`, `TeamBusy`, ...).
+- **Busy team:** while an automated Expedition runs, the team can't be edited
+  (`AssignResult.TeamBusy`). The Expedition system (SCRUM-7) implements `ITeamBusySource`;
+  until then the team is never busy. SCRUM-7 also adds the "Stop Expedition & Collect" action.
+- **Old saves:** the first time a save without a roster is used, empty slots are filled from
+  owned Minions in roster order (`RosterData.initialized`), so they keep mining. No version bump.
+- Not yet: the two Step A lists on screen (they need `GameSession`, SCRUM-17), and team power
+  for the "Team / Rec." line (SCRUM-7, SCRUM-10).
 
 ## 12. Open questions for the team
 
