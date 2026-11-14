@@ -68,3 +68,6 @@ MonoBehaviour:
         amount: 75
       - id: 12
         amount: 15
+  roster:
+    minerSlots: 3
+    adventureSlots: 3

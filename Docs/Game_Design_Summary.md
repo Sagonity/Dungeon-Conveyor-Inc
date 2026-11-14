@@ -156,7 +156,7 @@ not simply how large resource numbers become.
 
 | Area | What we still need to decide | Ticket |
 |---|---|---|
-| Minion capacity | How many Miners work and Adventurers fight simultaneously | SCRUM-6, SCRUM-2 |
+| Minion capacity | How many Miners work and Adventurers fight simultaneously (placeholder 3 and 3 in the prototype, tunable as data) | SCRUM-6, SCRUM-2 |
 | Progression pacing | How long each tier should take | SCRUM-2 |
 | Upgrade economy | Exact resource costs, production rates and scaling | SCRUM-2 |
 | Summoning | Final shard distribution, free acquisition rates and pity | SCRUM-11, SCRUM-2 |
