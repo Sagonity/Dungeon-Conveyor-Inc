@@ -3,8 +3,8 @@ namespace Deepshaft.Roster
     /// <summary>
     /// Tells the roster whether the Adventure team is out on an automated Expedition
     /// (team decision 2026-11-12: the team is busy until the player stops the Expedition
-    /// and collects). The Expedition system (SCRUM-7) implements this; until then the team
-    /// is never busy (<see cref="NoExpeditions"/>).
+    /// and collects). <see cref="Expeditions.ExpeditionService"/> implements this (SCRUM-7);
+    /// <see cref="NoExpeditions"/> is a team that's never busy, for tests and tools.
     /// </summary>
     public interface ITeamBusySource
     {

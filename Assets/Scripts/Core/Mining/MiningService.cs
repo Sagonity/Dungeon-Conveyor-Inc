@@ -139,18 +139,7 @@ namespace Deepshaft.Mining
             if (wallet == null) throw new ArgumentNullException(nameof(wallet));
             Bank();
 
-            var collected = new List<ResourceAmount>();
-            for (int i = 0; i < Data.pending.Count; i++)
-            {
-                MinedAmount p = Data.pending[i];
-                // The epsilon stops 119.99999999999999 (float error in 1.2 × 100) from losing a unit.
-                long whole = (long)Math.Floor(p.amount + 1e-6);
-                if (whole <= 0) continue;
-                wallet.Add(p.id, whole);
-                collected.Add(new ResourceAmount(p.id, whole));
-                Data.pending[i] = new MinedAmount(p.id, Math.Max(0.0, p.amount - whole));
-            }
-
+            List<ResourceAmount> collected = MiningMath.CollectWholeUnits(Data.pending, wallet);
             if (collected.Count > 0) Collected?.Invoke(collected);
             return collected;
         }
