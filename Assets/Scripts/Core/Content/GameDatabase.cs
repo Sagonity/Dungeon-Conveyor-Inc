@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Deepshaft.Minions;
 using Deepshaft.Mining;
+using Deepshaft.Roster;
 using UnityEngine;
 
 namespace Deepshaft.Content
@@ -15,6 +16,7 @@ namespace Deepshaft.Content
     {
         [SerializeField] List<MinionDefinition> minions = new List<MinionDefinition>();
         [SerializeField] MiningRules mining = MiningRules.CreateDefault();
+        [SerializeField] RosterRules roster = RosterRules.CreateDefault();
 
         Dictionary<string, MinionDefinition> minionsById;
 
@@ -22,6 +24,9 @@ namespace Deepshaft.Content
 
         /// <summary>Mining rates per tier and trait bonuses (SCRUM-5). Never null.</summary>
         public MiningRules Mining => mining ?? (mining = MiningRules.CreateDefault());
+
+        /// <summary>Miner and Adventure team slot counts (SCRUM-6). Never null.</summary>
+        public RosterRules Roster => roster ?? (roster = RosterRules.CreateDefault());
 
         /// <summary>Returns null if no definition has this id (e.g. content removed after a save was made).</summary>
         public MinionDefinition FindMinion(string id)
@@ -61,6 +66,9 @@ namespace Deepshaft.Content
 
         /// <summary>For tests and editor tools only.</summary>
         public void EditorSetMining(MiningRules rules) => mining = rules;
+
+        /// <summary>For tests and editor tools only.</summary>
+        public void EditorSetRoster(RosterRules rules) => roster = rules;
 #endif
     }
 }
