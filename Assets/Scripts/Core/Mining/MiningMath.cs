@@ -72,6 +72,41 @@ namespace Deepshaft.Mining
             return sum;
         }
 
+        /// <summary>
+        /// Moves every whole unit in <paramref name="pending"/> into <paramref name="wallet"/> and
+        /// leaves the fractions. Returns what was added. Shared by the Mine and automated Expeditions.
+        /// </summary>
+        public static List<ResourceAmount> CollectWholeUnits(List<MinedAmount> pending, Wallet wallet)
+        {
+            if (pending == null) throw new ArgumentNullException(nameof(pending));
+            if (wallet == null) throw new ArgumentNullException(nameof(wallet));
+
+            var collected = new List<ResourceAmount>();
+            for (int i = 0; i < pending.Count; i++)
+            {
+                MinedAmount p = pending[i];
+                // The epsilon stops 119.99999999999999 (float error in 1.2 × 100) from losing a unit.
+                long whole = (long)Math.Floor(p.amount + 1e-6);
+                if (whole <= 0) continue;
+                wallet.Add(p.id, whole);
+                collected.Add(new ResourceAmount(p.id, whole));
+                pending[i] = new MinedAmount(p.id, Math.Max(0.0, p.amount - whole));
+            }
+            return collected;
+        }
+
+        /// <summary>Turns whole-unit rates (e.g. an Expedition's per-hour list) into <see cref="MinedAmount"/>s.</summary>
+        public static List<MinedAmount> ToRates(IEnumerable<ResourceAmount> perHour)
+        {
+            var rates = new List<MinedAmount>();
+            if (perHour == null) return rates;
+            foreach (ResourceAmount r in perHour)
+            {
+                if (r.amount > 0) Add(rates, r.id, r.amount);
+            }
+            return rates;
+        }
+
         internal static void Add(List<MinedAmount> list, ResourceId id, double amount)
         {
             for (int i = 0; i < list.Count; i++)

@@ -71,3 +71,226 @@ MonoBehaviour:
   roster:
     minerSlots: 3
     adventureSlots: 3
+  combat:
+    timeLimitSeconds: 60
+    damageVariance: 0.1
+    supportTeamBonus: 0.1
+    healMultiplier: 0.9
+    healBelowHpFraction: 0.8
+    areaAttackMultiplier: 0.5
+    powerHpDivisor: 10
+    roles:
+    - role: 1
+      attackInterval: 1
+      damageMultiplier: 1
+      damageTakenMultiplier: 1
+      taunts: 0
+      hitsAllEnemies: 0
+      healsAllies: 0
+    - role: 2
+      attackInterval: 1
+      damageMultiplier: 0.7
+      damageTakenMultiplier: 0.75
+      taunts: 1
+      hitsAllEnemies: 0
+      healsAllies: 0
+    - role: 4
+      attackInterval: 0.8
+      damageMultiplier: 0.85
+      damageTakenMultiplier: 1
+      taunts: 0
+      hitsAllEnemies: 0
+      healsAllies: 0
+    - role: 5
+      attackInterval: 1.25
+      damageMultiplier: 0.8
+      damageTakenMultiplier: 1
+      taunts: 0
+      hitsAllEnemies: 1
+      healsAllies: 0
+    - role: 3
+      attackInterval: 1.25
+      damageMultiplier: 0.7
+      damageTakenMultiplier: 1
+      taunts: 0
+      hitsAllEnemies: 0
+      healsAllies: 1
+  bosses:
+  - id: spore_foreman
+    displayName: Spore Foreman
+    tier: 1
+    recommendedPower: 80
+    enemy:
+      displayName: Spore Foreman
+      hp: 880
+      atk: 26
+      attackInterval: 2
+      areaAttackEvery: 4
+    firstWinRewards:
+    - id: 40
+      amount: 1
+    - id: 20
+      amount: 20
+    repeatWinRewards:
+    - id: 40
+      amount: 1
+  - id: slag_golem
+    displayName: Slag Golem
+    tier: 2
+    recommendedPower: 135
+    enemy:
+      displayName: Slag Golem
+      hp: 1485
+      atk: 43
+      attackInterval: 2
+      areaAttackEvery: 4
+    firstWinRewards:
+    - id: 41
+      amount: 1
+    - id: 20
+      amount: 30
+    repeatWinRewards:
+    - id: 41
+      amount: 1
+  - id: prism_wyrm
+    displayName: Prism Wyrm
+    tier: 3
+    recommendedPower: 240
+    enemy:
+      displayName: Prism Wyrm
+      hp: 2640
+      atk: 77
+      attackInterval: 2
+      areaAttackEvery: 4
+    firstWinRewards:
+    - id: 42
+      amount: 1
+    - id: 20
+      amount: 40
+    repeatWinRewards:
+    - id: 42
+      amount: 1
+  expeditions:
+  - id: spore_caverns
+    displayName: Spore Caverns
+    tier: 1
+    unlockedByBoss: spore_foreman
+    recommendedPower: 100
+    enemies:
+    - displayName: Spore Crawler
+      hp: 300
+      atk: 10.5
+      attackInterval: 1.6
+      areaAttackEvery: 0
+    - displayName: Spore Crawler
+      hp: 300
+      atk: 10.5
+      attackInterval: 1.6
+      areaAttackEvery: 0
+    - displayName: Spore Crawler
+      hp: 300
+      atk: 10.5
+      attackInterval: 1.6
+      areaAttackEvery: 0
+    - displayName: Spore Crawler
+      hp: 300
+      atk: 10.5
+      attackInterval: 1.6
+      areaAttackEvery: 0
+    firstClearRewards:
+    - id: 0
+      amount: 500
+    - id: 20
+      amount: 10
+    - id: 30
+      amount: 5
+    automatedPerHour:
+    - id: 30
+      amount: 2
+  - id: magma_works
+    displayName: Magma Works
+    tier: 2
+    unlockedByBoss: slag_golem
+    recommendedPower: 175
+    enemies:
+    - displayName: Magma Imp
+      hp: 525
+      atk: 18
+      attackInterval: 1.6
+      areaAttackEvery: 0
+    - displayName: Magma Imp
+      hp: 525
+      atk: 18
+      attackInterval: 1.6
+      areaAttackEvery: 0
+    - displayName: Magma Imp
+      hp: 525
+      atk: 18
+      attackInterval: 1.6
+      areaAttackEvery: 0
+    - displayName: Magma Imp
+      hp: 525
+      atk: 18
+      attackInterval: 1.6
+      areaAttackEvery: 0
+    firstClearRewards:
+    - id: 0
+      amount: 1200
+    - id: 20
+      amount: 15
+    - id: 31
+      amount: 5
+    automatedPerHour:
+    - id: 31
+      amount: 2
+    - id: 30
+      amount: 1
+  - id: crystal_depths
+    displayName: Crystal Depths
+    tier: 3
+    unlockedByBoss: prism_wyrm
+    recommendedPower: 300
+    enemies:
+    - displayName: Crystal Wisp
+      hp: 900
+      atk: 31.5
+      attackInterval: 1.6
+      areaAttackEvery: 0
+    - displayName: Crystal Wisp
+      hp: 900
+      atk: 31.5
+      attackInterval: 1.6
+      areaAttackEvery: 0
+    - displayName: Crystal Wisp
+      hp: 900
+      atk: 31.5
+      attackInterval: 1.6
+      areaAttackEvery: 0
+    - displayName: Crystal Wisp
+      hp: 900
+      atk: 31.5
+      attackInterval: 1.6
+      areaAttackEvery: 0
+    firstClearRewards:
+    - id: 0
+      amount: 2500
+    - id: 20
+      amount: 20
+    - id: 32
+      amount: 5
+    automatedPerHour:
+    - id: 32
+      amount: 2
+    - id: 31
+      amount: 1
+  tierRequirements:
+  - tier: 2
+    requiredBosses:
+    - spore_foreman
+    requiredFirstClears: []
+    cost: []
+  - tier: 3
+    requiredBosses:
+    - slag_golem
+    requiredFirstClears: []
+    cost: []

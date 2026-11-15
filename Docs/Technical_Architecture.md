@@ -68,10 +68,15 @@ Assets/
       Minions/    MinionKind/Role/Rarity, MinionDefinition, OwnedMinion
       Content/    GameDatabase
       Mining/     MiningRules, MiningMath, MiningService, MiningData (SCRUM-5)
+      Roster/     RosterService, RosterRules, RosterData, ITeamBusySource (SCRUM-6)
+      Combat/     CombatRules, CombatSimulator, Combatant, BattleResult, AdventureTeam (SCRUM-7)
+      Bosses/     BossDefinition, BossService, BossData (SCRUM-7)
+      Expeditions/ ExpeditionDefinition, ExpeditionService, ExpeditionData (SCRUM-7)
+      Progression/ TierRequirement, TierProgressionService (SCRUM-7)
       State/      GameState
       Save/       ISaveStorage, FileSaveStorage, MemorySaveStorage,
                   SaveService, SaveMigrations
-      (Expeditions/, Boss/, Summon/ … added by their tickets)
+      (Smith/, Summon/ … added by their tickets)
     UI/                           Assembly-CSharp (views, UIManager, SafeAreaFitter)
     Editor/                       Assembly-CSharp-Editor (GameUIBuilder, tools)
     *.cs                          Assembly-CSharp (GameController, legacy Minion scripts)
@@ -208,9 +213,8 @@ summons and check the rates and pity guarantee (SCRUM-11).
 - `Deepshaft.Core.Tests`: EditMode tests for all of the above.
 - `.editorconfig` for consistent formatting.
 
-**Not built yet (later tickets):** `GameSession` and save timing (SCRUM-17), Mine Tier Bosses and Expeditions (first clear
-+ automation) (SCRUM-7), HQ and Smith (SCRUM-9), Minion levels, breakthroughs and gear
-(SCRUM-10), Summon (SCRUM-11).
+**Not built yet (later tickets):** `GameSession` and save timing (SCRUM-17), HQ and Smith (SCRUM-9),
+Minion levels, breakthroughs and gear (SCRUM-10), Summon (SCRUM-11).
 
 **Updated for Game Design Summary v3.4 (save version 2):** `ResourceId` now has Gold,
 Iron, Silver, Mithril, Basic/Advanced Shards, Minion Essence, rare Expedition materials and
@@ -254,6 +258,57 @@ placement: the player only picks Minions for slots.
   owned Minions in roster order (`RosterData.initialized`), so they keep mining. No version bump.
 - Not yet: the two Step A lists on screen (they need `GameSession`, SCRUM-17), and team power
   for the "Team / Rec." line (SCRUM-7, SCRUM-10).
+
+**Bosses, Expeditions and tier progression (SCRUM-7):**
+- **Autobattle** (`CombatSimulator`): plain C# with a passed-in `System.Random`, so the same team,
+  enemies and seed always give the same fight. The whole fight is worked out at once and returned as
+  a `BattleResult` with a timed event list (attack, area attack, heal, knocked out); rewards are given
+  straight away and the UI replays the events over the fight's 30–60 s.
+  - Everyone acts on their own attack timer. Team Minions hit the front enemy; **Mages** hit every
+    enemy; **Supports** heal the most hurt ally and give the team +10% damage; enemies hit a standing
+    **Tank** first (it also takes 25% less), otherwise a random Minion; some enemies hit the whole
+    team every Nth attack. Not won within 60 s = lost.
+  - **Team power** = Σ (ATK + HP ÷ 10), × 1.1 with a Support. Bosses and Expeditions show a
+    recommended power; the default content is tuned so most teams at that power win and teams
+    15% below it usually lose (teams with a Tank and a Support do better than that).
+  - `BattleResult.DescribeLoss()` explains a loss: "Out of time. Boss HP left: 32%. Team power 54 is
+    below the recommended 70. …" Grey-box English until SCRUM-25.
+  - Numbers live in `GameDatabase` → *Combat* (per-class timers and multipliers, heal, Support bonus,
+    time limit). Class behaviour comes from `MinionDefinition.Role`; stats from its HP/ATK at the
+    Minion's level. Gear bonuses come with SCRUM-9/10.
+- **Mine Tier Bosses** (`BossService`): one per tier, in `GameDatabase` → *Bosses*. A boss can be
+  fought once its tier is unlocked; attempts are free and unlimited. A win gives the boss's unique
+  material (every win; the first win's list can add a one-time bonus), and the first win unlocks
+  the Expeditions whose `unlockedByBoss` is that boss, permanently. Beaten bosses are saved in
+  `GameState.bosses`.
+- **Expeditions** (`ExpeditionService`), in `GameDatabase` → *Expeditions*:
+  - **First clear:** an autobattle that can fail. A win gives the one-time bonus and unlocks
+    automation for good (`GameState.expeditions.cleared`).
+  - **Automated:** can't fail. Earns `automatedPerHour` from the clock (start time + last bank,
+    like the Mine), so it runs while the app is closed. No time cap, no diminishing returns.
+    Only one at a time. `StopAndCollect` moves whole units to the Wallet; fractions carry over
+    to the next run.
+  - **Busy team:** `ExpeditionService` is the `ITeamBusySource`. While it runs, the team can't be
+    edited and can't fight a boss or a first clear (`TeamBusy`). Miners keep mining.
+  - A save whose running Expedition was removed from the content stops it (with a warning) so the
+    team isn't busy forever.
+- **Tier progression** (`TierProgressionService`): each tier after the first has a
+  `TierRequirement` in `GameDatabase` → *Tier Requirements*: bosses beaten, Expeditions
+  first-cleared, and an optional cost. Without a cost the tier unlocks by itself as soon as it's met
+  (checked after every boss win and first clear); with a cost the player pays with `TryUnlockNext`.
+  Unlocking goes through `MiningService.UnlockTier`, so the old rate is banked first. A tier with
+  no row is the end of the content. **Placeholder until SCRUM-2:** tier 2 needs the tier 1 boss,
+  tier 3 the tier 2 boss.
+- **Prototype content** (`DefaultAdventureContent`, also on the GameDatabase asset): 3 bosses
+  (recommended power 80 / 135 / 240) and 3 Expeditions (100 / 175 / 300) with the v3.4 placeholder
+  materials (Foreman Sigil, Golem Heart, Wyrm Scale; Spore Silk, Ember Core, Prism Dust). Names
+  and numbers are placeholders (SCRUM-13, SCRUM-2/19).
+- **Wiring** (for `GameSession`, SCRUM-17): `mining` → `tiers = new TierProgressionService(state, db, mining)`
+  → `expeditions = new ExpeditionService(state, db, clock, tiers)` → `roster = new RosterService(state, db, mining, expeditions)`
+  → `bosses = new BossService(state, db, expeditions, tiers)`.
+- Save format stays version 2: the new `bosses` and `expeditions` fields load as empty from older saves.
+- Not yet: the fight on screen and the boss/Expedition screens. Like SCRUM-5 and SCRUM-6, they need
+  the `GameSession` that owns `GameState` (SCRUM-17).
 
 ## 12. Open questions for the team
 

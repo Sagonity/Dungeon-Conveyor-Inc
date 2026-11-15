@@ -1,6 +1,10 @@
 using System.Collections.Generic;
+using Deepshaft.Bosses;
+using Deepshaft.Combat;
+using Deepshaft.Expeditions;
 using Deepshaft.Minions;
 using Deepshaft.Mining;
+using Deepshaft.Progression;
 using Deepshaft.Roster;
 using UnityEngine;
 
@@ -9,7 +13,7 @@ namespace Deepshaft.Content
     /// <summary>
     /// All game content in one place, so systems can look things up by id.
     /// Create one asset (Assets → Create → Deepshaft → Game Database) and list every definition in it.
-    /// Tiers, equipment and bosses get added here as their tickets are built.
+    /// Equipment gets added here when its ticket is built.
     /// </summary>
     [CreateAssetMenu(menuName = "Deepshaft/Game Database", fileName = "GameDatabase")]
     public class GameDatabase : ScriptableObject
@@ -17,6 +21,12 @@ namespace Deepshaft.Content
         [SerializeField] List<MinionDefinition> minions = new List<MinionDefinition>();
         [SerializeField] MiningRules mining = MiningRules.CreateDefault();
         [SerializeField] RosterRules roster = RosterRules.CreateDefault();
+
+        [Header("Bosses, Expeditions and tiers (SCRUM-7)")]
+        [SerializeField] CombatRules combat = CombatRules.CreateDefault();
+        [SerializeField] List<BossDefinition> bosses = DefaultAdventureContent.Bosses();
+        [SerializeField] List<ExpeditionDefinition> expeditions = DefaultAdventureContent.Expeditions();
+        [SerializeField] List<TierRequirement> tierRequirements = DefaultAdventureContent.TierRequirements();
 
         Dictionary<string, MinionDefinition> minionsById;
 
@@ -27,6 +37,50 @@ namespace Deepshaft.Content
 
         /// <summary>Miner and Adventure team slot counts (SCRUM-6). Never null.</summary>
         public RosterRules Roster => roster ?? (roster = RosterRules.CreateDefault());
+
+        /// <summary>Autobattle numbers and Adventure class behaviour (SCRUM-7). Never null.</summary>
+        public CombatRules Combat => combat ?? (combat = CombatRules.CreateDefault());
+
+        /// <summary>Mine Tier Bosses, one per tier (SCRUM-7).</summary>
+        public IReadOnlyList<BossDefinition> Bosses => bosses ?? (bosses = new List<BossDefinition>());
+
+        /// <summary>Expeditions, each unlocked by a boss (SCRUM-7).</summary>
+        public IReadOnlyList<ExpeditionDefinition> Expeditions =>
+            expeditions ?? (expeditions = new List<ExpeditionDefinition>());
+
+        /// <summary>What unlocks each mine tier after the first (SCRUM-7; final rules from SCRUM-2).</summary>
+        public IReadOnlyList<TierRequirement> TierRequirements =>
+            tierRequirements ?? (tierRequirements = new List<TierRequirement>());
+
+        /// <summary>Returns null if no boss has this id.</summary>
+        public BossDefinition FindBoss(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return null;
+            foreach (BossDefinition b in Bosses) if (b != null && b.id == id) return b;
+            return null;
+        }
+
+        /// <summary>The boss guarding <paramref name="tier"/>, or null.</summary>
+        public BossDefinition FindBossForTier(int tier)
+        {
+            foreach (BossDefinition b in Bosses) if (b != null && b.tier == tier) return b;
+            return null;
+        }
+
+        /// <summary>Returns null if no Expedition has this id.</summary>
+        public ExpeditionDefinition FindExpedition(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return null;
+            foreach (ExpeditionDefinition e in Expeditions) if (e != null && e.id == id) return e;
+            return null;
+        }
+
+        /// <summary>The requirement row for <paramref name="tier"/>, or null if that tier can't be unlocked.</summary>
+        public TierRequirement FindTierRequirement(int tier)
+        {
+            foreach (TierRequirement r in TierRequirements) if (r != null && r.tier == tier) return r;
+            return null;
+        }
 
         /// <summary>Returns null if no definition has this id (e.g. content removed after a save was made).</summary>
         public MinionDefinition FindMinion(string id)
@@ -69,6 +123,21 @@ namespace Deepshaft.Content
 
         /// <summary>For tests and editor tools only.</summary>
         public void EditorSetRoster(RosterRules rules) => roster = rules;
+
+        /// <summary>For tests and editor tools only.</summary>
+        public void EditorSetCombat(CombatRules rules) => combat = rules;
+
+        /// <summary>For tests and editor tools only.</summary>
+        public void EditorSetBosses(IEnumerable<BossDefinition> definitions) =>
+            bosses = new List<BossDefinition>(definitions);
+
+        /// <summary>For tests and editor tools only.</summary>
+        public void EditorSetExpeditions(IEnumerable<ExpeditionDefinition> definitions) =>
+            expeditions = new List<ExpeditionDefinition>(definitions);
+
+        /// <summary>For tests and editor tools only.</summary>
+        public void EditorSetTierRequirements(IEnumerable<TierRequirement> requirements) =>
+            tierRequirements = new List<TierRequirement>(requirements);
 #endif
     }
 }

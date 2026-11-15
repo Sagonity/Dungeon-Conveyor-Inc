@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Deepshaft.Bosses;
 using Deepshaft.Economy;
+using Deepshaft.Expeditions;
 using Deepshaft.Minions;
 using Deepshaft.Mining;
 using Deepshaft.Roster;
@@ -38,7 +40,10 @@ namespace Deepshaft.State
         public List<OwnedMinion> minions = new List<OwnedMinion>();
         public int nextMinionInstanceId = 1;
 
-        /// <summary>Highest tier the player can play (1 at start; a boss win raises it).</summary>
+        /// <summary>
+        /// Highest tier the player can play (1 at start). Raised by
+        /// <see cref="Progression.TierProgressionService"/> when the next tier's requirements are met.
+        /// </summary>
         public int highestUnlockedTier = 1;
 
         /// <summary>Automatic mining progress. Read and changed through <see cref="MiningService"/>.</summary>
@@ -46,6 +51,12 @@ namespace Deepshaft.State
 
         /// <summary>Who works in the Mine and who is in the Adventure team. Changed through <see cref="RosterService"/>.</summary>
         public RosterData roster = new RosterData();
+
+        /// <summary>Which Mine Tier Bosses are beaten. Changed through <see cref="BossService"/>.</summary>
+        public BossData bosses = new BossData();
+
+        /// <summary>Expedition first clears and the running automated Expedition. Changed through <see cref="ExpeditionService"/>.</summary>
+        public ExpeditionData expeditions = new ExpeditionData();
 
         public static GameState CreateNew(IClock clock)
         {
@@ -98,6 +109,12 @@ namespace Deepshaft.State
             if (roster == null) roster = new RosterData();
             if (roster.miners == null) roster.miners = new List<int>();
             if (roster.adventureTeam == null) roster.adventureTeam = new List<int>();
+            if (bosses == null) bosses = new BossData();
+            if (bosses.defeated == null) bosses.defeated = new List<string>();
+            if (expeditions == null) expeditions = new ExpeditionData();
+            if (expeditions.cleared == null) expeditions.cleared = new List<string>();
+            if (expeditions.activeId == null) expeditions.activeId = "";
+            if (expeditions.pending == null) expeditions.pending = new List<MinedAmount>();
 
             int maxId = 0;
             foreach (OwnedMinion m in minions)
