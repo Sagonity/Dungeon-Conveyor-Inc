@@ -149,7 +149,7 @@ progress = clamp((clock.UtcNow - startedAt) / duration, 0, 1)
 | Format | JSON via Unity's `JsonUtility` (no extra package, fast, enough for plain data) |
 | Where | `Application.persistentDataPath/save.json` (+ `.bak`) |
 | What | One `GameState` object: progress only, no content |
-| When | On `OnApplicationPause(true)` and `OnApplicationQuit`, after important actions (summon, boss result, upgrade), and every 30 s while playing. Wired up in SCRUM-17 |
+| When | On `OnApplicationPause(true)` and `OnApplicationQuit`, after every action, and every 30 s while playing. Wired up in SCRUM-30 (`GameSession`, `GameSessionRunner`) |
 | Safety | Write to `.tmp`, then swap; the previous save becomes `.bak`. A damaged save falls back to the backup |
 | Versions | `GameState.version`. Older saves are upgraded in `SaveMigrations`. A save from a **newer** build is never overwritten (saving is turned off and the player is told) |
 | Limits of JsonUtility | No dictionaries, no `DateTime`, no polymorphism. Use lists of `[Serializable]` classes and Unix-ms `long`s. If this ever hurts, switch to Newtonsoft JSON inside `SaveService` only. It's only in the project indirectly today (pulled in by `com.unity.ai.assistant` and `com.unity.purchasing`), so add `com.unity.nuget.newtonsoft-json` to `Packages/manifest.json` first |
@@ -213,7 +213,7 @@ summons and check the rates and pity guarantee (SCRUM-11).
 - `Deepshaft.Core.Tests`: EditMode tests for all of the above.
 - `.editorconfig` for consistent formatting.
 
-**Not built yet (later tickets):** `GameSession` and save timing (SCRUM-17), HQ and Smith (SCRUM-9),
+**Not built yet (later tickets):** HQ and Smith (SCRUM-9),
 Minion levels, breakthroughs and gear (SCRUM-10), Summon (SCRUM-11).
 
 **Updated for Game Design Summary v3.4 (save version 2):** `ResourceId` now has Gold,
@@ -303,12 +303,27 @@ placement: the player only picks Minions for slots.
   (recommended power 80 / 135 / 240) and 3 Expeditions (100 / 175 / 300) with the v3.4 placeholder
   materials (Foreman Sigil, Golem Heart, Wyrm Scale; Spore Silk, Ember Core, Prism Dust). Names
   and numbers are placeholders (SCRUM-13, SCRUM-2/19).
-- **Wiring** (for `GameSession`, SCRUM-17): `mining` → `tiers = new TierProgressionService(state, db, mining)`
+- **Wiring** (done in `GameSession`, SCRUM-30): `mining` → `tiers = new TierProgressionService(state, db, mining)`
   → `expeditions = new ExpeditionService(state, db, clock, tiers)` → `roster = new RosterService(state, db, mining, expeditions)`
   → `bosses = new BossService(state, db, expeditions, tiers)`.
 - Save format stays version 2: the new `bosses` and `expeditions` fields load as empty from older saves.
-- Not yet: the fight on screen and the boss/Expedition screens. Like SCRUM-5 and SCRUM-6, they need
-  the `GameSession` that owns `GameState` (SCRUM-17).
+- Not yet: the fight replay on screen. The grey-box screens come with SCRUM-30 (below).
+
+### SCRUM-30: GameSession and the grey-box screen
+
+- **`GameSession`** (`Deepshaft.Session`, pure C#): loads the save, builds the services in the
+  wiring order above, gives a new game the `GameDatabase` starter Minions, and reports what was earned
+  while away (`OfflineReport`). The UI changes the game only through its action methods
+  (`CollectMine`, `FightBoss`, `FirstClearExpedition`, `StartExpedition`, `StopExpedition`, roster changes),
+  which save and raise `Changed`. Tests: `GameSessionTests`.
+- **`GameSessionRunner`** (MonoBehaviour, created before the first scene loads): loads
+  `Resources/GameDatabase`, saves every 30 s and on pause, focus loss and quit.
+- **`GreyboxGameScreen`**: IMGUI tabs for Mine, Team, Bosses, Expeditions and Debug, shown in the
+  Game UI state. Throwaway until the real UI (SCRUM-12).
+- **Debug:** `OffsetClock` skips time ahead (kept in PlayerPrefs); `DebugLevelUpAll` raises levels past
+  the cap until levels and breakthroughs exist (SCRUM-10).
+- **Time** still comes from the device clock. The team decided on a server clock (Scope decision 20);
+  it plugs in as another `IClock`.
 
 ## 12. Open questions for the team
 
