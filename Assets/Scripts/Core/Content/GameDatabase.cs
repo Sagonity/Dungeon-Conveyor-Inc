@@ -28,6 +28,10 @@ namespace Deepshaft.Content
         [SerializeField] List<ExpeditionDefinition> expeditions = DefaultAdventureContent.Expeditions();
         [SerializeField] List<TierRequirement> tierRequirements = DefaultAdventureContent.TierRequirements();
 
+        [Header("New game (SCRUM-30)")]
+        [Tooltip("Minion definition ids a new game starts with. Miners fill the Mine and Adventure Minions the team, in this order.")]
+        [SerializeField] List<string> starterMinions = new List<string>();
+
         Dictionary<string, MinionDefinition> minionsById;
 
         public IReadOnlyList<MinionDefinition> Minions => minions;
@@ -51,6 +55,9 @@ namespace Deepshaft.Content
         /// <summary>What unlocks each mine tier after the first (SCRUM-7; final rules from SCRUM-2).</summary>
         public IReadOnlyList<TierRequirement> TierRequirements =>
             tierRequirements ?? (tierRequirements = new List<TierRequirement>());
+
+        /// <summary>Minion definition ids a new game starts with (SCRUM-30).</summary>
+        public IReadOnlyList<string> StarterMinions => starterMinions ?? (starterMinions = new List<string>());
 
         /// <summary>Returns null if no boss has this id.</summary>
         public BossDefinition FindBoss(string id)
@@ -134,6 +141,9 @@ namespace Deepshaft.Content
         /// <summary>For tests and editor tools only.</summary>
         public void EditorSetExpeditions(IEnumerable<ExpeditionDefinition> definitions) =>
             expeditions = new List<ExpeditionDefinition>(definitions);
+
+        /// <summary>For tests and editor tools only.</summary>
+        public void EditorSetStarterMinions(IEnumerable<string> ids) => starterMinions = new List<string>(ids);
 
         /// <summary>For tests and editor tools only.</summary>
         public void EditorSetTierRequirements(IEnumerable<TierRequirement> requirements) =>

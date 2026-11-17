@@ -4,7 +4,10 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// In-game HUD. Sends summon requests to GameController and shows the results.
+/// In-game HUD from the first UI pass. Since SCRUM-30 the game is played on the grey-box
+/// screen (GreyboxGameScreen), so this view hides its placeholder controls (Summon button,
+/// counter, log and Menu button) and only stays as the Game state's view for UIManager.
+/// It goes away with the real HUD (SCRUM-12).
 /// </summary>
 public class GameHUDView : UIView
 {
@@ -22,8 +25,21 @@ public class GameHUDView : UIView
 
     readonly Queue<string> logLines = new Queue<string>();
 
+    [Tooltip("Hide the placeholder Summon button, counter, log and Menu button (the grey-box screen replaces them).")]
+    [SerializeField] private bool hidePlaceholderControls = true;
+
     protected override void OnInitialize()
     {
+        if (hidePlaceholderControls)
+        {
+            // Old summon prototype: spawned scene objects that aren't part of the game state.
+            foreach (Component c in new Component[] { summonButton, mainMenuButton, counterText, logText })
+            {
+                if (c != null) c.gameObject.SetActive(false);
+            }
+            return;
+        }
+
         if (gameController == null)
         {
             gameController = FindFirstObjectByType<GameController>();

@@ -322,10 +322,14 @@ As of 2026-11-15 (SCRUM-4, 5, 6 and 7 merged).
   - **3 Miner slots and 3 Adventure slots** (data on the `GameDatabase`). The team keeps these and changes them only if playtests show a need (decision 18).
   - **Next tier unlocks when the current tier's boss is beaten.** Confirmed as the rule (decision 17).
   - **Boss and Expedition power numbers** are a first pass, until the SCRUM-2 economy is rebuilt for v3.4.
-- **Not connected to the game yet:** the SCRUM-5/6/7 systems exist only in `Deepshaft.Core`
-  and its tests. No screen or scene uses them, and there is no `GameSession` to load, run and save them (SCRUM-17).
-- **Still to replace:** `MinionStats` / `MinionHealth` and `GameController.SummonMinion()`
-  (placeholder Minion), moving to `MinionDefinition` / `OwnedMinion` (SCRUM-10, SCRUM-11).
+- **In progress (SCRUM-30): playable grey-box build.**
+  - `GameSession` loads the save, runs every system from the clock, gives a new game its starter
+    Minions (2 Miners, Tank, Fighter, Support, Mage, Archer) and saves after each action, every 30 s and on pause/quit.
+  - A game screen in the style of the UI mock-up (IMGUI, placeholder art) with HQ, Mine, Exped., Minions,
+    Smith and Boss tabs. Settings → Debug skips time and levels all Minions up, until levels exist (SCRUM-10).
+  - The GameDatabase moved to `Assets/Resources/` so the game finds it at start.
+- **Still to remove:** `MinionStats` / `MinionHealth` and `GameController.SummonMinion()`.
+  The HUD now hides the old Summon button, so nothing uses them.
 - **Still to change:** `GameController` sets `Time.timeScale = 0` while a menu is open.
   New systems must use `IClock`, not game time.
 
@@ -333,8 +337,7 @@ As of 2026-11-15 (SCRUM-4, 5, 6 and 7 merged).
 - Smith (upgrades and breakthroughs, SCRUM-9/10)
 - Minion levels and breakthroughs (SCRUM-10)
 - Summoning with two pools (SCRUM-11)
-- `GameSession` and connecting the save (SCRUM-17)
-- Grey-box screens for mining, the team, bosses and Expeditions, and resource counters in the HUD
+- Test the grey-box build in Unity and on a phone (SCRUM-30)
 
 ## 8. Success criteria
 
