@@ -325,8 +325,8 @@ As of 2026-11-15 (SCRUM-4, 5, 6 and 7 merged).
 - **In progress (SCRUM-30): playable grey-box build.**
   - `GameSession` loads the save, runs every system from the clock, gives a new game its starter
     Minions (2 Miners, Tank, Fighter, Support, Mage, Archer) and saves after each action, every 30 s and on pause/quit.
-  - A grey-box screen (IMGUI, no art) with Mine, Team, Bosses, Expeditions and Debug tabs.
-    Debug skips time and levels all Minions up, until levels exist (SCRUM-10).
+  - A game screen in the style of the UI mock-up (IMGUI, placeholder art) with HQ, Mine, Exped., Minions,
+    Smith and Boss tabs. Settings → Debug skips time and levels all Minions up, until levels exist (SCRUM-10).
   - The GameDatabase moved to `Assets/Resources/` so the game finds it at start.
 - **Still to remove:** `MinionStats` / `MinionHealth` and `GameController.SummonMinion()`.
   The HUD now hides the old Summon button, so nothing uses them.

@@ -318,8 +318,12 @@ placement: the player only picks Minions for slots.
   which save and raise `Changed`. Tests: `GameSessionTests`.
 - **`GameSessionRunner`** (MonoBehaviour, created before the first scene loads): loads
   `Resources/GameDatabase`, saves every 30 s and on pause, focus loss and quit.
-- **`GreyboxGameScreen`**: IMGUI tabs for Mine, Team, Bosses, Expeditions and Debug, shown in the
-  Game UI state. Throwaway until the real UI (SCRUM-12).
+- **`GreyboxGameScreen`**: the game screen, styled after the UI mock-up: resource bar (tap for every
+  material), tier header with the next goal, bronze-framed cards with gold buttons, and a bottom tab bar
+  (HQ, Mine, Exped., Minions, Smith, Boss). Settings (top right) holds Main menu and the debug tools.
+  Drawn with IMGUI and generated textures, so no art or scene setup. Portraits, boss art and tier names
+  are placeholders (SCRUM-13); Smith and Summon show as "coming soon" (SCRUM-9, SCRUM-11).
+  Throwaway until the real UI (SCRUM-12).
 - **Debug:** `OffsetClock` skips time ahead (kept in PlayerPrefs); `DebugLevelUpAll` raises levels past
   the cap until levels and breakthroughs exist (SCRUM-10).
 - **Time** still comes from the device clock. The team decided on a server clock (Scope decision 20);

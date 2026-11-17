@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Text;
 using Deepshaft.Bosses;
 using Deepshaft.Economy;
 using Deepshaft.Expeditions;
@@ -13,38 +12,58 @@ using Deepshaft.Session;
 using UnityEngine;
 
 /// <summary>
-/// Grey-box game screen for the core loop playtest (SCRUM-30, SCRUM-8): resources, Mine,
-/// Team, Bosses, Expeditions and debug tools, drawn with IMGUI so it needs no scene setup.
-/// Shown while the UI is in the Game state. Throwaway: the real screens come with the UI
-/// design system (SCRUM-12) and the wireframes (SCRUM-3).
+/// Game screen for the core loop playtest (SCRUM-30, SCRUM-8), styled after the team's UI
+/// mock-up: resource bar, tier header, bronze-framed cards with gold buttons, and a bottom
+/// tab bar (HQ, Mine, Exped., Minions, Smith, Boss).
 ///
+/// Drawn with IMGUI and generated textures, so it needs no scene setup and no art. Portraits
+/// and boss art are placeholders (SCRUM-13); the final screens come with SCRUM-12.
 /// Sizes are in units of a 1080-wide reference screen (shortest side), so buttons keep the
-/// 130-unit minimum touch target from the wireframes doc on every device.
+/// 130-unit minimum touch target from the wireframes doc.
 /// </summary>
 public class GreyboxGameScreen : MonoBehaviour
 {
-    enum Tab { Mine, Team, Boss, Expeditions, Debug }
+    enum Tab { HQ, Mine, Expeditions, Minions, Smith, Boss }
+    enum Overlay { None, Resources, Settings }
+    enum Mood { Neutral, Good, Bad }
+
+    static readonly string[] TabNames = { "HQ", "Mine", "Exped.", "Minions", "Smith", "Boss" };
 
     const float ReferenceSize = 1080f;
+    const float MaxColumn = 1080f;
     const float TouchTarget = 130f;
-    const float Padding = 24f;
+    const float TopBarHeight = 120f;
+    const float HeaderHeight = 84f;
+    const float NavHeight = 170f;
+    const float Side = 24f;
+    const float DragThreshold = 18f;
 
-    static readonly string[] TabNames = { "Mine", "Team", "Bosses", "Expeditions", "Debug" };
+    // Palette (from the mock-up)
+    static readonly Color Background = Hex("0E0C12");
+    static readonly Color CardFill = Hex("1A1620");
+    static readonly Color Bronze = Hex("6B4E26");
+    static readonly Color Gold = Hex("F5B83D");
+    static readonly Color GoldDark = Hex("2A1B06");
+    static readonly Color Text = Hex("EDE6D8");
+    static readonly Color Muted = Hex("A59C8C");
+    static readonly Color Green = Hex("5FD88C");
+    static readonly Color Purple = Hex("B48CFF");
+    static readonly Color Red = Hex("FF5A4E");
+    static readonly Color Blue = Hex("4FA3FF");
 
-    Tab tab;
+    Tab tab = Tab.HQ;
+    Overlay overlay;
     Vector2 scroll;
     string message = "";
+    Mood messageMood;
     bool resetArmed;
+    bool showMiners;
     UIManager ui;
 
-    GUIStyle background;
-    GUIStyle label;
-    GUIStyle heading;
-    GUIStyle small;
-    GUIStyle button;
-    GUIStyle tabButton;
-    GUIStyle box;
-    GUIStyle messageBox;
+    Vector2 pressStart;
+    bool dragging;
+
+    Styles s;
 
     static GameSession Session => GameSessionRunner.Instance != null ? GameSessionRunner.Instance.Session : null;
 
@@ -62,220 +81,952 @@ public class GreyboxGameScreen : MonoBehaviour
 
     void OnSessionStarted(GameSession session)
     {
-        message = DescribeWelcome(session.Offline);
-        tab = Tab.Mine;
+        Say(DescribeWelcome(session.Offline), Mood.Good);
+        tab = Tab.HQ;
+        overlay = Overlay.None;
     }
 
     bool IsVisible => ui == null || ui.CurrentState == UIState.Game;
 
-    // ---------------------------------------------------------------- Layout
+    // ================================================================ Frame
 
     void OnGUI()
     {
-        GameSession s = Session;
-        if (s == null || !IsVisible) return;
-        EnsureStyles();
+        GameSession game = Session;
+        if (game == null || !IsVisible) return;
+        if (s == null) s = new Styles();
 
         float scale = Mathf.Min(Screen.width, Screen.height) / ReferenceSize;
         GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
         float width = Screen.width / scale;
         float height = Screen.height / scale;
 
-        // Safe area (notches), converted from screen pixels (y up) to GUI units (y down).
+        // Safe area (notches), from screen pixels (y up) to GUI units (y down), then a centred column.
         Rect safe = Screen.safeArea;
-        var area = new Rect(safe.x / scale + Padding, (Screen.height - safe.yMax) / scale + Padding,
-            safe.width / scale - 2 * Padding, safe.height / scale - 2 * Padding);
+        float top = (Screen.height - safe.yMax) / scale;
+        float bottom = (safe.y) / scale;
+        float columnWidth = Mathf.Min(safe.width / scale, MaxColumn);
+        float left = safe.x / scale + (safe.width / scale - columnWidth) / 2f;
 
-        GUI.Box(new Rect(0, 0, width, height), GUIContent.none, background);
-        GUILayout.BeginArea(area);
+        var topBar = new Rect(left, top, columnWidth, TopBarHeight);
+        var header = new Rect(left, topBar.yMax, columnWidth, HeaderHeight);
+        var nav = new Rect(left, height - bottom - NavHeight, columnWidth, NavHeight);
+        var content = new Rect(left + Side, header.yMax, columnWidth - 2 * Side, nav.y - header.yMax);
+        Rect overlayRect = GetOverlayRect(topBar);
+        overlayRect.height = Mathf.Min(overlayRect.height, nav.yMax - overlayRect.y);
 
-        DrawResourceBar(s);
-        DrawTabs();
-        if (!string.IsNullOrEmpty(message)) GUILayout.Label(message, messageBox);
+        CloseOverlayOnOutsideTap(overlayRect);
+        GUI.DrawTexture(new Rect(0, 0, width, height), s.Solid(Background));
+
+        bool modal = overlay != Overlay.None;
+        GUI.enabled = !modal;
+
+        DrawTopBar(game, topBar);
+        DrawHeader(game, header);
 
         HandleTouchScroll();
-        scroll = GUILayout.BeginScrollView(scroll);
+        GUILayout.BeginArea(content);
+        scroll = GUILayout.BeginScrollView(scroll, false, false, GUIStyle.none, GUIStyle.none);
+        DrawMessage();
         switch (tab)
         {
-            case Tab.Mine: DrawMine(s); break;
-            case Tab.Team: DrawTeam(s); break;
-            case Tab.Boss: DrawBosses(s); break;
-            case Tab.Expeditions: DrawExpeditions(s); break;
-            case Tab.Debug: DrawDebug(s); break;
+            case Tab.HQ: DrawHQ(game); break;
+            case Tab.Mine: DrawMineTab(game); break;
+            case Tab.Expeditions: DrawExpeditionsTab(game); break;
+            case Tab.Minions: DrawMinionsTab(game); break;
+            case Tab.Smith: DrawSmithCard(); break;
+            case Tab.Boss: DrawBossTab(game); break;
         }
+        GUILayout.Space(24f);
         GUILayout.EndScrollView();
-
         GUILayout.EndArea();
-    }
 
-    void HandleTouchScroll()
-    {
-        Event e = Event.current;
-        if (e.type == EventType.MouseDrag && Mathf.Abs(e.delta.y) > 0f)
+        DrawNav(game, nav);
+
+        GUI.enabled = true;
+        if (modal)
         {
-            scroll.y = Mathf.Max(0f, scroll.y - e.delta.y);
-            e.Use();
+            GUI.DrawTexture(new Rect(0, 0, width, height), s.Solid(new Color(0f, 0f, 0f, 0.45f)));
+            if (overlay == Overlay.Resources) DrawResourcePanel(game, overlayRect);
+            else DrawSettingsPanel(game, overlayRect);
         }
     }
 
-    void DrawResourceBar(GameSession s)
+    // ================================================================ Top bar, header, nav
+
+    static readonly ResourceId[] BarResources =
     {
-        var parts = new List<string>();
-        foreach (ResourceId id in (ResourceId[])Enum.GetValues(typeof(ResourceId)))
+        ResourceId.Gold, ResourceId.Iron, ResourceId.Silver, ResourceId.Mithril,
+        ResourceId.BasicShard, ResourceId.AdvancedShard,
+    };
+
+    void DrawTopBar(GameSession game, Rect bar)
+    {
+        float menuSize = 96f;
+        float chipWidth = (bar.width - 2 * Side - menuSize) / BarResources.Length;
+        for (int i = 0; i < BarResources.Length; i++)
         {
-            long amount = s.Wallet.Get(id);
-            bool always = id == ResourceId.Gold || id == ResourceId.Iron;
-            if (amount > 0 || always) parts.Add(Name(id) + " " + Format(amount));
+            var chip = new Rect(bar.x + Side + i * chipWidth, bar.y + 26f, chipWidth, 64f);
+            DrawIcon(new Rect(chip.x, chip.y + 8f, 48f, 48f), BarResources[i]);
+            GUI.Label(new Rect(chip.x + 56f, chip.y, chipWidth - 56f, 64f), Short(game.Wallet.Get(BarResources[i])), s.chip);
         }
-        GUILayout.Label(string.Join("   ·   ", parts), box);
+
+        // Tap the resources to see every material.
+        var resources = new Rect(bar.x, bar.y, bar.width - menuSize - Side, bar.height);
+        if (GUI.Button(resources, GUIContent.none, GUIStyle.none)) { overlay = Overlay.Resources; Exit(); }
+
+        var menu = new Rect(bar.xMax - Side - menuSize, bar.y + 12f, menuSize, menuSize);
+        if (GUI.Button(menu, GUIContent.none, s.iconButton)) { overlay = Overlay.Settings; resetArmed = false; Exit(); }
+        for (int i = 0; i < 3; i++)
+        {
+            GUI.DrawTexture(new Rect(menu.x + 26f, menu.y + 30f + i * 16f, menu.width - 52f, 6f), s.Solid(Gold));
+        }
     }
 
-    void DrawTabs()
+    void DrawHeader(GameSession game, Rect header)
     {
-        GUILayout.BeginHorizontal();
+        int tier = game.Mining.CurrentTier;
+        GUI.Label(new Rect(header.x + Side, header.y, header.width * 0.55f, header.height),
+            "<color=#A59C8C>TIER " + tier + " ·</color> " + TierName(tier).ToUpperInvariant(), s.header);
+
+        string next = DescribeNextGoal(game);
+        Vector2 size = s.pill.CalcSize(new GUIContent(next));
+        var pill = new Rect(header.xMax - Side - size.x, header.y + (header.height - size.y) / 2f, size.x, size.y);
+        GUI.Label(pill, next, s.pill);
+    }
+
+    void DrawNav(GameSession game, Rect nav)
+    {
+        GUI.DrawTexture(nav, s.Solid(Hex("15121A")));
+        GUI.DrawTexture(new Rect(nav.x, nav.y, nav.width, 3f), s.Solid(Bronze));
+        float w = nav.width / TabNames.Length;
         for (int i = 0; i < TabNames.Length; i++)
         {
+            var cell = new Rect(nav.x + i * w, nav.y, w, nav.height);
             bool selected = (int)tab == i;
-            GUI.color = selected ? new Color(1f, 0.82f, 0.36f) : Color.white;
-            if (GUILayout.Button(TabNames[i], tabButton))
+            if (selected) GUI.DrawTexture(new Rect(cell.x + w * 0.2f, cell.y, w * 0.6f, 6f), s.Solid(Gold));
+
+            Color iconColor = selected ? Gold : Muted;
+            DrawTinted(new Rect(cell.center.x - 26f, cell.y + 30f, 52f, 52f), s.diamond, iconColor);
+            GUI.Label(new Rect(cell.x, cell.y + 92f, w, 50f), TabNames[i], selected ? s.navSelected : s.nav);
+
+            if (NeedsAttention(game, (Tab)i))
+            {
+                DrawTinted(new Rect(cell.center.x + 22f, cell.y + 24f, 22f, 22f), s.circle, Red);
+            }
+
+            if (GUI.Button(cell, GUIContent.none, GUIStyle.none))
             {
                 tab = (Tab)i;
                 scroll = Vector2.zero;
-                resetArmed = false;
                 Exit();
             }
         }
-        GUI.color = Color.white;
-        if (ui != null && GUILayout.Button("Menu", tabButton, GUILayout.Width(200f))) { ui.ShowMainMenu(); Exit(); }
-        GUILayout.EndHorizontal();
     }
 
-    // ---------------------------------------------------------------- Mine
-
-    void DrawMine(GameSession s)
+    bool NeedsAttention(GameSession game, Tab t)
     {
-        MiningService mining = s.Mining;
-        GUILayout.Label("Mine · Tier " + mining.CurrentTier, heading);
-        GUILayout.Label("Miners working: " + mining.GetWorkingMiners().Count + " / " + s.Roster.MinerSlots +
-                        "  (change them on the Team tab)", label);
-
-        GUILayout.Label("Per hour: " + Describe(mining.GetHourlyRates(), "/h"), label);
-        List<MinedAmount> pending = mining.GetPending();
-        GUILayout.Label("Waiting to collect: " + Describe(pending, ""), label);
-
-        if (Button("Collect"))
+        switch (t)
         {
-            List<ResourceAmount> collected = s.CollectMine();
-            message = collected.Count > 0 ? "Collected " + Describe(collected) + "." : "Nothing to collect yet.";
+            case Tab.Mine:
+                foreach (MinedAmount a in game.Mining.GetPending()) if (a.amount >= 1.0) return true;
+                return false;
+            case Tab.Expeditions:
+                foreach (ExpeditionDefinition e in game.Database.Expeditions)
+                {
+                    if (e == null) continue;
+                    if (game.Expeditions.CanFirstClear(e.id) == ExpeditionCheck.Ok) return true;
+                    if (game.Expeditions.CanStart(e.id) == ExpeditionCheck.Ok) return true;
+                }
+                return false;
+            case Tab.Boss:
+                BossDefinition boss = game.Bosses.CurrentBoss;
+                return boss != null && !game.Bosses.IsDefeated(boss.id);
+            case Tab.Minions:
+                return game.Roster.GetUnassigned(MinionKind.Adventure).Count > 0 &&
+                       game.Roster.GetTeam().Count < game.Roster.AdventureSlots && !game.Roster.IsTeamBusy;
+            default:
+                return false;
+        }
+    }
+
+    void DrawMessage()
+    {
+        if (string.IsNullOrEmpty(message)) return;
+        GUIStyle style = messageMood == Mood.Good ? s.toastGood : messageMood == Mood.Bad ? s.toastBad : s.toast;
+        if (GUILayout.Button(message, style)) { message = ""; Exit(); }
+    }
+
+    // ================================================================ HQ
+
+    void DrawHQ(GameSession game)
+    {
+        DrawMineCard(game);
+        DrawExpeditionCard(game, true);
+        DrawSmithCard();
+        DrawBossSummary(game);
+    }
+
+    // ================================================================ Mine
+
+    void DrawMineTab(GameSession game)
+    {
+        DrawMineCard(game);
+        DrawMinerCard(game);
+        DrawNextTierCard(game);
+    }
+
+    void DrawMineCard(GameSession game)
+    {
+        MiningService mining = game.Mining;
+        int miners = mining.GetWorkingMiners().Count;
+        BeginCard();
+        CardHeader("MINE", miners > 0 ? "Digging · " + miners + (miners == 1 ? " Miner" : " Miners") : "No Miners",
+            miners > 0 ? s.pillGreen : s.pillRed);
+
+        GUILayout.Label("Waiting to collect", s.body);
+        List<MinedAmount> rates = mining.GetHourlyRates();
+        List<MinedAmount> pending = mining.GetPending();
+        var waiting = new List<KeyValuePair<ResourceId, double>>();
+        foreach (MinedAmount r in rates) waiting.Add(Pair(r.id, MiningMath.Get(pending, r.id)));
+        ResourceLine(waiting, "+");
+
+        GUILayout.Label(DescribeRates(rates) + " per hour · no limit", s.small);
+        GUILayout.BeginHorizontal();
+        GUILayout.FlexibleSpace();
+        if (GoldButton("Collect", 300f))
+        {
+            List<ResourceAmount> collected = game.CollectMine();
+            Say(collected.Count > 0 ? "Collected " + Describe(collected) + "." : "Nothing to collect yet.", Mood.Good);
             Exit();
         }
-
-        GUILayout.Space(30f);
-        DrawNextTier(s);
+        GUILayout.EndHorizontal();
+        EndCard();
     }
 
-    void DrawNextTier(GameSession s)
+    void DrawMinerCard(GameSession game)
     {
-        TierUnlockCheck check = s.Tiers.CheckNext(s.Wallet);
-        GUILayout.Label("Next tier", heading);
+        RosterService roster = game.Roster;
+        BeginCard();
+        CardHeader("MINERS (" + roster.GetMiners().Count + "/" + roster.MinerSlots + ")", "Tap to assign", s.pill);
+        var all = new List<OwnedMinion>(roster.GetMiners());
+        all.AddRange(roster.GetUnassigned(MinionKind.Miner));
+        MinionGrid(game, all);
+        EndCard();
+    }
+
+    void DrawNextTierCard(GameSession game)
+    {
+        TierUnlockCheck check = game.Tiers.CheckNext(game.Wallet);
+        BeginCard();
+        CardHeader("NEXT TIER", check.Status == TierUnlockStatus.MaxTierReached ? "Deepest tier" : "Tier " + check.Tier, s.pill);
         switch (check.Status)
         {
             case TierUnlockStatus.MaxTierReached:
-                GUILayout.Label("Tier " + s.Tiers.HighestUnlockedTier + " is the deepest tier in the prototype.", label);
+                GUILayout.Label(TierName(game.Tiers.HighestUnlockedTier) + " is the deepest tier in the prototype.", s.body);
                 break;
             case TierUnlockStatus.BossNotDefeated:
-                GUILayout.Label("Tier " + check.Tier + ": beat " + BossNames(s, check.MissingBosses) + ".", label);
+                GUILayout.Label(TierName(check.Tier) + ": beat " + BossNames(game, check.MissingBosses) + ".", s.body);
                 break;
             case TierUnlockStatus.ExpeditionNotCleared:
-                GUILayout.Label("Tier " + check.Tier + ": first-clear " + ExpeditionNames(s, check.MissingFirstClears) + ".", label);
+                GUILayout.Label(TierName(check.Tier) + ": first-clear " + ExpeditionNames(game, check.MissingFirstClears) + ".", s.body);
                 break;
             case TierUnlockStatus.CantAfford:
-                GUILayout.Label("Tier " + check.Tier + " costs " + Describe(check.Cost) + ". Missing " +
-                                Describe(check.Shortfall) + ".", label);
+                GUILayout.Label(TierName(check.Tier) + " costs " + Describe(check.Cost) + ".", s.body);
+                GUILayout.Label("Need " + Describe(check.Shortfall) + " more", s.smallRed);
                 break;
             case TierUnlockStatus.Ok:
-                if (Button("Unlock Tier " + check.Tier + " (" + Describe(check.Cost) + ")"))
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(Describe(check.Cost), s.body);
+                GUILayout.FlexibleSpace();
+                if (GoldButton("Unlock", 300f))
                 {
-                    TierUnlockCheck result = s.UnlockNextTier();
-                    message = result.CanUnlock ? "Tier " + result.Tier + " unlocked! Miners moved down." : "Couldn't unlock: " + result.Status;
+                    TierUnlockCheck result = game.UnlockNextTier();
+                    Say(result.CanUnlock ? TierName(result.Tier) + " unlocked! Miners moved down." : "Couldn't unlock: " + result.Status,
+                        result.CanUnlock ? Mood.Good : Mood.Bad);
                     Exit();
                 }
+                GUILayout.EndHorizontal();
                 break;
         }
+        EndCard();
     }
 
-    // ---------------------------------------------------------------- Team
+    // ================================================================ Expeditions
 
-    void DrawTeam(GameSession s)
+    void DrawExpeditionsTab(GameSession game)
     {
-        RosterService roster = s.Roster;
+        if (game.Expeditions.IsRunning) DrawExpeditionCard(game, false);
+        DrawTeamSlotsCard(game, "ADVENTURE TEAM", "Only one Expedition runs at a time.");
+        DrawExpeditionList(game);
+    }
 
-        GUILayout.Label("Miners in the Mine (" + roster.GetMiners().Count + " / " + roster.MinerSlots + ")", heading);
-        foreach (OwnedMinion m in roster.GetMiners())
+    void DrawExpeditionCard(GameSession game, bool onHQ)
+    {
+        ExpeditionService expeditions = game.Expeditions;
+        ExpeditionDefinition active = expeditions.Active;
+        BeginCard();
+        if (active != null)
         {
-            if (Row(Describe(s, m), "Remove")) { Report(s.UnassignMiner(m.instanceId)); Exit(); }
-        }
-        foreach (OwnedMinion m in roster.GetUnassigned(MinionKind.Miner))
-        {
-            if (Row(Describe(s, m) + "  (resting)", "Assign", roster.GetMiners().Count < roster.MinerSlots))
+            CardHeader("EXPEDITION", "Automated · running", s.pillPurple);
+            GUILayout.Label("<b>" + active.displayName + "</b> <color=#A59C8C>· earned so far · " +
+                            Hours(expeditions.HoursRunning) + "</color>", s.body);
+            var earned = new List<KeyValuePair<ResourceId, double>>();
+            List<MinedAmount> pending = expeditions.GetPending();
+            foreach (MinedAmount r in expeditions.GetHourlyRates()) earned.Add(Pair(r.id, MiningMath.Get(pending, r.id)));
+            ResourceLine(earned, "+");
+            GUILayout.Label("Never fails · no time limit · keeps running while the phone is locked", s.small);
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            if (GoldButton("Stop & Collect", 380f))
             {
-                Report(s.AssignMiner(m.instanceId));
+                ExpeditionCollectResult result = game.StopExpedition();
+                Say("Expedition stopped after " + Hours(result.HoursRun) + ". Collected " + Describe(result.Collected) +
+                    ". The team is free.", Mood.Good);
                 Exit();
             }
+            GUILayout.EndHorizontal();
         }
-
-        GUILayout.Space(30f);
-        GUILayout.Label("Adventure team (" + roster.GetTeam().Count + " / " + roster.AdventureSlots + ")  ·  Power " +
-                        Format(s.Bosses.GetTeamPower()), heading);
-        if (roster.IsTeamBusy) GUILayout.Label("The team is on an Expedition. Stop it on the Expeditions tab to change the team.", small);
-        foreach (OwnedMinion m in roster.GetTeam())
+        else
         {
-            if (Row(Describe(s, m), "Remove", !roster.IsTeamBusy)) { Report(s.RemoveFromTeam(m.instanceId)); Exit(); }
-        }
-        foreach (OwnedMinion m in roster.GetUnassigned(MinionKind.Adventure))
-        {
-            bool canAdd = !roster.IsTeamBusy && roster.GetTeam().Count < roster.AdventureSlots;
-            if (Row(Describe(s, m) + "  (bench)", "Add", canAdd)) { Report(s.AssignToTeam(m.instanceId)); Exit(); }
-        }
-    }
-
-    void Report(AssignResult result)
-    {
-        message = result == AssignResult.Ok ? "" : "Can't do that: " + result + ".";
-    }
-
-    // ---------------------------------------------------------------- Bosses
-
-    void DrawBosses(GameSession s)
-    {
-        GUILayout.Label("Team power " + Format(s.Bosses.GetTeamPower()), heading);
-        foreach (BossDefinition boss in s.Database.Bosses)
-        {
-            if (boss == null) continue;
-            bool defeated = s.Bosses.IsDefeated(boss.id);
-            string title = boss.displayName + " · Tier " + boss.tier + " · Recommended " + Format(boss.recommendedPower) +
-                           (defeated ? "  (beaten)" : "");
-            BossCheck check = s.Bosses.CanFight(boss.id);
-            string action = defeated ? "Fight again" : "Fight";
-            if (check != BossCheck.Ok) title += "\n" + Explain(check);
-            if (Row(title, action, check == BossCheck.Ok))
+            CardHeader("EXPEDITION", "Idle", s.pill);
+            ExpeditionDefinition next = NextExpeditionStep(game, out string what);
+            GUILayout.Label(next != null ? "<b>" + next.displayName + "</b> <color=#A59C8C>· " + what + "</color>"
+                                         : "Beat a boss to unlock Expeditions.", s.body);
+            if (onHQ)
             {
-                message = DescribeFight(s, boss, s.FightBoss(boss.id));
-                Exit();
+                GUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                if (GoldButton("Go", 300f)) { tab = Tab.Expeditions; scroll = Vector2.zero; Exit(); }
+                GUILayout.EndHorizontal();
             }
         }
+        EndCard();
     }
 
-    string DescribeFight(GameSession s, BossDefinition boss, BossFightResult result)
+    void DrawExpeditionList(GameSession game)
+    {
+        ExpeditionService expeditions = game.Expeditions;
+        BeginCard();
+        CardHeader("EXPEDITIONS", "Power " + Format(expeditions.GetTeamPower()), s.pill);
+        foreach (ExpeditionDefinition e in game.Database.Expeditions)
+        {
+            if (e == null) continue;
+            ExpeditionStatus status = expeditions.GetStatus(e.id);
+            GUILayout.BeginHorizontal(s.row);
+
+            Color dot = status == ExpeditionStatus.Locked ? Muted : status == ExpeditionStatus.FirstClearAvailable ? Gold : Green;
+            Rect dotRect = GUILayoutUtility.GetRect(30f, 30f, GUILayout.Width(30f), GUILayout.Height(30f));
+            DrawTinted(new Rect(dotRect.x, dotRect.y + 34f, 26f, 26f), s.circle, dot);
+            GUILayout.Space(12f);
+
+            string detail;
+            string action = null;
+            bool enabled = false;
+            switch (status)
+            {
+                case ExpeditionStatus.Locked:
+                    detail = "beat " + BossNames(game, new[] { e.unlockedByBoss });
+                    break;
+                case ExpeditionStatus.FirstClearAvailable:
+                    detail = "first clear needed · Rec. " + Format(e.recommendedPower);
+                    action = "First clear";
+                    enabled = expeditions.CanFirstClear(e.id) == ExpeditionCheck.Ok;
+                    break;
+                case ExpeditionStatus.ReadyToAutomate:
+                    detail = "cleared · " + DescribeRates(MiningMath.ToRates(e.automatedPerHour)) + "/h";
+                    action = "Automate";
+                    enabled = expeditions.CanStart(e.id) == ExpeditionCheck.Ok;
+                    break;
+                default:
+                    detail = "automated · running";
+                    break;
+            }
+            GUILayout.Label("<b>" + e.displayName + "</b> <color=#A59C8C>· " + detail + "</color>", s.body,
+                GUILayout.ExpandWidth(true));
+
+            if (action != null && SmallGoldButton(action, enabled))
+            {
+                if (status == ExpeditionStatus.FirstClearAvailable)
+                {
+                    FirstClearResult result = game.FirstClearExpedition(e.id);
+                    Say(DescribeFirstClear(e, result), result.Won ? Mood.Good : Mood.Bad);
+                }
+                else
+                {
+                    ExpeditionCheck started = game.StartExpedition(e.id);
+                    Say(started == ExpeditionCheck.Ok ? e.displayName + " is running. It keeps going while the app is closed."
+                        : Explain(started), started == ExpeditionCheck.Ok ? Mood.Good : Mood.Bad);
+                }
+                Exit();
+            }
+            GUILayout.EndHorizontal();
+        }
+        if (game.Roster.IsTeamBusy)
+        {
+            GUILayout.Label("The team is on an Expedition. Stop it to fight or first-clear.", s.small);
+        }
+        EndCard();
+    }
+
+    ExpeditionDefinition NextExpeditionStep(GameSession game, out string what)
+    {
+        foreach (ExpeditionDefinition e in game.Database.Expeditions)
+        {
+            if (e == null) continue;
+            ExpeditionStatus status = game.Expeditions.GetStatus(e.id);
+            if (status == ExpeditionStatus.FirstClearAvailable) { what = "first clear needed"; return e; }
+            if (status == ExpeditionStatus.ReadyToAutomate) { what = "ready to automate"; return e; }
+        }
+        what = "";
+        return null;
+    }
+
+    // ================================================================ Minions
+
+    void DrawMinionsTab(GameSession game)
+    {
+        RosterService roster = game.Roster;
+        MinionKind kind = showMiners ? MinionKind.Miner : MinionKind.Adventure;
+        int ownedOther = Count(game, showMiners ? MinionKind.Adventure : MinionKind.Miner);
+
+        BeginCard();
+        GUILayout.BeginHorizontal();
+        GUILayout.Label((showMiners ? "MINERS (" : "ADVENTURE (") + Count(game, kind) + ")", s.title);
+        GUILayout.FlexibleSpace();
+        if (GUILayout.Button((showMiners ? "Adventure (" : "Miners (") + ownedOther + ")", s.pillButton))
+        {
+            showMiners = !showMiners;
+            Exit();
+        }
+        GUILayout.EndHorizontal();
+
+        List<OwnedMinion> assigned = showMiners ? roster.GetMiners() : roster.GetTeam();
+        var all = new List<OwnedMinion>(assigned);
+        all.AddRange(roster.GetUnassigned(kind));
+        MinionGrid(game, all);
+
+        string hint = showMiners
+            ? "Tap a Miner to put it in the Mine or take it out (" + roster.MinerSlots + " slots)."
+            : roster.IsTeamBusy ? "The team is on an Expedition. Stop it to change the team."
+            : "Tap a Minion to add it to the team or bench it (" + roster.AdventureSlots + " slots).";
+        GUILayout.Label(hint, s.small);
+        EndCard();
+
+        DrawSummonCard(game);
+    }
+
+    static int Count(GameSession game, MinionKind kind)
+    {
+        int n = 0;
+        foreach (OwnedMinion m in game.State.minions)
+        {
+            MinionDefinition d = game.Database.FindMinion(m.definitionId);
+            if (d != null && d.Kind == kind) n++;
+        }
+        return n;
+    }
+
+    void MinionGrid(GameSession game, List<OwnedMinion> minions)
+    {
+        const int columns = 3;
+        const float gap = 18f;
+        const float cardHeight = 400f;
+        float available = Mathf.Max(300f, s.lastCardInnerWidth);
+        float cardWidth = (available - gap * (columns - 1)) / columns;
+
+        for (int start = 0; start < minions.Count; start += columns)
+        {
+            GUILayout.BeginHorizontal();
+            for (int i = start; i < start + columns; i++)
+            {
+                if (i > start) GUILayout.Space(gap);
+                Rect r = GUILayoutUtility.GetRect(cardWidth, cardHeight, GUILayout.Width(cardWidth), GUILayout.Height(cardHeight));
+                if (i < minions.Count) MinionCard(game, r, minions[i]);
+            }
+            GUILayout.EndHorizontal();
+            GUILayout.Space(gap);
+        }
+    }
+
+    void MinionCard(GameSession game, Rect r, OwnedMinion m)
+    {
+        MinionDefinition d = game.Database.FindMinion(m.definitionId);
+        if (d == null) return;
+        RosterService roster = game.Roster;
+        bool isMiner = d.Kind == MinionKind.Miner;
+        bool assigned = roster.IsAssigned(m.instanceId);
+        bool busy = !isMiner && assigned && roster.IsTeamBusy;
+
+        GUI.Box(r, GUIContent.none, assigned ? s.minionCardOn : s.minionCard);
+
+        // Portrait placeholder: class colour and initial (art: SCRUM-13).
+        var portrait = new Rect(r.x + 14f, r.y + 14f, r.width - 28f, r.height * 0.5f);
+        DrawTinted(portrait, s.roundedWhite, ClassColor(d) * 0.55f + new Color(0, 0, 0, 0.45f));
+        GUI.Label(portrait, Initial(d.DisplayName), s.portraitLetter);
+
+        float y = portrait.yMax + 10f;
+        GUI.Label(new Rect(r.x + 16f, y, r.width - 32f, 44f), d.DisplayName, s.minionName);
+        string job = isMiner ? d.MinerTrait + " Miner" : d.Role.ToString();
+        GUI.Label(new Rect(r.x + 16f, y + 42f, r.width - 32f, 36f), job + " · Lv " + m.level, s.minionSub);
+
+        // Breakthrough pips (up to 3 shown).
+        for (int i = 0; i < 3; i++)
+        {
+            DrawTinted(new Rect(r.x + 16f + i * 32f, y + 84f, 26f, 26f), s.diamond, i < m.breakthroughs ? Gold : Hex("4A4050"));
+        }
+
+        string tag = busy ? "Busy" : assigned ? (isMiner ? "Mining" : "Team") : (isMiner ? "Resting" : "Bench");
+        GUIStyle tagStyle = busy ? s.tagPurple : assigned ? s.tagGreen : s.tagMuted;
+        GUI.Label(new Rect(r.x + 16f, r.yMax - 52f, r.width - 32f, 40f), tag, tagStyle);
+
+        if (GUI.Button(r, GUIContent.none, GUIStyle.none))
+        {
+            AssignResult result;
+            if (isMiner) result = assigned ? game.UnassignMiner(m.instanceId) : game.AssignMiner(m.instanceId);
+            else result = assigned ? game.RemoveFromTeam(m.instanceId) : game.AssignToTeam(m.instanceId);
+            if (result != AssignResult.Ok) Say(Explain(result), Mood.Bad);
+            Exit();
+        }
+    }
+
+    void DrawSummonCard(GameSession game)
+    {
+        BeginCard();
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("SUMMON", s.title);
+        GUILayout.FlexibleSpace();
+        Rect icon = GUILayoutUtility.GetRect(44f, 44f, GUILayout.Width(44f), GUILayout.Height(44f));
+        DrawIcon(new Rect(icon.x, icon.y + 6f, 40f, 40f), ResourceId.BasicShard);
+        GUILayout.Label(Short(game.Wallet.Get(ResourceId.BasicShard)), s.chipInline);
+        GUILayout.EndHorizontal();
+
+        bool was = GUI.enabled;
+        GUI.enabled = false;
+        GUILayout.BeginHorizontal();
+        GUILayout.Button("Miner", s.segment);
+        GUILayout.Button("Adventure", s.segmentOn);
+        GUILayout.Button("Basic", s.segmentOn);
+        GUILayout.Button("Advanced", s.segment);
+        GUILayout.EndHorizontal();
+        GUI.enabled = was;
+
+        GUILayout.Label("C 75% · <color=#5FD88C>U 23%</color> · <color=#4FA3FF>R 2%</color> · duplicates → Essence", s.body);
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Summoning comes with SCRUM-11.", s.small);
+        GUILayout.FlexibleSpace();
+        GoldButton("Summon x1 · 10", 380f, false);
+        GUILayout.EndHorizontal();
+        EndCard();
+    }
+
+    // ================================================================ Smith
+
+    void DrawSmithCard()
+    {
+        BeginCard();
+        CardHeader("SMITH", "Coming soon", s.pillGold);
+        GUILayout.Label("Upgrade pickaxes and gear with Gold and ores. Breakthroughs use rare Expedition materials.", s.body);
+        GUILayout.Label("Arrives with SCRUM-9 and SCRUM-10. Until then, use Settings → Debug to level up.", s.small);
+        EndCard();
+    }
+
+    // ================================================================ Boss
+
+    void DrawBossSummary(GameSession game)
+    {
+        BossDefinition boss = game.Bosses.CurrentBoss;
+        if (boss == null) return;
+        float power = game.Bosses.GetTeamPower();
+        BeginCard();
+        CardHeader("BOSS · " + boss.displayName.ToUpperInvariant(), "Free · unlimited tries", s.pill);
+        GUILayout.Label(TeamVsRecommended(power, boss.recommendedPower), s.body);
+        GUILayout.BeginHorizontal();
+        GUILayout.Label(game.Bosses.IsDefeated(boss.id) ? "Beaten · fight again for its material" : "Win: unique boss material + new Expeditions", s.small);
+        GUILayout.FlexibleSpace();
+        if (GoldButton("Go", 300f)) { tab = Tab.Boss; scroll = Vector2.zero; Exit(); }
+        GUILayout.EndHorizontal();
+        EndCard();
+    }
+
+    void DrawBossTab(GameSession game)
+    {
+        BossDefinition boss = game.Bosses.CurrentBoss;
+        if (boss == null)
+        {
+            BeginCard();
+            GUILayout.Label("No boss in the content.", s.body);
+            EndCard();
+            return;
+        }
+
+        // Art placeholder (SCRUM-13).
+        Rect art = GUILayoutUtility.GetRect(100f, 380f, GUILayout.ExpandWidth(true), GUILayout.Height(380f));
+        GUI.Box(art, GUIContent.none, s.artCard);
+        GUI.Label(new Rect(art.x, art.yMax - 80f, art.width, 60f), "[ " + boss.displayName + " art ]", s.artLabel);
+        GUILayout.Space(12f);
+
+        float power = game.Bosses.GetTeamPower();
+        bool busy = game.Roster.IsTeamBusy;
+        BeginCard();
+        CardHeader("BOSS · " + boss.displayName.ToUpperInvariant(), "Free · unlimited tries", s.pill);
+        GUILayout.Label(TeamVsRecommended(power, boss.recommendedPower), s.body);
+        GUILayout.Label("Win: unique boss material + new Expeditions", s.small);
+        GUILayout.BeginHorizontal();
+        BossCheck check = game.Bosses.CanFight(boss.id);
+        GUILayout.Label(busy ? "Team on Expedition" : check == BossCheck.Ok ? "Ready" : Explain(check), s.small);
+        GUILayout.FlexibleSpace();
+        string label = busy ? "Stop Exp. & Fight" : game.Bosses.IsDefeated(boss.id) ? "Fight again" : "Fight";
+        bool canPress = busy || check == BossCheck.Ok;
+        if (GoldButton(label, 420f, canPress))
+        {
+            string prefix = "";
+            if (busy)
+            {
+                ExpeditionCollectResult stopped = game.StopExpedition();
+                prefix = "Expedition stopped (+" + Describe(stopped.Collected) + "). ";
+            }
+            BossFightResult result = game.FightBoss(boss.id);
+            Say(prefix + DescribeFight(game, boss, result), result.Won ? Mood.Good : Mood.Bad);
+            Exit();
+        }
+        GUILayout.EndHorizontal();
+        EndCard();
+
+        DrawTeamSlotsCard(game, "YOUR TEAM", null);
+        BeginCard();
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Recommended", s.body);
+        GUILayout.FlexibleSpace();
+        GUILayout.Label(Format(boss.recommendedPower), s.bodyRight);
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Your team", s.body);
+        GUILayout.FlexibleSpace();
+        GUILayout.Label(power < boss.recommendedPower ? "<color=#FF5A4E>" + Format(power) + " ▲</color>" : "<color=#5FD88C>" + Format(power) + "</color>", s.bodyRight);
+        GUILayout.EndHorizontal();
+        GUILayout.Label("Unlocks: " + DescribeUnlocks(game, boss), s.small);
+        EndCard();
+
+        DrawOtherBosses(game, boss);
+    }
+
+    void DrawOtherBosses(GameSession game, BossDefinition current)
+    {
+        bool any = false;
+        foreach (BossDefinition b in game.Database.Bosses) if (b != null && b != current) any = true;
+        if (!any) return;
+
+        BeginCard();
+        CardHeader("OTHER BOSSES", null, null);
+        foreach (BossDefinition b in game.Database.Bosses)
+        {
+            if (b == null || b == current) continue;
+            BossCheck check = game.Bosses.CanFight(b.id);
+            bool beaten = game.Bosses.IsDefeated(b.id);
+            GUILayout.BeginHorizontal(s.row);
+            string state = beaten ? "<color=#5FD88C>beaten</color>" : check == BossCheck.TierLocked ? "reach " + TierName(b.tier) : "Rec. " + Format(b.recommendedPower);
+            GUILayout.Label("<b>" + b.displayName + "</b> <color=#A59C8C>· Tier " + b.tier + " ·</color> " + state, s.body,
+                GUILayout.ExpandWidth(true));
+            if (SmallGoldButton(beaten ? "Fight again" : "Fight", check == BossCheck.Ok))
+            {
+                BossFightResult result = game.FightBoss(b.id);
+                Say(DescribeFight(game, b, result), result.Won ? Mood.Good : Mood.Bad);
+                Exit();
+            }
+            GUILayout.EndHorizontal();
+        }
+        EndCard();
+    }
+
+    void DrawTeamSlotsCard(GameSession game, string title, string footer)
+    {
+        RosterService roster = game.Roster;
+        BeginCard();
+        CardHeader(title, roster.IsTeamBusy ? "Busy" : "Ready", roster.IsTeamBusy ? s.pillPurple : s.pillGreen);
+        GUILayout.BeginHorizontal();
+        List<OwnedMinion> team = roster.GetTeam();
+        for (int i = 0; i < roster.AdventureSlots; i++)
+        {
+            Rect slot = GUILayoutUtility.GetRect(120f, 120f, GUILayout.Width(120f), GUILayout.Height(120f));
+            if (i < team.Count)
+            {
+                MinionDefinition d = game.Database.FindMinion(team[i].definitionId);
+                GUI.Box(slot, GUIContent.none, s.slotOn);
+                DrawTinted(new Rect(slot.x + 10f, slot.y + 10f, slot.width - 20f, slot.height - 20f), s.roundedWhite,
+                    (d != null ? ClassColor(d) : Muted) * 0.5f + new Color(0, 0, 0, 0.5f));
+                GUI.Label(slot, roster.IsTeamBusy ? "BUSY" : d != null ? d.Role.ToString().Substring(0, 1) : "?",
+                    roster.IsTeamBusy ? s.slotBusy : s.slotLetter);
+            }
+            else
+            {
+                GUI.Box(slot, GUIContent.none, s.slot);
+                GUI.Label(slot, "+", s.slotLetter);
+                if (GUI.Button(slot, GUIContent.none, GUIStyle.none)) { tab = Tab.Minions; showMiners = false; Exit(); }
+            }
+            GUILayout.Space(16f);
+        }
+        GUILayout.FlexibleSpace();
+        GUILayout.EndHorizontal();
+        GUILayout.Label("Power " + Format(game.Bosses.GetTeamPower()) + (footer != null ? " · " + footer : ""), s.small);
+        EndCard();
+    }
+
+    // ================================================================ Overlays
+
+    Rect GetOverlayRect(Rect topBar)
+    {
+        float w = Mathf.Min(680f, topBar.width - 2 * Side);
+        float h = overlay == Overlay.Settings ? 1080f : 1000f;
+        return new Rect(topBar.xMax - Side - w, topBar.yMax - 10f, w, h);
+    }
+
+    void CloseOverlayOnOutsideTap(Rect overlayRect)
+    {
+        Event e = Event.current;
+        if (overlay == Overlay.None || e.type != EventType.MouseDown) return;
+        if (overlayRect.Contains(e.mousePosition)) return;
+        overlay = Overlay.None;
+        resetArmed = false;
+        e.Use();
+    }
+
+    void DrawResourcePanel(GameSession game, Rect r)
+    {
+        GUILayout.BeginArea(r, s.panel);
+        PanelGroup(game, "Mine", ResourceId.Gold, ResourceId.Iron, ResourceId.Silver, ResourceId.Mithril);
+        PanelGroup(game, "Shards", ResourceId.BasicShard, ResourceId.AdvancedShard);
+        PanelGroup(game, "Expedition materials", ResourceId.SporeSilk, ResourceId.EmberCore, ResourceId.PrismDust);
+        PanelGroup(game, "Boss materials", ResourceId.ForemanSigil, ResourceId.GolemHeart, ResourceId.WyrmScale);
+        PanelGroup(game, "Other", ResourceId.MinionEssence);
+        GUILayout.Space(8f);
+        GUILayout.Label("Rare materials come from automated Expeditions.", s.small);
+        GUILayout.EndArea();
+    }
+
+    void PanelGroup(GameSession game, string title, params ResourceId[] ids)
+    {
+        GUILayout.Label(title, s.panelHeading);
+        foreach (ResourceId id in ids)
+        {
+            GUILayout.BeginHorizontal();
+            Rect icon = GUILayoutUtility.GetRect(40f, 40f, GUILayout.Width(40f), GUILayout.Height(40f));
+            DrawIcon(new Rect(icon.x, icon.y + 4f, 36f, 36f), id);
+            GUILayout.Space(10f);
+            GUILayout.Label(Name(id), s.panelText);
+            GUILayout.FlexibleSpace();
+            GUILayout.Label(Format(game.Wallet.Get(id)), s.panelText);
+            GUILayout.EndHorizontal();
+        }
+    }
+
+    void DrawSettingsPanel(GameSession game, Rect r)
+    {
+        GameSessionRunner runner = GameSessionRunner.Instance;
+        GUILayout.BeginArea(r, s.panel);
+        GUILayout.Label("Settings", s.title);
+        if (ui != null && DarkButton("Main menu")) { overlay = Overlay.None; ui.ShowMainMenu(); Exit(); }
+
+        GUILayout.Space(16f);
+        GUILayout.Label("Debug (playtest only)", s.panelHeading);
+        GUILayout.Label("Clock skipped ahead: " + Hours(runner.Clock.Offset.TotalHours) +
+                        (game.SavingAllowed ? "" : "\nSaving is OFF: the save on this device is from a newer build."), s.small);
+        GUILayout.BeginHorizontal();
+        if (DarkButton("+1 h")) { Skip(runner, 1); Exit(); }
+        if (DarkButton("+8 h")) { Skip(runner, 8); Exit(); }
+        if (DarkButton("+24 h")) { Skip(runner, 24); Exit(); }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Label("Levels until SCRUM-10:", s.small);
+        GUILayout.BeginHorizontal();
+        if (DarkButton("All +1 level")) { LevelUp(game, 1); Exit(); }
+        if (DarkButton("All +5")) { LevelUp(game, 5); Exit(); }
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(16f);
+        if (DarkButton(resetArmed ? "Tap again to DELETE the save" : "Reset game"))
+        {
+            if (!resetArmed)
+            {
+                resetArmed = true;
+                Exit();
+                return;
+            }
+            resetArmed = false;
+            overlay = Overlay.None;
+            runner.DebugResetGame();
+            Say("New game started.", Mood.Neutral);
+            Exit();
+        }
+        GUILayout.EndArea();
+    }
+
+    void Skip(GameSessionRunner runner, int hours)
+    {
+        runner.DebugSkipTime(TimeSpan.FromHours(hours));
+        Say("Skipped " + hours + " h. Check the Mine and the Expedition.", Mood.Neutral);
+    }
+
+    void LevelUp(GameSession game, int levels)
+    {
+        game.DebugLevelUpAll(levels);
+        Say("All Minions +" + levels + " level(s). Team power " + Format(game.Bosses.GetTeamPower()) + ".", Mood.Neutral);
+    }
+
+    // ================================================================ Widgets
+
+    /// <summary>
+    /// Ends this GUI pass right after a tap changed the game. Without it, IMGUI would keep
+    /// drawing a different number of controls than it laid out and log layout errors.
+    /// </summary>
+    static void Exit() => GUIUtility.ExitGUI();
+
+    void Say(string text, Mood mood)
+    {
+        message = text ?? "";
+        messageMood = mood;
+    }
+
+    void BeginCard()
+    {
+        GUILayout.BeginVertical(s.card);
+    }
+
+    void EndCard()
+    {
+        GUILayout.EndVertical();
+        if (Event.current.type == EventType.Repaint)
+        {
+            // Remember the inner width so the Minion grid can size its columns.
+            Rect last = GUILayoutUtility.GetLastRect();
+            s.lastCardInnerWidth = last.width - s.card.padding.horizontal;
+        }
+        GUILayout.Space(14f);
+    }
+
+    void CardHeader(string title, string pill, GUIStyle pillStyle)
+    {
+        GUILayout.BeginHorizontal();
+        Rect icon = GUILayoutUtility.GetRect(34f, 34f, GUILayout.Width(34f), GUILayout.Height(34f));
+        DrawTinted(new Rect(icon.x, icon.y + 10f, 30f, 30f), s.diamond, Gold);
+        GUILayout.Space(12f);
+        GUILayout.Label(title, s.title);
+        GUILayout.FlexibleSpace();
+        if (!string.IsNullOrEmpty(pill)) GUILayout.Label(pill, pillStyle ?? s.pill, GUILayout.ExpandWidth(false));
+        GUILayout.EndHorizontal();
+        GUILayout.Space(8f);
+    }
+
+    bool GoldButton(string text, float width, bool enabled = true)
+    {
+        bool was = GUI.enabled;
+        GUI.enabled = was && enabled;
+        bool clicked = GUILayout.Button(text, s.goldButton, GUILayout.Width(width));
+        GUI.enabled = was;
+        return clicked;
+    }
+
+    bool SmallGoldButton(string text, bool enabled)
+    {
+        bool was = GUI.enabled;
+        GUI.enabled = was && enabled;
+        bool clicked = GUILayout.Button(text, s.goldButton, GUILayout.Width(280f));
+        GUI.enabled = was;
+        return clicked;
+    }
+
+    bool DarkButton(string text) => GUILayout.Button(text, s.darkButton);
+
+    void ResourceLine(List<KeyValuePair<ResourceId, double>> items, string prefix)
+    {
+        GUILayout.BeginHorizontal();
+        foreach (KeyValuePair<ResourceId, double> item in items)
+        {
+            Rect icon = GUILayoutUtility.GetRect(44f, 52f, GUILayout.Width(44f), GUILayout.Height(52f));
+            DrawIcon(new Rect(icon.x, icon.y + 6f, 42f, 42f), item.Key);
+            GUILayout.Label(prefix + Short(Math.Floor(item.Value)), s.chipInline);
+            GUILayout.Space(18f);
+        }
+        GUILayout.FlexibleSpace();
+        GUILayout.EndHorizontal();
+    }
+
+    void DrawIcon(Rect r, ResourceId id)
+    {
+        IconInfo info = Icon(id);
+        DrawTinted(r, info.Diamond ? s.diamond : s.circle, info.Color);
+        if (!info.Diamond) GUI.Label(r, info.Letters, s.iconLetter);
+    }
+
+    static void DrawTinted(Rect r, Texture2D texture, Color color)
+    {
+        if (Event.current.type != EventType.Repaint) return;
+        Color old = GUI.color;
+        GUI.color = GUI.enabled ? color : new Color(color.r, color.g, color.b, color.a * 0.5f);
+        GUI.DrawTexture(r, texture);
+        GUI.color = old;
+    }
+
+    // ================================================================ Text
+
+    static string DescribeNextGoal(GameSession game)
+    {
+        TierUnlockCheck check = game.Tiers.CheckNext(game.Wallet);
+        switch (check.Status)
+        {
+            case TierUnlockStatus.BossNotDefeated: return "Next: beat " + BossNames(game, check.MissingBosses);
+            case TierUnlockStatus.ExpeditionNotCleared: return "Next: clear " + ExpeditionNames(game, check.MissingFirstClears);
+            case TierUnlockStatus.CantAfford: return "Next: gather for " + TierName(check.Tier);
+            case TierUnlockStatus.Ok: return "Next: unlock " + TierName(check.Tier);
+            default: return "Deepest tier reached";
+        }
+    }
+
+    static string TeamVsRecommended(float power, float recommended)
+    {
+        string team = power < recommended ? "<color=#FF5A4E>" + Format(power) + " ▲</color>" : "<color=#5FD88C>" + Format(power) + "</color>";
+        return "Team " + team + " / Rec. " + Format(recommended);
+    }
+
+    static string DescribeUnlocks(GameSession game, BossDefinition boss)
+    {
+        var parts = new List<string>();
+        foreach (ExpeditionDefinition e in game.Database.Expeditions)
+        {
+            if (e != null && e.unlockedByBoss == boss.id) parts.Add(e.displayName + " Expedition");
+        }
+        TierRequirement next = game.Database.FindTierRequirement(boss.tier + 1);
+        if (next != null && next.requiredBosses != null && next.requiredBosses.Contains(boss.id)) parts.Add(TierName(boss.tier + 1));
+        return parts.Count > 0 ? string.Join(" · ", parts) : "its boss material";
+    }
+
+    static string DescribeWelcome(OfflineReport offline)
+    {
+        if (offline == null || offline.HoursAway < 1.0 / 60.0) return "";
+        string text = "Welcome back! You were away " + Hours(offline.HoursAway) + ". Mine: " +
+                      Describe(offline.Mine) + " waiting.";
+        if (offline.Expedition.Count > 0) text += " Expedition: " + Describe(offline.Expedition) + " earned.";
+        return text + "  (tap to close)";
+    }
+
+    string DescribeFight(GameSession game, BossDefinition boss, BossFightResult result)
     {
         if (result.Check != BossCheck.Ok) return Explain(result.Check);
         if (!result.Won) return "Lost to " + boss.displayName + " after " + Format(result.Battle.DurationSeconds) + " s. " + result.DescribeLoss();
 
-        var text = new StringBuilder("Beat " + boss.displayName + " in " + Format(result.Battle.DurationSeconds) + " s! +" +
-                                     Describe(result.Rewards) + ".");
-        if (result.UnlockedExpeditions.Count > 0) text.Append(" New Expedition: " + ExpeditionNames(s, result.UnlockedExpeditions) + ".");
-        foreach (int tier in result.UnlockedTiers) text.Append(" Tier " + tier + " unlocked!");
-        return text.ToString();
+        string text = "Beat " + boss.displayName + " in " + Format(result.Battle.DurationSeconds) + " s! +" + Describe(result.Rewards) + ".";
+        if (result.UnlockedExpeditions.Count > 0) text += " New Expedition: " + ExpeditionNames(game, result.UnlockedExpeditions) + ".";
+        foreach (int tier in result.UnlockedTiers) text += " " + TierName(tier) + " unlocked!";
+        return text;
+    }
+
+    static string DescribeFirstClear(ExpeditionDefinition e, FirstClearResult result)
+    {
+        if (result.Check != ExpeditionCheck.Ok) return Explain(result.Check);
+        if (!result.Won) return "First clear of " + e.displayName + " failed. " + result.Battle.DescribeLoss("Enemy");
+        string text = "Cleared " + e.displayName + "! +" + Describe(result.Rewards) + ". You can automate it now.";
+        foreach (int tier in result.UnlockedTiers) text += " " + TierName(tier) + " unlocked!";
+        return text;
     }
 
     static string Explain(BossCheck check)
@@ -288,79 +1039,6 @@ public class GreyboxGameScreen : MonoBehaviour
             case BossCheck.Unknown: return "Unknown boss.";
             default: return "";
         }
-    }
-
-    // ---------------------------------------------------------------- Expeditions
-
-    void DrawExpeditions(GameSession s)
-    {
-        ExpeditionService expeditions = s.Expeditions;
-        ExpeditionDefinition active = expeditions.Active;
-        if (active != null)
-        {
-            GUILayout.Label("Running: " + active.displayName + " for " + FormatHours(expeditions.HoursRunning), heading);
-            GUILayout.Label("Earns " + Describe(expeditions.GetHourlyRates(), "/h") + ". Earned so far: " +
-                            Describe(expeditions.GetPending(), "") + ".", label);
-            if (Button("Stop & Collect"))
-            {
-                ExpeditionCollectResult result = s.StopExpedition();
-                message = "Expedition stopped after " + FormatHours(result.HoursRun) + ". Collected " +
-                          Describe(result.Collected) + ". The team is free.";
-                Exit();
-            }
-            GUILayout.Space(30f);
-        }
-
-        GUILayout.Label("Team power " + Format(expeditions.GetTeamPower()), heading);
-        foreach (ExpeditionDefinition e in s.Database.Expeditions)
-        {
-            if (e == null) continue;
-            string title = e.displayName + " · Tier " + e.tier + " · Recommended " + Format(e.recommendedPower);
-            switch (expeditions.GetStatus(e.id))
-            {
-                case ExpeditionStatus.Locked:
-                    GUILayout.Label(title + "\nLocked: beat " + BossNames(s, new[] { e.unlockedByBoss }) + ".", box);
-                    break;
-                case ExpeditionStatus.FirstClearAvailable:
-                {
-                    ExpeditionCheck check = expeditions.CanFirstClear(e.id);
-                    if (check != ExpeditionCheck.Ok) title += "\n" + Explain(check);
-                    if (Row(title + "\nFirst clear (can fail)", "First clear", check == ExpeditionCheck.Ok))
-                    {
-                        message = DescribeFirstClear(e, s.FirstClearExpedition(e.id));
-                        Exit();
-                    }
-                    break;
-                }
-                case ExpeditionStatus.ReadyToAutomate:
-                {
-                    ExpeditionCheck check = expeditions.CanStart(e.id);
-                    title += "\nCleared · automated: " + Describe(MiningMath.ToRates(e.automatedPerHour), "/h");
-                    if (check != ExpeditionCheck.Ok) title += "\n" + Explain(check);
-                    if (Row(title, "Automate", check == ExpeditionCheck.Ok))
-                    {
-                        ExpeditionCheck started = s.StartExpedition(e.id);
-                        message = started == ExpeditionCheck.Ok
-                            ? e.displayName + " is running. It keeps going while the app is closed."
-                            : Explain(started);
-                        Exit();
-                    }
-                    break;
-                }
-                case ExpeditionStatus.Running:
-                    GUILayout.Label(title + "\nRunning now.", box);
-                    break;
-            }
-        }
-    }
-
-    static string DescribeFirstClear(ExpeditionDefinition e, FirstClearResult result)
-    {
-        if (result.Check != ExpeditionCheck.Ok) return Explain(result.Check);
-        if (!result.Won) return "First clear of " + e.displayName + " failed. " + result.Battle.DescribeLoss("Enemy");
-        string text = "Cleared " + e.displayName + "! +" + Describe(result.Rewards) + ". You can automate it now.";
-        foreach (int tier in result.UnlockedTiers) text += " Tier " + tier + " unlocked!";
-        return text;
     }
 
     static string Explain(ExpeditionCheck check)
@@ -379,132 +1057,25 @@ public class GreyboxGameScreen : MonoBehaviour
         }
     }
 
-    // ---------------------------------------------------------------- Debug
-
-    void DrawDebug(GameSession s)
+    static string Explain(AssignResult result)
     {
-        GameSessionRunner runner = GameSessionRunner.Instance;
-        GUILayout.Label("Debug tools (playtest only)", heading);
-        GUILayout.Label("Clock skipped ahead: " + FormatHours(runner.Clock.Offset.TotalHours) +
-                        (s.SavingAllowed ? "" : "\nSaving is OFF: the save on this device is from a newer build."), small);
-
-        GUILayout.BeginHorizontal();
-        if (Button("+1 hour")) { Skip(runner, 1); Exit(); }
-        if (Button("+8 hours")) { Skip(runner, 8); Exit(); }
-        if (Button("+24 hours")) { Skip(runner, 24); Exit(); }
-        GUILayout.EndHorizontal();
-
-        GUILayout.Label("Minion levels aren't built yet (SCRUM-10). Use these to reach Tier 2 and 3.", small);
-        GUILayout.BeginHorizontal();
-        if (Button("All Minions +1 level")) { LevelUp(s, 1); Exit(); }
-        if (Button("+5 levels")) { LevelUp(s, 5); Exit(); }
-        GUILayout.EndHorizontal();
-
-        GUILayout.Space(30f);
-        if (Button(resetArmed ? "Tap again to DELETE the save" : "Reset game"))
+        switch (result)
         {
-            if (!resetArmed)
-            {
-                resetArmed = true;
-                Exit();
-                return;
-            }
-            resetArmed = false;
-            runner.DebugResetGame();
-            message = "New game started.";
-            Exit();
+            case AssignResult.NoFreeSlot: return "All slots are full. Take someone out first.";
+            case AssignResult.TeamBusy: return "The team is on an Expedition. Stop it to change the team.";
+            case AssignResult.WrongKind: return "Miners only mine; Adventure Minions only fight.";
+            default: return "Can't do that: " + result + ".";
         }
     }
 
-    void Skip(GameSessionRunner runner, int hours)
+    static string DescribeRates(List<MinedAmount> rates)
     {
-        runner.DebugSkipTime(TimeSpan.FromHours(hours));
-        message = "Skipped " + hours + " h. Check the Mine and the Expedition.";
-    }
-
-    void LevelUp(GameSession s, int levels)
-    {
-        s.DebugLevelUpAll(levels);
-        message = "All Minions +" + levels + " level(s), up to their cap. Team power " + Format(s.Bosses.GetTeamPower()) + ".";
-    }
-
-    // ---------------------------------------------------------------- Widgets
-
-    /// <summary>
-    /// Ends this GUI pass right after a tap changed the game. Without it, IMGUI would keep
-    /// drawing a different number of controls than it laid out and log layout errors.
-    /// </summary>
-    static void Exit() => GUIUtility.ExitGUI();
-
-    bool Button(string text, bool enabled = true)
-    {
-        bool was = GUI.enabled;
-        GUI.enabled = was && enabled;
-        bool clicked = GUILayout.Button(text, button);
-        GUI.enabled = was;
-        return clicked;
-    }
-
-    /// <summary>A text line with a button on the right. Returns true when the button is tapped.</summary>
-    bool Row(string text, string action, bool enabled = true)
-    {
-        GUILayout.BeginHorizontal(box);
-        GUILayout.Label(text, label, GUILayout.ExpandWidth(true));
-        bool was = GUI.enabled;
-        GUI.enabled = was && enabled;
-        bool clicked = GUILayout.Button(action, button, GUILayout.Width(300f));
-        GUI.enabled = was;
-        GUILayout.EndHorizontal();
-        return clicked;
-    }
-
-    void EnsureStyles()
-    {
-        if (button != null) return;
-
-        var dark = MakeTexture(new Color(0.07f, 0.06f, 0.09f, 1f));
-        var panel = MakeTexture(new Color(0.14f, 0.12f, 0.16f, 1f));
-        var note = MakeTexture(new Color(0.25f, 0.18f, 0.08f, 1f));
-        Color text = new Color(0.95f, 0.93f, 0.88f);
-
-        background = new GUIStyle { normal = { background = dark } };
-        label = new GUIStyle(GUI.skin.label) { fontSize = 34, wordWrap = true, normal = { textColor = text } };
-        small = new GUIStyle(label) { fontSize = 28, normal = { textColor = new Color(0.75f, 0.72f, 0.68f) } };
-        heading = new GUIStyle(label) { fontSize = 40, fontStyle = FontStyle.Bold, margin = new RectOffset(4, 4, 16, 8),
-            normal = { textColor = new Color(1f, 0.82f, 0.36f) } };
-        box = new GUIStyle(GUI.skin.box) { fontSize = 32, wordWrap = true, alignment = TextAnchor.MiddleLeft,
-            padding = new RectOffset(20, 20, 14, 14), margin = new RectOffset(0, 0, 6, 6),
-            normal = { background = panel, textColor = text } };
-        messageBox = new GUIStyle(box) { normal = { background = note, textColor = text } };
-        button = new GUIStyle(GUI.skin.button) { fontSize = 34, fixedHeight = TouchTarget, wordWrap = true };
-        tabButton = new GUIStyle(button) { fontSize = 30 };
-    }
-
-    static Texture2D MakeTexture(Color color)
-    {
-        var t = new Texture2D(1, 1) { hideFlags = HideFlags.HideAndDontSave };
-        t.SetPixel(0, 0, color);
-        t.Apply();
-        return t;
-    }
-
-    // ---------------------------------------------------------------- Text
-
-    static string DescribeWelcome(OfflineReport offline)
-    {
-        if (offline == null || offline.HoursAway < 1.0 / 60.0) return "";
-        string text = "Welcome back! You were away " + FormatHours(offline.HoursAway) + ". Mine: " +
-                      Describe(offline.Mine, "") + " waiting.";
-        if (offline.Expedition.Count > 0) text += " Expedition: " + Describe(offline.Expedition, "") + " earned.";
-        return text;
-    }
-
-    static string Describe(GameSession s, OwnedMinion m)
-    {
-        MinionDefinition d = s.Database.FindMinion(m.definitionId);
-        if (d == null) return "Unknown Minion";
-        string kind = d.Kind == MinionKind.Miner ? d.MinerTrait + " Miner" : d.Role.ToString();
-        return d.DisplayName + " · Lv " + m.level + " · " + kind + " · " + d.Rarity;
+        var parts = new List<string>();
+        foreach (MinedAmount r in rates)
+        {
+            if (r.amount > 0) parts.Add(r.amount.ToString("0.#", CultureInfo.InvariantCulture) + " " + Name(r.id));
+        }
+        return parts.Count > 0 ? string.Join(" · ", parts) : "nothing";
     }
 
     static string Describe(IEnumerable<ResourceAmount> amounts)
@@ -514,47 +1085,76 @@ public class GreyboxGameScreen : MonoBehaviour
         return parts.Count > 0 ? string.Join(", ", parts) : "nothing";
     }
 
-    static string Describe(IEnumerable<MinedAmount> amounts, string suffix)
+    static string Describe(IEnumerable<MinedAmount> amounts)
     {
         var parts = new List<string>();
-        foreach (MinedAmount a in amounts)
-        {
-            if (a.amount <= 0) continue;
-            string number = suffix.Length > 0 ? a.amount.ToString("0.#", CultureInfo.InvariantCulture) : Format(Math.Floor(a.amount));
-            parts.Add(number + suffix + " " + Name(a.id));
-        }
+        foreach (MinedAmount a in amounts) if (a.amount >= 1.0) parts.Add(Format(Math.Floor(a.amount)) + " " + Name(a.id));
         return parts.Count > 0 ? string.Join(", ", parts) : "nothing";
     }
 
-    static string BossNames(GameSession s, IEnumerable<string> ids)
+    static string BossNames(GameSession game, IEnumerable<string> ids)
     {
         var names = new List<string>();
         foreach (string id in ids)
         {
-            BossDefinition b = s.Database.FindBoss(id);
+            BossDefinition b = game.Database.FindBoss(id);
             names.Add(b != null ? b.displayName : id);
         }
         return string.Join(", ", names);
     }
 
-    static string ExpeditionNames(GameSession s, IEnumerable<string> ids)
+    static string ExpeditionNames(GameSession game, IEnumerable<string> ids)
     {
         var names = new List<string>();
         foreach (string id in ids)
         {
-            ExpeditionDefinition e = s.Database.FindExpedition(id);
+            ExpeditionDefinition e = game.Database.FindExpedition(id);
             names.Add(e != null ? e.displayName : id);
         }
         return string.Join(", ", names);
     }
 
+    /// <summary>Placeholder tier names (SCRUM-13), from the UI mock-up.</summary>
+    static string TierName(int tier)
+    {
+        switch (tier)
+        {
+            case 1: return "Gold Shallows";
+            case 2: return "Iron Seams";
+            case 3: return "Silver Veins";
+            case 4: return "Silver Depths";
+            case 5: return "Mithril Deeps";
+            case 6: return "Mithril Core";
+            default: return "Tier " + tier;
+        }
+    }
+
     static string Format(double value) => Math.Floor(value).ToString("#,0", CultureInfo.InvariantCulture);
 
-    static string FormatHours(double hours)
+    /// <summary>1,234 → 1.2K, as in the mock-up's resource bar.</summary>
+    static string Short(double value)
+    {
+        double v = Math.Floor(value);
+        if (v >= 1_000_000) return (v / 1_000_000).ToString("0.#", CultureInfo.InvariantCulture) + "M";
+        if (v >= 1_000) return (v / 1_000).ToString("0.#", CultureInfo.InvariantCulture) + "K";
+        return v.ToString("0", CultureInfo.InvariantCulture);
+    }
+
+    static string Hours(double hours)
     {
         if (hours < 1.0) return Math.Floor(hours * 60.0).ToString(CultureInfo.InvariantCulture) + " min";
         return hours.ToString("0.#", CultureInfo.InvariantCulture) + " h";
     }
+
+    /// <summary>First letter of the last word: "Common Tank" → "T".</summary>
+    static string Initial(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "?";
+        string[] words = name.Trim().Split(' ');
+        return words[words.Length - 1].Substring(0, 1).ToUpperInvariant();
+    }
+
+    static KeyValuePair<ResourceId, double> Pair(ResourceId id, double amount) => new KeyValuePair<ResourceId, double>(id, amount);
 
     static string Name(ResourceId id)
     {
@@ -562,7 +1162,7 @@ public class GreyboxGameScreen : MonoBehaviour
         {
             case ResourceId.BasicShard: return "Basic Shards";
             case ResourceId.AdvancedShard: return "Advanced Shards";
-            case ResourceId.MinionEssence: return "Essence";
+            case ResourceId.MinionEssence: return "Minion Essence";
             case ResourceId.SporeSilk: return "Spore Silk";
             case ResourceId.EmberCore: return "Ember Core";
             case ResourceId.PrismDust: return "Prism Dust";
@@ -570,6 +1170,316 @@ public class GreyboxGameScreen : MonoBehaviour
             case ResourceId.GolemHeart: return "Golem Heart";
             case ResourceId.WyrmScale: return "Wyrm Scale";
             default: return id.ToString();
+        }
+    }
+
+    readonly struct IconInfo
+    {
+        public IconInfo(Color color, string letters, bool diamond)
+        {
+            Color = color;
+            Letters = letters;
+            Diamond = diamond;
+        }
+
+        public Color Color { get; }
+        public string Letters { get; }
+        public bool Diamond { get; }
+    }
+
+    static IconInfo Icon(ResourceId id)
+    {
+        switch (id)
+        {
+            case ResourceId.Gold: return new IconInfo(Gold, "G", false);
+            case ResourceId.Iron: return new IconInfo(Hex("8C96A3"), "Fe", false);
+            case ResourceId.Silver: return new IconInfo(Hex("C9D1DA"), "Ag", false);
+            case ResourceId.Mithril: return new IconInfo(Hex("4FC3A1"), "Mi", false);
+            case ResourceId.BasicShard: return new IconInfo(Blue, "", true);
+            case ResourceId.AdvancedShard: return new IconInfo(Purple, "", true);
+            case ResourceId.MinionEssence: return new IconInfo(Hex("E07BE0"), "E", false);
+            case ResourceId.SporeSilk: return new IconInfo(Hex("9B7BD8"), "Ss", false);
+            case ResourceId.EmberCore: return new IconInfo(Hex("FF7A3D"), "Ec", false);
+            case ResourceId.PrismDust: return new IconInfo(Hex("7FE0F0"), "Pd", false);
+            case ResourceId.ForemanSigil: return new IconInfo(Hex("D9A441"), "Fs", false);
+            case ResourceId.GolemHeart: return new IconInfo(Hex("E05A5A"), "Gh", false);
+            case ResourceId.WyrmScale: return new IconInfo(Hex("6FB7FF"), "Ws", false);
+            default: return new IconInfo(Muted, "?", false);
+        }
+    }
+
+    static Color ClassColor(MinionDefinition d)
+    {
+        if (d.Kind == MinionKind.Miner) return Gold;
+        switch (d.Role)
+        {
+            case MinionRole.Tank: return Hex("4A78C2");
+            case MinionRole.Fighter: return Hex("D0564A");
+            case MinionRole.Archer: return Hex("5AA04A");
+            case MinionRole.Mage: return Purple;
+            case MinionRole.Support: return Hex("3FA89A");
+            default: return Muted;
+        }
+    }
+
+    static Color Hex(string rgb)
+    {
+        ColorUtility.TryParseHtmlString("#" + rgb, out Color c);
+        return c;
+    }
+
+    // ================================================================ Touch scrolling
+
+    void HandleTouchScroll()
+    {
+        Event e = Event.current;
+        if (overlay != Overlay.None) return;
+        if (e.type == EventType.MouseDown)
+        {
+            pressStart = e.mousePosition;
+            dragging = false;
+        }
+        else if (e.type == EventType.MouseDrag)
+        {
+            if (!dragging && (e.mousePosition - pressStart).magnitude > DragThreshold)
+            {
+                dragging = true;
+                GUIUtility.hotControl = 0; // a drag is a scroll, not a tap on the button under the finger
+            }
+            if (dragging)
+            {
+                scroll.y = Mathf.Max(0f, scroll.y - e.delta.y);
+                e.Use();
+            }
+        }
+    }
+
+    // ================================================================ Styles
+
+    sealed class Styles
+    {
+        public float lastCardInnerWidth = 900f;
+
+        public readonly Texture2D circle = Shapes.Rounded(Color.white, Color.white, 32, 0, 68);
+        public readonly Texture2D diamond = Shapes.Diamond(64);
+        public readonly Texture2D roundedWhite = Shapes.Rounded(Color.white, Color.white, 16, 0);
+        readonly Dictionary<Color, Texture2D> solids = new Dictionary<Color, Texture2D>();
+
+        public readonly GUIStyle card, artCard, row, panel, title, header, body, bodyRight, small, smallRed;
+        public readonly GUIStyle pill, pillGreen, pillPurple, pillRed, pillGold, pillButton;
+        public readonly GUIStyle goldButton, darkButton, iconButton, segment, segmentOn;
+        public readonly GUIStyle chip, chipInline, iconLetter, nav, navSelected;
+        public readonly GUIStyle minionCard, minionCardOn, minionName, minionSub, portraitLetter;
+        public readonly GUIStyle tagGreen, tagPurple, tagMuted, slot, slotOn, slotLetter, slotBusy;
+        public readonly GUIStyle toast, toastGood, toastBad, panelHeading, panelText, artLabel;
+
+        public Styles()
+        {
+            card = Box(CardFill, Bronze, 20, 3, 28);
+            artCard = Box(Hex("221A2E"), Bronze, 20, 3, 0);
+            row = new GUIStyle { margin = new RectOffset(0, 0, 6, 6), padding = new RectOffset(0, 0, 4, 4) };
+            panel = Box(Hex("17131D"), Bronze, 20, 3, 32);
+
+            title = Font(36, Text, FontStyle.Bold);
+            header = Font(36, Text, FontStyle.Bold);
+            header.alignment = TextAnchor.MiddleLeft;
+            body = Font(32, Text, FontStyle.Normal);
+            body.wordWrap = true;
+            bodyRight = Font(32, Text, FontStyle.Bold);
+            bodyRight.alignment = TextAnchor.MiddleRight;
+            small = Font(26, Muted, FontStyle.Normal);
+            small.wordWrap = true;
+            smallRed = Font(26, Red, FontStyle.Normal);
+
+            pill = Pill(Hex("1A1620"), Hex("4A4050"), Text);
+            pillGreen = Pill(Hex("12301F"), Hex("2F8F55"), Green);
+            pillPurple = Pill(Hex("2A1838"), Hex("8A5CC7"), Purple);
+            pillRed = Pill(Hex("3A1414"), Hex("A33A30"), Red);
+            pillGold = Pill(Hex("3A2808"), Hex("B98522"), Gold);
+            pillButton = Pill(Hex("1A1620"), Hex("4A4050"), Text);
+            pillButton.fixedHeight = 0;
+            pillButton.padding = new RectOffset(28, 28, 18, 18);
+            pillButton.hover.background = Shapes.Rounded(Hex("2A2430"), Hex("6B5E70"), 22, 2);
+            pillButton.hover.textColor = Text;
+
+            goldButton = Button(Gold, Hex("FFD77A"), GoldDark, 34);
+            darkButton = Button(Hex("241E2A"), Bronze, Text, 30);
+            darkButton.margin = new RectOffset(6, 6, 8, 8);
+            iconButton = Button(Hex("1A1620"), Bronze, Text, 30);
+            iconButton.fixedHeight = 0;
+            segment = Button(Hex("1A1620"), Hex("4A4050"), Text, 28);
+            segment.fixedHeight = 96;
+            segmentOn = Button(Hex("3A2808"), Gold, Gold, 28);
+            segmentOn.fixedHeight = 96;
+
+            chip = Font(32, Text, FontStyle.Bold);
+            chip.alignment = TextAnchor.MiddleLeft;
+            chipInline = Font(32, Text, FontStyle.Bold);
+            chipInline.alignment = TextAnchor.MiddleLeft;
+            chipInline.fixedHeight = 52;
+            iconLetter = Font(18, GoldDark, FontStyle.Bold);
+            iconLetter.alignment = TextAnchor.MiddleCenter;
+            nav = Font(26, Muted, FontStyle.Normal);
+            nav.alignment = TextAnchor.MiddleCenter;
+            navSelected = Font(26, Gold, FontStyle.Bold);
+            navSelected.alignment = TextAnchor.MiddleCenter;
+
+            minionCard = Box(Hex("15121A"), Hex("4A4050"), 16, 3, 0);
+            minionCardOn = Box(Hex("15121A"), Green, 16, 3, 0);
+            minionName = Font(30, Text, FontStyle.Bold);
+            minionName.clipping = TextClipping.Clip;
+            minionSub = Font(24, Muted, FontStyle.Normal);
+            portraitLetter = Font(110, new Color(1f, 1f, 1f, 0.85f), FontStyle.Bold);
+            portraitLetter.alignment = TextAnchor.MiddleCenter;
+            tagGreen = Font(26, Green, FontStyle.Bold);
+            tagPurple = Font(26, Purple, FontStyle.Bold);
+            tagMuted = Font(26, Muted, FontStyle.Normal);
+
+            slot = Box(Hex("15121A"), Hex("4A4050"), 14, 3, 0);
+            slotOn = Box(Hex("15121A"), Green, 14, 3, 0);
+            slotLetter = Font(44, Text, FontStyle.Bold);
+            slotLetter.alignment = TextAnchor.MiddleCenter;
+            slotBusy = Font(24, Purple, FontStyle.Bold);
+            slotBusy.alignment = TextAnchor.MiddleCenter;
+
+            toast = Box(Hex("221C28"), Hex("6B5E70"), 18, 3, 24);
+            toastGood = Box(Hex("13261B"), Hex("2F8F55"), 18, 3, 24);
+            toastBad = Box(Hex("2C1414"), Hex("A33A30"), 18, 3, 24);
+            foreach (GUIStyle t in new[] { toast, toastGood, toastBad })
+            {
+                t.fontSize = 30;
+                t.wordWrap = true;
+                t.richText = true;
+                t.alignment = TextAnchor.MiddleLeft;
+                t.normal.textColor = Text;
+                t.hover = t.normal;
+                t.active = t.normal;
+            }
+
+            panelHeading = Font(28, Muted, FontStyle.Normal);
+            panelHeading.margin = new RectOffset(0, 0, 18, 6);
+            panelText = Font(30, Text, FontStyle.Normal);
+            panelText.alignment = TextAnchor.MiddleLeft;
+            panelText.fixedHeight = 48;
+            artLabel = Font(30, Text, FontStyle.Normal);
+            artLabel.alignment = TextAnchor.MiddleCenter;
+        }
+
+        public Texture2D Solid(Color color)
+        {
+            if (!solids.TryGetValue(color, out Texture2D t))
+            {
+                t = new Texture2D(1, 1) { hideFlags = HideFlags.HideAndDontSave };
+                t.SetPixel(0, 0, color);
+                t.Apply();
+                solids[color] = t;
+            }
+            return t;
+        }
+
+        static GUIStyle Font(int size, Color color, FontStyle style)
+        {
+            var g = new GUIStyle(GUI.skin.label) { fontSize = size, fontStyle = style, richText = true, wordWrap = false };
+            g.normal.textColor = color;
+            return g;
+        }
+
+        static GUIStyle Box(Color fill, Color border, int radius, int borderWidth, int padding)
+        {
+            var g = new GUIStyle
+            {
+                border = new RectOffset(radius + 2, radius + 2, radius + 2, radius + 2),
+                padding = new RectOffset(padding, padding, padding, padding),
+                margin = new RectOffset(0, 0, 0, 0),
+            };
+            g.normal.background = Shapes.Rounded(fill, border, radius, borderWidth);
+            return g;
+        }
+
+        static GUIStyle Pill(Color fill, Color border, Color textColor)
+        {
+            GUIStyle g = Box(fill, border, 22, 2, 0);
+            g.padding = new RectOffset(22, 22, 8, 8);
+            g.margin = new RectOffset(0, 0, 4, 4);
+            g.fontSize = 24;
+            g.alignment = TextAnchor.MiddleCenter;
+            g.normal.textColor = textColor;
+            g.wordWrap = false;
+            g.richText = true;
+            return g;
+        }
+
+        static GUIStyle Button(Color fill, Color border, Color textColor, int fontSize)
+        {
+            GUIStyle g = Box(fill, border, 18, 3, 0);
+            g.padding = new RectOffset(24, 24, 10, 10);
+            g.margin = new RectOffset(0, 0, 8, 8);
+            g.fontSize = fontSize;
+            g.fontStyle = FontStyle.Bold;
+            g.alignment = TextAnchor.MiddleCenter;
+            g.wordWrap = true;
+            g.fixedHeight = TouchTarget;
+            g.normal.textColor = textColor;
+            g.hover.background = Shapes.Rounded(Color.Lerp(fill, Color.white, 0.12f), border, 18, 3);
+            g.hover.textColor = textColor;
+            g.active.background = Shapes.Rounded(Color.Lerp(fill, Color.black, 0.2f), border, 18, 3);
+            g.active.textColor = textColor;
+            return g;
+        }
+    }
+
+    static class Shapes
+    {
+        /// <summary>A rounded rectangle for 9-slicing: <paramref name="fill"/> inside, a <paramref name="border"/> edge.</summary>
+        public static Texture2D Rounded(Color fill, Color border, int radius, int borderWidth, int size = 0)
+        {
+            if (size <= 0) size = radius * 2 + 4;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                hideFlags = HideFlags.HideAndDontSave,
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp,
+            };
+            float half = size / 2f;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    // Signed distance to the rounded rectangle edge (negative inside).
+                    float qx = Mathf.Abs(x + 0.5f - half) - (half - radius);
+                    float qy = Mathf.Abs(y + 0.5f - half) - (half - radius);
+                    float distance = new Vector2(Mathf.Max(qx, 0f), Mathf.Max(qy, 0f)).magnitude +
+                                     Mathf.Min(Mathf.Max(qx, qy), 0f) - radius;
+                    float alpha = Mathf.Clamp01(0.5f - distance);
+                    float edge = borderWidth > 0 ? Mathf.Clamp01(distance + borderWidth + 0.5f) : 0f;
+                    Color c = Color.Lerp(fill, border, edge);
+                    c.a *= alpha;
+                    tex.SetPixel(x, y, c);
+                }
+            }
+            tex.Apply();
+            return tex;
+        }
+
+        public static Texture2D Diamond(int size)
+        {
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                hideFlags = HideFlags.HideAndDontSave,
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp,
+            };
+            float half = size / 2f;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float distance = Mathf.Abs(x + 0.5f - half) + Mathf.Abs(y + 0.5f - half) - (half - 1f);
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, Mathf.Clamp01(0.5f - distance)));
+                }
+            }
+            tex.Apply();
+            return tex;
         }
     }
 }
