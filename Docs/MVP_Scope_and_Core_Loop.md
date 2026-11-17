@@ -2,7 +2,7 @@
 
 *Working title. Previously "Dungeon Conveyor Inc."*
 
-**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** In review, v2.3 (2026-11-17), updated to Game Design Summary v3.4
+**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** Final, v2.4 (2026-11-17), updated to Game Design Summary v3.4
 **Platform:** Android first (iOS later), all four orientations (portrait and landscape) · **Engine:** Unity 6 (6000.6)
 
 > **Design source of truth:** [Game Design Summary v3.4](Game_Design_Summary.md).
@@ -415,3 +415,4 @@ contents and game name (see §9, decisions 17–22).
 | 2.1 | 2026-11-12 | Team decisions: Guardian Tickets scrapped, no Mine stockpile cap, the Adventure team is busy while an Expedition is automated. |
 | 2.2 | 2026-11-15 | Updated "Where the current build stands" after SCRUM-5, 6 and 7, including the placeholders that stand in for open decisions. Added offline-clock protection, return motivation and the game name to the open questions. |
 | 2.3 | 2026-11-17 | Team answers: next tier unlocks on the boss win, keep 3 + 3 slots, tune numbers by playtesting, server clock against clock cheating, shop sells resources/shards, keep "Expedition: Deepshaft". Remaining open questions updated. |
+| 2.4 | 2026-11-17 | SCRUM-1 closed. Status set to final; the remaining open questions (§10) live in their own tickets. |
