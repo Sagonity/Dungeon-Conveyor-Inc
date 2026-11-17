@@ -70,7 +70,7 @@ and Iron production.
 
 - **Miner traits** may specialize in Gold, ore, or mining speed.
 - **Adventure classes:** Tank, Fighter, Archer, Mage and Support.
-- **Still undecided:** the number of active Minions in each team.
+- **Team sizes:** 3 Miners and 3 Adventurers for now; changed only if playtests show a need (§8b).
 
 ## 4. Bosses and Expeditions
 
@@ -171,6 +171,20 @@ not simply how large resource numbers become.
 | Guardian Tickets (from the v1.1 design)? | **Scrapped.** Boss attempts are free and unlimited. |
 | Mine stockpile cap? | **None.** Mining accumulates for as long as the player is away. |
 | Is the Adventure team busy while an Expedition is automated? | **Yes.** Stop the Expedition (and collect) to use the team for a boss or a first clear. |
+
+## 8b. Team decisions (2026-11-17)
+
+| Question | Decision |
+|---|---|
+| What unlocks the next mine tier? | **Beating the current tier's boss.** |
+| Minion capacity? | **Keep 3 Miners and 3 Adventurers** for now; change only if playtests show a need. |
+| Upgrade costs, rates and scaling? | **Tuned by playtesting** once the app prototype runs. |
+| Offline clock cheating? | **The game will run against a server** and use the server's clock. |
+| What does the shop sell? | **Probably resources, shards and other items** (details in SCRUM-24). |
+| Game name? | **Keep "Expedition: Deepshaft"** for now. |
+| Tier pacing? | **Still open.** Leaning towards finishing all of Tier 1 before Tier 2 and up; time per tier unknown. |
+| Ascension in the prototype? | **Still open.** |
+| What brings players back with no stockpile cap? | **Still open.** |
 
 ## 9. Prototype scope recommendation
 
