@@ -2,7 +2,7 @@
 
 *Working title. Previously "Dungeon Conveyor Inc."*
 
-**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** In review, v2.1 (2026-11-12), updated to Game Design Summary v3.4
+**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** In review, v2.2 (2026-11-15), updated to Game Design Summary v3.4
 **Platform:** Android first (iOS later), all four orientations (portrait and landscape) · **Engine:** Unity 6 (6000.6)
 
 > **Design source of truth:** [Game Design Summary v3.4](Game_Design_Summary.md).
@@ -296,9 +296,11 @@ always chooses to watch one for a reward). No interstitial or pop-up ads.
 
 ## 7. Where the current build stands
 
+As of 2026-11-15 (SCRUM-4, 5, 6 and 7 merged).
+
 - **Done:** main menu, settings, UI state machine, safe-area UI for all four rotations,
   wireframes for the v1.1 screens (SCRUM-3; need updating for v3.4, see that doc).
-- **Done (SCRUM-4), updated for v3.4:** the `Deepshaft.Core` assembly:
+- **Done (SCRUM-4), updated for v3.4:** the `Deepshaft.Core` foundations:
   - `ResourceId`: Gold, Iron, Silver, Mithril, Basic/Advanced Shards, Minion Essence,
     rare Expedition materials and unique boss materials. Copper and Upgrade Materials are retired.
   - `MinionDefinition`: Miner/Adventure kind, combat class (Tank, Fighter, Archer, Mage, Support),
@@ -306,14 +308,33 @@ always chooses to watch one for a reward). No interstitial or pop-up ads.
   - `OwnedMinion`: level and breakthroughs (star rank removed).
   - Save format version 2, with a migration that drops the retired resources from version 1 saves.
   - `Wallet`, `IClock` (UTC timestamps for offline progress), `GameState`, `SaveService`, EditMode tests.
+- **Done (SCRUM-5): auto-mining.** `MiningService` mines the highest unlocked tier from the
+  clock with no cap, using mining power, Miner traits and tool bonuses. Default rates are the §4.1 table.
+- **Done (SCRUM-6): team assignment.** `RosterService` assigns Miners to Miner slots and
+  Adventurers to the Adventure team. The team can't be edited while it is busy on an automated Expedition.
+- **Done (SCRUM-7): bosses and Expeditions.**
+  - `CombatSimulator`: a repeatable autobattle with class behaviour, a 60 s limit and a loss explanation.
+  - `BossService`: free, unlimited attempts. Every win gives the boss material; the first win unlocks its Expeditions.
+  - `ExpeditionService`: the first clear can fail. Automated runs can't fail, have no cap, and can be stopped and collected at any time.
+  - `TierProgressionService`: data-driven tier requirements.
+  - Prototype content: 3 bosses and 3 Expeditions.
+- **Placeholders standing in for open decisions** (§10). They work for now, but they are not final answers:
+  - **3 Miner slots and 3 Adventure slots** (data on the `GameDatabase`), until SCRUM-6 decides team sizes.
+  - **Next tier unlocks when the current tier's boss is beaten**, until SCRUM-2 decides the prerequisites.
+  - **Boss and Expedition power numbers** are a first pass, until the SCRUM-2 economy is rebuilt for v3.4.
+- **Not connected to the game yet:** the SCRUM-5/6/7 systems exist only in `Deepshaft.Core`
+  and its tests. No screen or scene uses them, and there is no `GameSession` to load, run and save them (SCRUM-17).
 - **Still to replace:** `MinionStats` / `MinionHealth` and `GameController.SummonMinion()`
   (placeholder Minion), moving to `MinionDefinition` / `OwnedMinion` (SCRUM-10, SCRUM-11).
 - **Still to change:** `GameController` sets `Time.timeScale = 0` while a menu is open.
   New systems must use `IClock`, not game time.
 
-**Missing for Step A:** auto-mining, Smith, Mine Tier Bosses and autobattle, Expedition
-first clear + automation, tier progression, summoning with two pools, resource counters
-in the HUD, and connecting the save to the game (`GameSession`, SCRUM-17).
+**Missing for Step A:**
+- Smith (upgrades and breakthroughs, SCRUM-9/10)
+- Minion levels and breakthroughs (SCRUM-10)
+- Summoning with two pools (SCRUM-11)
+- `GameSession` and connecting the save (SCRUM-17)
+- Grey-box screens for mining, the team, bosses and Expeditions, and resource counters in the HUD
 
 ## 8. Success criteria
 
@@ -363,15 +384,18 @@ Run with 5+ testers who haven't seen the game:
 
 ## 10. Open questions (v3.4 §8)
 
-| Area | Question | Ticket |
-|---|---|---|
-| Minion capacity | How many Miners work and Adventurers fight at the same time? | SCRUM-6 |
-| Progression pacing | How long should each tier take? **Most important next step.** | SCRUM-2 |
-| Upgrade economy | Exact costs, production rates and scaling | SCRUM-2 |
-| Summoning | Final shard rates, free shard income, pity | SCRUM-11, SCRUM-2 |
-| Ascension | In the initial prototype or not? | SCRUM-10 |
-| Tier progression | Exact prerequisites for the next mine tier (boss win + breakthrough?) | SCRUM-2, SCRUM-7 |
-| Monetization | What does the shop sell? | SCRUM-24 |
+| Area | Question | Placeholder in the build | Ticket |
+|---|---|---|---|
+| Minion capacity | How many Miners work and Adventurers fight at the same time? | 3 Miners, 3 Adventurers | SCRUM-6 |
+| Progression pacing | How long should each tier take? **Most important next step.** | None. The economy doc still uses the v1 model (Guardian Tickets, stockpile cap) and needs rebuilding for v3.4 | SCRUM-2 |
+| Upgrade economy | Exact costs, production rates and scaling | Mining rates from §4.1; first-pass boss and Expedition power | SCRUM-2 |
+| Summoning | Final shard rates, free shard income, pity | Not built yet | SCRUM-11, SCRUM-2 |
+| Ascension | In the initial prototype or not? | Not built | SCRUM-10 |
+| Tier progression | Exact prerequisites for the next mine tier (boss win + breakthrough?) | Current tier's boss win only | SCRUM-2, SCRUM-7 |
+| Monetization | What does the shop sell? Harder without Guardian Tickets or caps to sell around | Not built | SCRUM-24 |
+| Offline progress | Offline time comes from the device clock, so with no caps, changing the clock is an exploit. How do we protect it before launch? | Device UTC clock (`IClock`) | SCRUM-16, SCRUM-17 |
+| Return motivation | With no stockpile cap, what brings players back (goals, notifications)? | — | SCRUM-2, SCRUM-16 |
+| Game name | The Jira project is called "Exploration: Deepshaft", the docs say "Expedition: Deepshaft". Which is it? | Docs use "Expedition: Deepshaft" | SCRUM-25 |
 
 ## 11. Change log
 
@@ -381,3 +405,4 @@ Run with 5+ testers who haven't seen the game:
 | 1.1 | 2026-11-12 | Updated "Where the current build stands" after the core architecture (SCRUM-4). Linked the Technical Architecture doc. |
 | 2.0 | 2026-11-12 | Rewritten for Game Design Summary v3.4: auto-mining of the highest tier (Gold, Iron, Silver, Mithril), Smith and breakthroughs, boss materials, Expedition first clear + automation, 3 rarities (Common/Uncommon/Rare), Miner/Adventure summon pools, Minion Essence, 5 combat classes, new prototype scope. Guardian Tickets and the Mine stockpile cap moved to open questions. |
 | 2.1 | 2026-11-12 | Team decisions: Guardian Tickets scrapped, no Mine stockpile cap, the Adventure team is busy while an Expedition is automated. |
+| 2.2 | 2026-11-15 | Updated "Where the current build stands" after SCRUM-5, 6 and 7, including the placeholders that stand in for open decisions. Added offline-clock protection, return motivation and the game name to the open questions. |
