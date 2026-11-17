@@ -1,6 +1,6 @@
 # Expedition: Deepshaft — Technical Architecture & Tooling
 
-**Jira:** SCRUM-4 · **Status:** Final, v1.0 (2026-11-12)
+**Jira:** SCRUM-4 · **Status:** Final, v1.1 (2026-11-17)
 **Engine:** Unity 6 (6000.6), URP 2D · **Platform:** Android first, iOS later
 **Related:** [MVP Scope](MVP_Scope_and_Core_Loop.md) · [UI Wireframes](UI_Wireframes_and_Readability.md)
 
@@ -170,6 +170,9 @@ summons and check the rates and pity guarantee (SCRUM-11).
 
 - **EditMode tests** in `Assets/Tests/EditMode` cover every Core system. Run them in
   *Window → General → Test Runner → EditMode → Run All*.
+- There is no CI, so **run the EditMode tests in Unity before merging a PR** that
+  changes Core. Cloud (Claude) sessions can't run Unity; their PRs must say the tests
+  still need a run.
 - Each system ticket adds tests for its rules (e.g. "mining keeps adding up with no cap",
   "an automated Expedition can't fail", "the team can't fight while an Expedition runs").
 - PlayMode tests only where a MonoBehaviour does real work. The UI is checked by
@@ -197,12 +200,12 @@ summons and check the rates and pity guarantee (SCRUM-11).
 |---|---|
 | Unity | 6000.6.x. Everyone uses the version in `ProjectSettings/ProjectVersion.txt` |
 | IDE | VS Code or Rider. Installed packages: `com.unity.ide.rider` and `com.unity.ide.visualstudio` (also used by VS Code). Don't commit machine-specific settings such as `dotnet.defaultSolution` |
-| Branches | One branch per ticket, e.g. `SCRUM-5-mining`. PR into `main`, then delete the branch |
+| Branches | One branch per ticket, named `SCRUM-<n>-<topic>`, e.g. `SCRUM-5-mining`. PR into `main`, then delete the branch |
 | Commits | Start with the ticket key: `SCRUM-5: Add automatic mining` |
-| PRs | Describe what changed and how to test it. Tests must pass in the Test Runner |
-| Builds | APKs go on GitHub Releases, never into git (`.gitignore` blocks them) |
-| Large files | Turn on **Git LFS** before the first art lands (SCRUM-13): `*.psd`, `*.fbx`, `*.blend`, `*.png`, `*.wav`, `*.mp3`. Not enabled yet, because everyone needs `git lfs install` first |
-| CI | Later: GameCI on GitHub Actions to run tests and build an APK on each PR. Needs a Unity license secret set up by the repo owner |
+| PRs | Title starts with the ticket key. Describe what changed and how to test it. EditMode tests must pass in the Test Runner before merging |
+| Builds | APKs are committed to `APK/`, named `Expedition Deepshaft v<version>.apk`. Other build output (`/Builds/`, `/IOS/`, `*.aab`) stays out of git |
+| Large files | Turn on **Git LFS** before the first art lands (SCRUM-13): `*.psd`, `*.fbx`, `*.blend`, `*.png`, `*.wav`, `*.mp3`. Not enabled yet, because everyone needs `git lfs install` first. Worth adding `*.apk` to LFS then too, so each build stops growing every clone |
+| CI | Not planned. Tests are run by hand in Unity (see §8) and builds are made locally |
 
 ---
 
@@ -329,8 +332,8 @@ placement: the player only picks Minions for slots.
 - **Time** still comes from the device clock. The team decided on a server clock (Scope decision 20);
   it plugs in as another `IClock`.
 
-## 12. Open questions for the team
+## 12. Team decisions (2026-11-17)
 
-1. Branch naming `SCRUM-<n>-<topic>`: OK for everyone?
-2. Who owns the Unity license for CI, and do we want CI before the playtest (SCRUM-8)?
-3. Turn on Git LFS now, or when SCRUM-13 art starts?
+1. **Branch naming:** `SCRUM-<n>-<topic>`, as in §10.
+2. **CI:** not planned. EditMode tests are run by hand in Unity before merging (§8).
+3. **Git LFS:** turned on when SCRUM-13 art starts. **APKs stay in git** in `APK/`.
