@@ -2,7 +2,7 @@
 
 *Working title. Previously "Dungeon Conveyor Inc."*
 
-**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** In review, v2.2 (2026-11-15), updated to Game Design Summary v3.4
+**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** In review, v2.3 (2026-11-17), updated to Game Design Summary v3.4
 **Platform:** Android first (iOS later), all four orientations (portrait and landscape) · **Engine:** Unity 6 (6000.6)
 
 > **Design source of truth:** [Game Design Summary v3.4](Game_Design_Summary.md).
@@ -319,8 +319,8 @@ As of 2026-11-15 (SCRUM-4, 5, 6 and 7 merged).
   - `TierProgressionService`: data-driven tier requirements.
   - Prototype content: 3 bosses and 3 Expeditions.
 - **Placeholders standing in for open decisions** (§10). They work for now, but they are not final answers:
-  - **3 Miner slots and 3 Adventure slots** (data on the `GameDatabase`), until SCRUM-6 decides team sizes.
-  - **Next tier unlocks when the current tier's boss is beaten**, until SCRUM-2 decides the prerequisites.
+  - **3 Miner slots and 3 Adventure slots** (data on the `GameDatabase`). The team keeps these and changes them only if playtests show a need (decision 18).
+  - **Next tier unlocks when the current tier's boss is beaten.** Confirmed as the rule (decision 17).
   - **Boss and Expedition power numbers** are a first pass, until the SCRUM-2 economy is rebuilt for v3.4.
 - **Not connected to the game yet:** the SCRUM-5/6/7 systems exist only in `Deepshaft.Core`
   and its tests. No screen or scene uses them, and there is no `GameSession` to load, run and save them (SCRUM-17).
@@ -381,21 +381,26 @@ Run with 5+ testers who haven't seen the game:
 | 14 | Art? | **Arcane + Borderlands inspired**, 2D sprites made from 3D. See 4.8. |
 | 15 | Conveyor belt? | **No.** |
 | 16 | Game name? | **Expedition: Deepshaft** (working title). Check stores and trademarks (SCRUM-25). |
+| 17 | What unlocks the next mine tier? | **Beating the current tier's boss.** (Team decision 2026-11-17.) |
+| 18 | Miner and Adventure slots? | **Keep 3 and 3** for now; change only if playtests show a need. |
+| 19 | Upgrade costs, production rates, scaling? | **Tuned by playtesting** once the app prototype runs. The first-pass numbers stay until then. |
+| 20 | Offline progress and clock cheating? | **The game will run against a server** and use the server's clock, not the device clock. The build keeps `IClock`, so a server clock can replace the device clock. |
+| 21 | What does the shop sell? | **Probably resources, shards and other items.** Details in SCRUM-24. |
+| 22 | Game name in Jira vs docs? | **Keep "Expedition: Deepshaft"**. The name may change later. |
 
-## 10. Open questions (v3.4 §8)
+## 10. Open questions
 
-| Area | Question | Placeholder in the build | Ticket |
+Answered on 2026-11-17: tier unlock, slot counts, upgrade numbers, offline clock, shop
+contents and game name (see §9, decisions 17–22).
+
+| Area | Question | Status / placeholder in the build | Ticket |
 |---|---|---|---|
-| Minion capacity | How many Miners work and Adventurers fight at the same time? | 3 Miners, 3 Adventurers | SCRUM-6 |
-| Progression pacing | How long should each tier take? **Most important next step.** | None. The economy doc still uses the v1 model (Guardian Tickets, stockpile cap) and needs rebuilding for v3.4 | SCRUM-2 |
-| Upgrade economy | Exact costs, production rates and scaling | Mining rates from §4.1; first-pass boss and Expedition power | SCRUM-2 |
-| Summoning | Final shard rates, free shard income, pity | Not built yet | SCRUM-11, SCRUM-2 |
-| Ascension | In the initial prototype or not? | Not built | SCRUM-10 |
-| Tier progression | Exact prerequisites for the next mine tier (boss win + breakthrough?) | Current tier's boss win only | SCRUM-2, SCRUM-7 |
-| Monetization | What does the shop sell? Harder without Guardian Tickets or caps to sell around | Not built | SCRUM-24 |
-| Offline progress | Offline time comes from the device clock, so with no caps, changing the clock is an exploit. How do we protect it before launch? | Device UTC clock (`IClock`) | SCRUM-16, SCRUM-17 |
-| Return motivation | With no stockpile cap, what brings players back (goals, notifications)? | — | SCRUM-2, SCRUM-16 |
-| Game name | The Jira project is called "Exploration: Deepshaft", the docs say "Expedition: Deepshaft". Which is it? | Docs use "Expedition: Deepshaft" | SCRUM-25 |
+| Progression pacing | How long should each tier take? **Most important next step.** | Leaning towards: the player must finish all of Tier 1 before Tier 2 and up. What "all" means (boss, every Expedition first clear, breakthroughs?) and the time per tier are still open. The economy doc still uses the v1 model and needs rebuilding for v3.4 | SCRUM-2 |
+| Summoning | Final shard rates, free shard income, pity | Decided in SCRUM-11 | SCRUM-11, SCRUM-2 |
+| Ascension | In the initial prototype or not? | Undecided. Not built | SCRUM-10 |
+| Monetization | Exact shop items and prices | Leaning towards resources, shards and other items. Not built | SCRUM-24 |
+| Server | Which backend, and does the game need to be online to play? (Follows from decision 20.) | Not started. Device UTC clock (`IClock`) for now | SCRUM-16, SCRUM-17 |
+| Return motivation | With no stockpile cap, what brings players back (goals, notifications)? | No answer yet | SCRUM-2, SCRUM-16 |
 
 ## 11. Change log
 
@@ -406,3 +411,4 @@ Run with 5+ testers who haven't seen the game:
 | 2.0 | 2026-11-12 | Rewritten for Game Design Summary v3.4: auto-mining of the highest tier (Gold, Iron, Silver, Mithril), Smith and breakthroughs, boss materials, Expedition first clear + automation, 3 rarities (Common/Uncommon/Rare), Miner/Adventure summon pools, Minion Essence, 5 combat classes, new prototype scope. Guardian Tickets and the Mine stockpile cap moved to open questions. |
 | 2.1 | 2026-11-12 | Team decisions: Guardian Tickets scrapped, no Mine stockpile cap, the Adventure team is busy while an Expedition is automated. |
 | 2.2 | 2026-11-15 | Updated "Where the current build stands" after SCRUM-5, 6 and 7, including the placeholders that stand in for open decisions. Added offline-clock protection, return motivation and the game name to the open questions. |
+| 2.3 | 2026-11-17 | Team answers: next tier unlocks on the boss win, keep 3 + 3 slots, tune numbers by playtesting, server clock against clock cheating, shop sells resources/shards, keep "Expedition: Deepshaft". Remaining open questions updated. |
