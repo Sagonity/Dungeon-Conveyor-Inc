@@ -17,7 +17,7 @@ namespace Deepshaft.Tests
     /// <summary>
     /// GameSession (SCRUM-30): new game, starter Minions, save and reload, offline progress,
     /// and the whole Tier 1 loop through the session's actions. Uses the default bosses and
-    /// Expeditions; the team is levelled up with the debug action so the fights can't be lost.
+    /// Expeditions; the team is levelled up with paid level-ups (SCRUM-10) so the fights can't be lost.
     /// </summary>
     public class GameSessionTests
     {
@@ -161,8 +161,10 @@ namespace Deepshaft.Tests
             int count = 0;
             session.Changed += () => count++;
 
+            session.Wallet.Add(ResourceId.Gold, 1000);
+            session.Wallet.Add(ResourceId.Iron, 1000);
             session.CollectMine();
-            session.DebugLevelUpAll();
+            session.LevelUpMinion(session.State.minions[0].instanceId);
 
             Assert.AreEqual(2, count);
         }
@@ -173,7 +175,7 @@ namespace Deepshaft.Tests
         public void Tier1Loop_BossExpeditionAndNextTier_SurviveReload()
         {
             GameSession session = NewSession();
-            session.DebugLevelUpAll(15); // Debug until Minion levels exist (SCRUM-10).
+            foreach (OwnedMinion m in session.Roster.GetTeam()) LevelTo(session, m.instanceId, 16);
 
             var boss = session.FightBoss(DefaultAdventureContent.Tier1Boss);
             Assert.IsTrue(boss.Won, boss.DescribeLoss());
@@ -200,16 +202,50 @@ namespace Deepshaft.Tests
             Assert.IsFalse(reloaded.Roster.IsTeamBusy);
         }
 
+        // ---------- Minion levels (SCRUM-10) ----------
+
         [Test]
-        public void DebugLevelUp_RaisesEveryMinion_AndTheMiningRate()
+        public void LevelUpMiner_PaysAndRaisesTheMiningRate_AndSurvivesReload()
         {
             GameSession session = NewSession();
+            int minerId = session.Roster.GetMiners()[0].instanceId;
             double goldPerHourBefore = MiningMath.Get(session.Mining.GetHourlyRates(), ResourceId.Gold);
+            session.Wallet.Add(ResourceId.Gold, 100);
+            session.Wallet.Add(ResourceId.Iron, 100);
 
-            session.DebugLevelUpAll(30);
+            MinionUpgradeCheck result = session.LevelUpMinion(minerId);
 
-            foreach (OwnedMinion m in session.State.minions) Assert.AreEqual(31, m.level);
+            Assert.AreEqual(MinionUpgradeStatus.Ok, result.Status);
+            Assert.AreEqual(2, result.Level);
+            Assert.AreEqual(75, session.Wallet.Get(ResourceId.Gold), "Level 1 → 2 costs 25 Gold by default.");
+            Assert.AreEqual(90, session.Wallet.Get(ResourceId.Iron), "Level 1 → 2 costs 10 Iron by default.");
             Assert.Greater(MiningMath.Get(session.Mining.GetHourlyRates(), ResourceId.Gold), goldPerHourBefore);
+
+            GameSession reloaded = NewSession();
+            Assert.AreEqual(2, reloaded.State.FindMinion(minerId).level);
+        }
+
+        [Test]
+        public void LevelUp_WithoutResources_ChangesNothing()
+        {
+            GameSession session = NewSession();
+            int minerId = session.Roster.GetMiners()[0].instanceId;
+
+            MinionUpgradeCheck result = session.LevelUpMinion(minerId);
+
+            Assert.AreEqual(MinionUpgradeStatus.CantAfford, result.Status);
+            Assert.AreEqual(1, session.State.FindMinion(minerId).level);
+        }
+
+        /// <summary>Gives exactly what the level-ups cost and buys them through the session.</summary>
+        static void LevelTo(GameSession session, int instanceId, int level)
+        {
+            while (session.State.FindMinion(instanceId).level < level)
+            {
+                MinionUpgradeCheck check = session.Minions.CheckLevelUp(instanceId);
+                session.Wallet.Add(check.Cost);
+                Assert.AreEqual(MinionUpgradeStatus.Ok, session.LevelUpMinion(instanceId).Status);
+            }
         }
     }
 }

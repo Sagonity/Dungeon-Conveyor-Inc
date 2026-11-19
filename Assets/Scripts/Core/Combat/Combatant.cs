@@ -1,4 +1,5 @@
 using System;
+using Deepshaft.Equipment;
 using Deepshaft.Minions;
 
 namespace Deepshaft.Combat
@@ -47,15 +48,20 @@ namespace Deepshaft.Combat
         /// <summary>The <see cref="OwnedMinion.instanceId"/> for team Minions, 0 for enemies.</summary>
         public int InstanceId { get; }
 
-        /// <summary>A team Minion: stats from its definition and level, behaviour from its class.</summary>
-        public static Combatant ForMinion(MinionDefinition definition, OwnedMinion minion, CombatRules rules)
+        /// <summary>
+        /// A team Minion: stats from its definition, level and gear (weapon → ATK, armor → HP),
+        /// behaviour from its class. Without <paramref name="equipment"/> rules, gear is ignored.
+        /// </summary>
+        public static Combatant ForMinion(MinionDefinition definition, OwnedMinion minion, CombatRules rules,
+            EquipmentRules equipment = null)
         {
             if (definition == null) throw new ArgumentNullException(nameof(definition));
             if (minion == null) throw new ArgumentNullException(nameof(minion));
             if (rules == null) throw new ArgumentNullException(nameof(rules));
             RoleCombatStats role = rules.GetRole(definition.Role);
             return new Combatant(definition.DisplayName, definition.Role,
-                definition.GetHp(minion.level), definition.GetAtk(minion.level), role.attackInterval,
+                MinionStatCalculator.GetHp(definition, minion, minion.level, equipment),
+                MinionStatCalculator.GetAtk(definition, minion, minion.level, equipment), role.attackInterval,
                 role.damageMultiplier, role.damageTakenMultiplier, role.taunts, role.hitsAllEnemies,
                 role.healsAllies, 0, minion.instanceId);
         }

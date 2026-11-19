@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Deepshaft.Bosses;
 using Deepshaft.Content;
 using Deepshaft.Economy;
+using Deepshaft.Equipment;
 using Deepshaft.Expeditions;
 using Deepshaft.Minions;
 using Deepshaft.Mining;
@@ -69,11 +70,12 @@ namespace Deepshaft.Session
 
             // Wiring order (Technical Architecture §11): each service gets what it depends on.
             Wallet = new Wallet(State.wallet);
-            Mining = new MiningService(State, database, clock);
+            Mining = new MiningService(State, database, clock, new EquipmentToolBonus(() => database.Equipment));
             Tiers = new TierProgressionService(State, database, Mining);
             Expeditions = new ExpeditionService(State, database, clock, Tiers);
             Roster = new RosterService(State, database, Mining, Expeditions);
             Bosses = new BossService(State, database, Expeditions, Tiers);
+            Minions = new MinionProgressionService(State, database, Mining);
 
             if (State.minions.Count == 0) GrantStarterMinions();
 
@@ -98,6 +100,7 @@ namespace Deepshaft.Session
         public ExpeditionService Expeditions { get; }
         public RosterService Roster { get; }
         public BossService Bosses { get; }
+        public MinionProgressionService Minions { get; }
 
         /// <summary>False after loading a save from a newer build: nothing will be written.</summary>
         public bool SavingAllowed => saves.SavingAllowed;
@@ -137,20 +140,11 @@ namespace Deepshaft.Session
         /// <summary>Pays for and unlocks the next tier, for tiers with a cost. Free tiers unlock by themselves.</summary>
         public TierUnlockCheck UnlockNextTier() => Done(Tiers.TryUnlockNext(Wallet));
 
-        /// <summary>
-        /// Debug only, until Minion levels and breakthroughs exist (SCRUM-10): raises every owned
-        /// Minion by <paramref name="levels"/>. Ignores the level cap, because breakthroughs can't
-        /// be done yet. Lets the playtest reach Tier 2 and 3.
-        /// </summary>
-        public void DebugLevelUpAll(int levels = 1)
-        {
-            if (levels <= 0) return;
-            Mining.ChangeRate(() =>
-            {
-                foreach (OwnedMinion m in State.minions) m.level = Math.Max(1, m.level) + levels;
-            });
-            Done(0);
-        }
+        /// <summary>Pays Gold + ores and raises a Minion one level (SCRUM-10).</summary>
+        public MinionUpgradeCheck LevelUpMinion(int instanceId) => Done(Minions.TryLevelUp(instanceId, Wallet));
+
+        /// <summary>Pays a rare Expedition material and raises a Minion's level cap (SCRUM-10).</summary>
+        public MinionUpgradeCheck BreakthroughMinion(int instanceId) => Done(Minions.TryBreakthrough(instanceId, Wallet));
 
         T Done<T>(T result)
         {

@@ -160,7 +160,6 @@ not simply how large resource numbers become.
 | Progression pacing | How long each tier should take | SCRUM-2 |
 | Upgrade economy | Exact resource costs, production rates and scaling | SCRUM-2 |
 | Summoning | Final shard distribution, free acquisition rates and pity | SCRUM-11, SCRUM-2 |
-| Ascension | Whether it belongs in the initial prototype | SCRUM-10 |
 | Tier progression | Exact prerequisites for unlocking the next mine tier | SCRUM-2, SCRUM-7 |
 | Monetization | What the shop will sell | SCRUM-24 |
 
@@ -183,8 +182,16 @@ not simply how large resource numbers become.
 | What does the shop sell? | **Probably resources, shards and other items** (details in SCRUM-24). |
 | Game name? | **Keep "Expedition: Deepshaft"** for now. |
 | Tier pacing? | **Still open.** Leaning towards finishing all of Tier 1 before Tier 2 and up; time per tier unknown. |
-| Ascension in the prototype? | **Still open.** |
+| Ascension in the prototype? | **Not now** (decided 2026-11-19, see 8c). |
 | What brings players back with no stockpile cap? | **Still open.** |
+
+## 8c. Team decisions (2026-11-19)
+
+| Question | Decision |
+|---|---|
+| Ascension in the prototype? | **Not now.** Minion Essence from duplicates accumulates; decide after the playtest (SCRUM-8). |
+| Equipment: shared or per Minion? | **Per Minion.** Each Miner has its own tool; each Adventure Minion its own weapon and armor. Upgraded at the Smith. |
+| Which rare material does each Minion breakthrough cost? | **By tier:** the 1st uses the Tier 1 Expedition material, the 2nd Tier 2's, the 3rd Tier 3's (plus Gold and ores). |
 
 ## 9. Prototype scope recommendation
 

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Deepshaft.Equipment;
 
 namespace Deepshaft.Minions
 {
@@ -19,5 +21,11 @@ namespace Deepshaft.Minions
         /// Replaces the old star rank; duplicates now become Minion Essence instead.
         /// </summary>
         public int breakthroughs;
+
+        /// <summary>
+        /// This Minion's own gear (SCRUM-10): a tool for Miners, weapon and armor for Adventurers.
+        /// A slot with no entry holds the basic level-1 item. Read through <see cref="EquipmentRules"/>.
+        /// </summary>
+        public List<OwnedEquipment> equipment = new List<OwnedEquipment>();
     }
 }

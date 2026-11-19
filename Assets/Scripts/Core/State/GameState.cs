@@ -121,6 +121,13 @@ namespace Deepshaft.State
             {
                 if (m.level < 1) m.level = 1;
                 if (m.breakthroughs < 0) m.breakthroughs = 0;
+                if (m.equipment == null) m.equipment = new List<Equipment.OwnedEquipment>();
+                m.equipment.RemoveAll(e => e == null);
+                foreach (Equipment.OwnedEquipment e in m.equipment)
+                {
+                    if (e.level < 1) e.level = 1;
+                    if (e.breakthroughs < 0) e.breakthroughs = 0;
+                }
                 if (m.instanceId > maxId) maxId = m.instanceId;
             }
             if (nextMinionInstanceId <= maxId) nextMinionInstanceId = maxId + 1;

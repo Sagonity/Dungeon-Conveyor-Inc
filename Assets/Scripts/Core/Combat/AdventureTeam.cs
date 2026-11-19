@@ -13,7 +13,7 @@ namespace Deepshaft.Combat
     /// </summary>
     public static class AdventureTeam
     {
-        /// <summary>The valid team Minions in slot order, with stats from their definition and level.</summary>
+        /// <summary>The valid team Minions in slot order, with stats from their definition, level and gear.</summary>
         public static List<Combatant> Build(GameState state, GameDatabase database)
         {
             if (state == null) throw new ArgumentNullException(nameof(state));
@@ -25,7 +25,7 @@ namespace Deepshaft.Combat
                 MinionKind.Adventure, database.Roster.AdventureSlots);
             foreach (OwnedMinion m in members)
             {
-                team.Add(Combatant.ForMinion(database.FindMinion(m.definitionId), m, database.Combat));
+                team.Add(Combatant.ForMinion(database.FindMinion(m.definitionId), m, database.Combat, database.Equipment));
             }
             return team;
         }
