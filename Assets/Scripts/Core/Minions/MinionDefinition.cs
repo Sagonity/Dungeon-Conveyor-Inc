@@ -76,6 +76,17 @@ namespace Deepshaft.Minions
             rarity = newRarity;
             minerTrait = newMinerTrait;
         }
+
+        /// <summary>For tests and editor tools only: base stats × <paramref name="multiplier"/> (e.g. 1.25 for an Uncommon).</summary>
+        public void EditorScaleStats(float multiplier)
+        {
+            baseMiningPower = 10f * multiplier;
+            miningPowerPerLevel = 2f * multiplier;
+            baseHp = 100f * multiplier;
+            hpPerLevel = 10f * multiplier;
+            baseAtk = 10f * multiplier;
+            atkPerLevel = 1f * multiplier;
+        }
 #endif
     }
 }
