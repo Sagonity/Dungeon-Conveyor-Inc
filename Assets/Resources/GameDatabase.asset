@@ -20,6 +20,19 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 46a1ae77577449918484d9d60bbfe648, type: 2}
   - {fileID: 11400000, guid: 545cd383aafa4097a22196c1c1464a3b, type: 2}
   - {fileID: 11400000, guid: 4016088375e248c496150f6f64e254f9, type: 2}
+  - {fileID: 11400000, guid: 4c2fede2200740839d4a385cf750cfa8, type: 2}
+  - {fileID: 11400000, guid: fb7a1540e73840e599081ed1e1850f6d, type: 2}
+  - {fileID: 11400000, guid: 59fc82ff21944af897bcab8d419ea810, type: 2}
+  - {fileID: 11400000, guid: c8a3f073844742028b2cc57c573f86ae, type: 2}
+  - {fileID: 11400000, guid: 41cf34537ff44db1bcbb42dc93d05468, type: 2}
+  - {fileID: 11400000, guid: d0e6fdd3f4c044aa8c785c42bbf335c1, type: 2}
+  - {fileID: 11400000, guid: accd471a30744eef856daebe3304b328, type: 2}
+  - {fileID: 11400000, guid: 51751e14bbaf41b485a8a05aedc09750, type: 2}
+  - {fileID: 11400000, guid: b203c8b34ef74704aba715ecdf06791b, type: 2}
+  - {fileID: 11400000, guid: bf4dd7eb27304f2b8303089f7bac8aac, type: 2}
+  - {fileID: 11400000, guid: 97fb9586435e4453bcddbb1851f4c3e1, type: 2}
+  - {fileID: 11400000, guid: 97a1e02cea23410dbeb312077fb181c7, type: 2}
+  - {fileID: 11400000, guid: 27e1acc42a984cb2b0288bd38c644a75, type: 2}
   mining:
     referenceMiningPower: 10
     goldTraitBonus: 0.25
@@ -137,6 +150,8 @@ MonoBehaviour:
       amount: 1
     - id: 20
       amount: 20
+    - id: 21
+      amount: 10
     repeatWinRewards:
     - id: 40
       amount: 1
@@ -155,6 +170,8 @@ MonoBehaviour:
       amount: 1
     - id: 20
       amount: 30
+    - id: 21
+      amount: 10
     repeatWinRewards:
     - id: 41
       amount: 1
@@ -173,6 +190,8 @@ MonoBehaviour:
       amount: 1
     - id: 20
       amount: 40
+    - id: 21
+      amount: 10
     repeatWinRewards:
     - id: 42
       amount: 1

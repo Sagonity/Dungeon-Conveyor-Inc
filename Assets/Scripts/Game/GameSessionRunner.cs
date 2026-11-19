@@ -120,6 +120,7 @@ public class GameSessionRunner : MonoBehaviour
     public void DebugSkipTime(TimeSpan amount)
     {
         if (Session == null || amount <= TimeSpan.Zero) return;
+        Session.Playtest.Add("debug_skip", "hours=" + amount.TotalHours.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture));
         Session.Save();
         Clock.Advance(amount);
         SaveClockOffset(Clock.Offset);

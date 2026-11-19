@@ -6,6 +6,8 @@ using Deepshaft.Expeditions;
 using Deepshaft.Minions;
 using Deepshaft.Mining;
 using Deepshaft.Roster;
+using Deepshaft.Session;
+using Deepshaft.Smith;
 using Deepshaft.Time;
 
 namespace Deepshaft.State
@@ -57,6 +59,12 @@ namespace Deepshaft.State
 
         /// <summary>Expedition first clears and the running automated Expedition. Changed through <see cref="ExpeditionService"/>.</summary>
         public ExpeditionData expeditions = new ExpeditionData();
+
+        /// <summary>Smith ranks learned with boss materials. Changed through <see cref="SmithService"/>.</summary>
+        public SmithData smith = new SmithData();
+
+        /// <summary>Local playtest event log (SCRUM-8). Written through <see cref="PlaytestLog"/>.</summary>
+        public PlaytestLogData playtest = new PlaytestLogData();
 
         public static GameState CreateNew(IClock clock)
         {
@@ -115,12 +123,24 @@ namespace Deepshaft.State
             if (expeditions.cleared == null) expeditions.cleared = new List<string>();
             if (expeditions.activeId == null) expeditions.activeId = "";
             if (expeditions.pending == null) expeditions.pending = new List<MinedAmount>();
+            if (smith == null) smith = new SmithData();
+            if (smith.rank < 0) smith.rank = 0;
+            if (playtest == null) playtest = new PlaytestLogData();
+            if (playtest.events == null) playtest.events = new List<PlaytestEvent>();
+            playtest.events.RemoveAll(e => e == null);
 
             int maxId = 0;
             foreach (OwnedMinion m in minions)
             {
                 if (m.level < 1) m.level = 1;
                 if (m.breakthroughs < 0) m.breakthroughs = 0;
+                if (m.equipment == null) m.equipment = new List<Equipment.OwnedEquipment>();
+                m.equipment.RemoveAll(e => e == null);
+                foreach (Equipment.OwnedEquipment e in m.equipment)
+                {
+                    if (e.level < 1) e.level = 1;
+                    if (e.breakthroughs < 0) e.breakthroughs = 0;
+                }
                 if (m.instanceId > maxId) maxId = m.instanceId;
             }
             if (nextMinionInstanceId <= maxId) nextMinionInstanceId = maxId + 1;

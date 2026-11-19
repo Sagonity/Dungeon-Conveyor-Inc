@@ -17,8 +17,6 @@ using UnityEngine.InputSystem.UI;
 public static class GameUIBuilder
 {
     const string MenuPath = "Tools/Dungeon Conveyor/Build Game UI";
-    const string PrefabFolder = "Assets/Prefabs";
-    const string MinionPrefabPath = PrefabFolder + "/Minion.prefab";
 
     static readonly Color PanelColor = new Color(0.07f, 0.06f, 0.09f, 0.97f);
     static readonly Color ButtonColor = new Color(0.42f, 0.27f, 0.14f, 1f);
@@ -130,7 +128,7 @@ public static class GameUIBuilder
         GameHUDView view = CreateView<GameHUDView>("GameHUDView", parent, false);
         RectTransform safe = CreateSafeArea(view);
 
-        // Top bar: menu button left, counter right.
+        // Top bar with the old Menu button (hidden; the grey-box screen has its own menu).
         RectTransform bar = CreateRect("TopBar", safe);
         bar.anchorMin = new Vector2(0f, 1f);
         bar.anchorMax = new Vector2(1f, 1f);
@@ -147,35 +145,7 @@ public static class GameUIBuilder
         menuRect.pivot = new Vector2(0f, 0.5f);
         menuRect.anchoredPosition = new Vector2(30f, 0f);
 
-        TextMeshProUGUI counter = CreateText("SummonCounter", bar, "Minions summoned: 0", 48f,
-            TextColor, TextAlignmentOptions.Right, FontStyles.Bold);
-        RectTransform counterRect = counter.rectTransform;
-        counterRect.anchorMin = Vector2.zero;
-        counterRect.anchorMax = Vector2.one;
-        counterRect.offsetMin = new Vector2(320f, 0f);
-        counterRect.offsetMax = new Vector2(-40f, 0f);
-
-        // Log above the summon button.
-        TextMeshProUGUI log = CreateText("SummonLog", safe, "", 40f,
-            TextColor, TextAlignmentOptions.BottomLeft, FontStyles.Normal);
-        RectTransform logRect = log.rectTransform;
-        logRect.anchorMin = new Vector2(0f, 0f);
-        logRect.anchorMax = new Vector2(1f, 0f);
-        logRect.pivot = new Vector2(0.5f, 0f);
-        logRect.anchoredPosition = new Vector2(0f, 260f);
-        logRect.sizeDelta = new Vector2(-80f, 240f);
-
-        Button summon = CreateButton("SummonButton", safe, "Summon Minion", 640f, 170f, AccentColor);
-        RectTransform summonRect = (RectTransform)summon.transform;
-        summonRect.anchorMin = summonRect.anchorMax = new Vector2(0.5f, 0f);
-        summonRect.pivot = new Vector2(0.5f, 0f);
-        summonRect.anchoredPosition = new Vector2(0f, 60f);
-
-        SetRef(view, "gameController", controller);
-        SetRef(view, "summonButton", summon);
         SetRef(view, "mainMenuButton", menuButton);
-        SetRef(view, "counterText", counter);
-        SetRef(view, "logText", log);
         return view;
     }
 
@@ -241,41 +211,7 @@ public static class GameUIBuilder
             Undo.RegisterCreatedObjectUndo(go, "Create GameController");
             controller = Undo.AddComponent<GameController>(go);
         }
-
-        SerializedObject so = new SerializedObject(controller);
-        SerializedProperty prefab = so.FindProperty("minionPrefab");
-        if (prefab.objectReferenceValue == null) prefab.objectReferenceValue = EnsureMinionPrefab();
-        so.ApplyModifiedProperties();
         return controller;
-    }
-
-    /// <summary>Uses Assets/Prefabs/Minion.prefab, or creates it from a minion already in the scene.</summary>
-    static GameObject EnsureMinionPrefab()
-    {
-        GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(MinionPrefabPath);
-        if (existing != null) return existing;
-
-        MinionHealth template = Object.FindFirstObjectByType<MinionHealth>(FindObjectsInactive.Include);
-        if (template == null)
-        {
-            Debug.LogWarning("GameUIBuilder: no minion in the scene to make a prefab from. " +
-                             "Assign 'Minion Prefab' on GameController by hand.");
-            return null;
-        }
-
-        if (!AssetDatabase.IsValidFolder(PrefabFolder))
-        {
-            AssetDatabase.CreateFolder("Assets", "Prefabs");
-        }
-
-        GameObject prefab = PrefabUtility.SaveAsPrefabAsset(template.gameObject, MinionPrefabPath, out bool success);
-        if (!success)
-        {
-            Debug.LogWarning("GameUIBuilder: could not save minion prefab to " + MinionPrefabPath);
-            return null;
-        }
-        Debug.Log("GameUIBuilder: created " + MinionPrefabPath + " from '" + template.name + "'.", prefab);
-        return prefab;
     }
 
     // ---------------------------------------------------------------- Widgets

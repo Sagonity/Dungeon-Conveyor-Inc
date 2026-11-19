@@ -2,7 +2,7 @@
 
 *Working title. Previously "Dungeon Conveyor Inc."*
 
-**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** Final, v2.4 (2026-11-17), updated to Game Design Summary v3.4
+**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** Final, v2.8 (2026-11-19), updated to Game Design Summary v3.4
 **Platform:** Android first (iOS later), all four orientations (portrait and landscape) · **Engine:** Unity 6 (6000.6)
 
 > **Design source of truth:** [Game Design Summary v3.4](Game_Design_Summary.md).
@@ -171,7 +171,7 @@ Expeditions work differently before and after their first completion:
 
 1. **Standard levels:** Gold + ores.
 2. **Breakthroughs:** need rare Expedition materials; each raises the level cap.
-3. **Ascension:** optional, paid with Minion Essence. **Open:** in the prototype or not (SCRUM-10).
+3. **Ascension:** optional, paid with Minion Essence. **Not in the prototype** (decision 23).
 
 **Open:** how many Miners work and how many Adventurers fight at the same time (SCRUM-6).
 
@@ -274,7 +274,7 @@ always chooses to watch one for a reward). No interstitial or pop-up ads.
 | Expeditions: first clear + automation | ✅ a few Expeditions | ✅ | SCRUM-7 |
 | Smith: upgrades + breakthroughs | ✅ pickaxe + a few items | ✅ | SCRUM-9, SCRUM-10 |
 | Minion levels + breakthroughs | ✅ | ✅ | SCRUM-10 |
-| Ascension (Essence) | ⚪ only if decided | ⚪ decide after playtest | SCRUM-10 |
+| Ascension (Essence) | — (decision 23) | ⚪ decide after playtest | SCRUM-10 |
 | Summoning (2 pools, 3 rarities, Essence) | ✅ simple rates, no pity | ✅ rates shown | SCRUM-11 |
 | Tier progression | ✅ | ✅ | SCRUM-2, SCRUM-7 |
 | Save / load, offline progress | ⚪ local | ✅ local | SCRUM-16, SCRUM-17 |
@@ -296,7 +296,7 @@ always chooses to watch one for a reward). No interstitial or pop-up ads.
 
 ## 7. Where the current build stands
 
-As of 2026-11-15 (SCRUM-4, 5, 6 and 7 merged).
+As of 2026-11-19 (SCRUM-4, 5, 6, 7 and 30 merged; SCRUM-10, 9 and 11 in review).
 
 - **Done:** main menu, settings, UI state machine, safe-area UI for all four rotations,
   wireframes for the v1.1 screens (SCRUM-3; need updating for v3.4, see that doc).
@@ -322,28 +322,52 @@ As of 2026-11-15 (SCRUM-4, 5, 6 and 7 merged).
   - **3 Miner slots and 3 Adventure slots** (data on the `GameDatabase`). The team keeps these and changes them only if playtests show a need (decision 18).
   - **Next tier unlocks when the current tier's boss is beaten.** Confirmed as the rule (decision 17).
   - **Boss and Expedition power numbers** are a first pass, until the SCRUM-2 economy is rebuilt for v3.4.
-- **In progress (SCRUM-30): playable grey-box build.**
+- **Done (SCRUM-30): playable grey-box build.** Tested in Unity and on a phone (v0.0.2 APK); tests passed.
   - `GameSession` loads the save, runs every system from the clock, gives a new game its starter
     Minions (2 Miners, Tank, Fighter, Support, Mage, Archer) and saves after each action, every 30 s and on pause/quit.
   - A game screen in the style of the UI mock-up (IMGUI, placeholder art) with HQ, Mine, Exped., Minions,
-    Smith and Boss tabs. Settings → Debug skips time and levels all Minions up, until levels exist (SCRUM-10).
+    Smith and Boss tabs. Settings → Debug skips time.
   - The GameDatabase moved to `Assets/Resources/` so the game finds it at start.
-- **Still to remove:** `MinionStats` / `MinionHealth` and `GameController.SummonMinion()`.
-  The HUD now hides the old Summon button, so nothing uses them.
+- **In review (SCRUM-10): Minion levels, breakthroughs and gear.**
+  - Standard levels cost Gold + Iron (first pass: 25 Gold + 10 Iron, +12% per level).
+  - Breakthroughs need the level cap and cost a rare Expedition material by tier (decision 25):
+    Spore Silk, then Ember Core, then Prism Dust. Level cap 20 → 30 → 40 → 50.
+  - Gear per Minion (decision 24): a tool for Miners, weapon and armor for Adventurers, fixed stats.
+    Everyone starts with level-1 gear; upgrading it is the Smith (SCRUM-9).
+  - Minions tab: tap a Minion for its detail card (level, stats now → next, Level Up, Breakthrough, gear,
+    Mine / team button). The debug "level everyone up" buttons are gone.
+  - Removed the old `MinionStats` / `MinionHealth` scripts and `GameController.SummonMinion()`.
+- **In review (SCRUM-9): Smith and HQ.**
+  - Gear upgrades at the Smith, per Minion: Gold + Iron (first pass 40 Gold + 20 Iron, +25% per level),
+    Silver from level 9. Cap 4, +4 per breakthrough (pickaxe 4 → 5 is the first breakthrough).
+  - Gear breakthroughs: Gold + ores + that tier's Expedition material (Spore Silk, Ember Core, Prism Dust),
+    and the Smith must know the matching rank.
+  - Smith ranks (decision 26): learned once each with a boss material — Foreman Sigil, Golem Heart,
+    Wyrm Scale — and each opens the next gear breakthrough.
+  - Every cost shows what's missing and where to get it (Mine tier, automated Expedition or boss).
+  - HQ tab: production per hour (Mine + automated Expedition) and Collect.
+- **In review (SCRUM-11): Summoning.**
+  - Pick the Miner or Adventure pool and a Basic or Advanced shard; 10 shards a summon. Rates 75/23/2 and
+    0/85/15, shown on the screen (the real chances for that pool). No pity.
+  - One of each Minion: duplicates give Minion Essence by rarity, 5 / 15 / 50 (decision 28).
+  - Each boss's first win also gives 10 Advanced Shards (decision 27).
+  - 13 placeholder Minions added (Common Speed Miner; Uncommon and Rare Miners and Adventurers),
+    Uncommon +25% and Rare +60% base stats (SCRUM-13 names and art).
 - **Still to change:** `GameController` sets `Time.timeScale = 0` while a menu is open.
   New systems must use `IClock`, not game time.
 
-**Missing for Step A:**
-- Smith (upgrades and breakthroughs, SCRUM-9/10)
-- Minion levels and breakthroughs (SCRUM-10)
-- Summoning with two pools (SCRUM-11)
-- Test the grey-box build in Unity and on a phone (SCRUM-30)
+**Missing for Step A:** nothing in code. Next: review PR #21 (SCRUM-10/9/11), build v0.0.3, then run the
+playtest with the [Playtest Plan](Playtest_Plan_SCRUM-8.md) (SCRUM-8). The plan also lists pacing findings
+from a simulated free player (all 3 tiers cleared in about 11 hours of play), for SCRUM-2.
+- **Playtest tools (SCRUM-8):** a local playtest event log (every action and tab, saved with the game);
+  Settings → Debug → Copy log / Save log file exports it as CSV.
 
 ## 8. Success criteria
 
 ### Step A: economy prototype / playtest (SCRUM-8)
 
-Run with 5+ testers who haven't seen the game:
+Run with 5+ testers who haven't seen the game. How: [Playtest Plan](Playtest_Plan_SCRUM-8.md).
+
 
 - [ ] Testers can explain "mine, upgrade, beat the boss, clear and automate the Expedition, break through" after 10 minutes
 - [ ] After losing a boss or first clear, at least 4 of 5 go back to upgrading without being told
@@ -390,17 +414,23 @@ Run with 5+ testers who haven't seen the game:
 | 20 | Offline progress and clock cheating? | **The game will run against a server** and use the server's clock, not the device clock. The build keeps `IClock`, so a server clock can replace the device clock. |
 | 21 | What does the shop sell? | **Probably resources, shards and other items.** Details in SCRUM-24. |
 | 22 | Game name in Jira vs docs? | **Keep "Expedition: Deepshaft"**. The name may change later. |
+| 23 | Ascension in the prototype? | **Not now.** Essence accumulates; decide after the playtest. (Team decision 2026-11-19.) |
+| 24 | Equipment shared or per Minion? | **Per Minion:** each Miner has its own tool, each Adventure Minion its own weapon and armor. (2026-11-19.) |
+| 25 | Which material does each Minion breakthrough cost? | **By tier:** 1st Tier 1's Expedition material, 2nd Tier 2's, 3rd Tier 3's. (2026-11-19.) |
+| 26 | What do unique boss materials do at the Smith? | **One-time Smith ranks:** Foreman Sigil, Golem Heart and Wyrm Scale each teach the Smith a rank that opens the next gear breakthrough. (2026-11-19.) |
+| 27 | Where do Advanced Shards come from? | **Each boss's first win gives 10** (one Advanced summon). (2026-11-19.) |
+| 28 | Essence per duplicate? | **By rarity:** Common 5, Uncommon 15, Rare 50. (2026-11-19.) |
 
 ## 10. Open questions
 
 Answered on 2026-11-17: tier unlock, slot counts, upgrade numbers, offline clock, shop
-contents and game name (see §9, decisions 17–22).
+contents and game name (see §9, decisions 17–22). Answered on 2026-11-19: Ascension, gear per
+Minion, breakthrough materials, boss materials at the Smith, Advanced Shards and Essence (decisions 23–28).
 
 | Area | Question | Status / placeholder in the build | Ticket |
 |---|---|---|---|
 | Progression pacing | How long should each tier take? **Most important next step.** | Leaning towards: the player must finish all of Tier 1 before Tier 2 and up. What "all" means (boss, every Expedition first clear, breakthroughs?) and the time per tier are still open. The economy doc still uses the v1 model and needs rebuilding for v3.4 | SCRUM-2 |
 | Summoning | Final shard rates, free shard income, pity | Decided in SCRUM-11 | SCRUM-11, SCRUM-2 |
-| Ascension | In the initial prototype or not? | Undecided. Not built | SCRUM-10 |
 | Monetization | Exact shop items and prices | Leaning towards resources, shards and other items. Not built | SCRUM-24 |
 | Server | Which backend, and does the game need to be online to play? (Follows from decision 20.) | Not started. Device UTC clock (`IClock`) for now | SCRUM-16, SCRUM-17 |
 | Return motivation | With no stockpile cap, what brings players back (goals, notifications)? | No answer yet | SCRUM-2, SCRUM-16 |
@@ -416,3 +446,7 @@ contents and game name (see §9, decisions 17–22).
 | 2.2 | 2026-11-15 | Updated "Where the current build stands" after SCRUM-5, 6 and 7, including the placeholders that stand in for open decisions. Added offline-clock protection, return motivation and the game name to the open questions. |
 | 2.3 | 2026-11-17 | Team answers: next tier unlocks on the boss win, keep 3 + 3 slots, tune numbers by playtesting, server clock against clock cheating, shop sells resources/shards, keep "Expedition: Deepshaft". Remaining open questions updated. |
 | 2.4 | 2026-11-17 | SCRUM-1 closed. Status set to final; the remaining open questions (§10) live in their own tickets. |
+| 2.8 | 2026-11-19 | SCRUM-8 prep: playtest plan, playtest event log, simulated free-player playthrough. |
+| 2.7 | 2026-11-19 | SCRUM-11 built (summoning, Essence, placeholder Uncommon/Rare Minions). Decisions 27–28. |
+| 2.6 | 2026-11-19 | SCRUM-9 built (Smith ranks, gear upgrades and breakthroughs, HQ production). Decision 26: boss materials teach Smith ranks. |
+| 2.5 | 2026-11-19 | SCRUM-30 tested and done. SCRUM-10 built (levels, breakthroughs, gear per Minion). Decisions 23–25: no Ascension in the prototype, gear per Minion, breakthrough materials by tier. |

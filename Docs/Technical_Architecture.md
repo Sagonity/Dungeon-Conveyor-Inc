@@ -90,8 +90,8 @@ Docs/                             Design and tech docs
   use it without changes. Core can't reference Assembly-CSharp; that's on purpose.
 - New gameplay rules go in Core. New MonoBehaviours go in `Scripts/` (Assembly-CSharp)
   until there are enough to deserve their own assembly.
-- `MinionStats` and `MinionHealth` are legacy. They get replaced by
-  `MinionDefinition` + `OwnedMinion` (SCRUM-10) and the boss auto-combat (SCRUM-7).
+- The legacy `MinionStats` / `MinionHealth` scene scripts and the summon placeholder were removed in
+  SCRUM-10. Minions are save data (`MinionDefinition` + `OwnedMinion`); combat is the SCRUM-7 autobattle.
 
 ---
 
@@ -162,7 +162,7 @@ progress = clamp((clock.UtcNow - startedAt) / duration, 0, 1)
 Summons, loot and combat take a **`System.Random` passed in**, never
 `UnityEngine.Random` or a new `Random()` inside the system. Tests pass a seeded
 `Random` and get the same results every run. Drop-rate tests run many seeded
-summons and check the rates and pity guarantee (SCRUM-11).
+summons and check the rates (SCRUM-11, `SummonTests`; no pity in the prototype).
 
 ---
 
@@ -216,8 +216,7 @@ summons and check the rates and pity guarantee (SCRUM-11).
 - `Deepshaft.Core.Tests`: EditMode tests for all of the above.
 - `.editorconfig` for consistent formatting.
 
-**Not built yet (later tickets):** HQ and Smith (SCRUM-9),
-Minion levels, breakthroughs and gear (SCRUM-10), Summon (SCRUM-11).
+Minion levels, breakthroughs and gear: SCRUM-10, below. Smith and HQ: SCRUM-9. Summoning: SCRUM-11.
 
 **Updated for Game Design Summary v3.4 (save version 2):** `ResourceId` now has Gold,
 Iron, Silver, Mithril, Basic/Advanced Shards, Minion Essence, rare Expedition materials and
@@ -325,12 +324,88 @@ placement: the player only picks Minions for slots.
   material), tier header with the next goal, bronze-framed cards with gold buttons, and a bottom tab bar
   (HQ, Mine, Exped., Minions, Smith, Boss). Settings (top right) holds Main menu and the debug tools.
   Drawn with IMGUI and generated textures, so no art or scene setup. Portraits, boss art and tier names
-  are placeholders (SCRUM-13); Smith and Summon show as "coming soon" (SCRUM-9, SCRUM-11).
+  are placeholders (SCRUM-13).
   Throwaway until the real UI (SCRUM-12).
-- **Debug:** `OffsetClock` skips time ahead (kept in PlayerPrefs); `DebugLevelUpAll` raises levels past
-  the cap until levels and breakthroughs exist (SCRUM-10).
+- **Debug:** `OffsetClock` skips time ahead (kept in PlayerPrefs). The "level everyone up" debug action
+  was removed in SCRUM-10: Minions now level up for real in the Minions tab.
 - **Time** still comes from the device clock. The team decided on a server clock (Scope decision 20);
   it plugs in as another `IClock`.
+
+### SCRUM-10: Minion levels, breakthroughs and gear
+
+- **`MinionProgressionService`** (`Deepshaft.Minions`): `CheckLevelUp` / `TryLevelUp` and
+  `CheckBreakthrough` / `TryBreakthrough` return a `MinionUpgradeCheck` (status, cost, shortfall, level,
+  cap) so the UI can explain what's missing. Changes go through `MiningService.ChangeRate`, so a Miner's
+  new level counts only from now on. Allowed while the team is on an automated Expedition (automation
+  can't fail and doesn't use team power). `GameSession.LevelUpMinion` / `BreakthroughMinion` save and
+  raise `Changed`.
+- **`MinionProgressionRules`** (on the GameDatabase): level-up cost per resource
+  = base × growth^(level − 1), default 25 Gold + 10 Iron, ×1.12 per level, the same for Miners and
+  Adventurers. Breakthroughs need the Minion at its cap; the 1st costs Spore Silk (Tier 1 Expedition),
+  the 2nd Ember Core (Tier 2), the 3rd Prism Dust (Tier 3), plus Gold and Iron. The number of rows is
+  the number of breakthroughs (3: level cap 20 → 30 → 40 → 50). First-pass numbers until SCRUM-2/19.
+- **Gear, per Minion** (`Deepshaft.Equipment`): Miners have a Tool, Adventurers a Weapon and Armor
+  (`EquipmentRules.SlotsFor`). Saved as `OwnedMinion.equipment` (slot, level, breakthroughs); a slot
+  with no entry is the basic level-1 item. Fixed stats: each level above 1 adds Tool +10% mining output,
+  Weapon +8% ATK, Armor +8% HP; cap 4, +4 per breakthrough (`EquipmentRules` on the GameDatabase).
+  The Tool feeds mining through `EquipmentToolBonus` (`IMinerToolBonus`); Weapon and Armor feed
+  `Combatant.ForMinion`. **Upgrading gear is the Smith (SCRUM-9).**
+- **`MinionStatCalculator`**: a Minion's HP, ATK and mining power with level and gear, so the screen,
+  combat and mining use the same numbers.
+- **Ascension is not built** (team decision 2026-11-19). Minion Essence just accumulates.
+- Save format stays version 2: `equipment` loads as empty from older saves (`GameState.EnsureValid`).
+- **Grey-box screen:** tapping a Minion card selects it; the detail card shows Lv / cap, stats now →
+  next level, Level Up, Breakthrough (with its cost shown before the cap), gear, and the Mine / team
+  button (assigning moved here from the card tap).
+- Tests: `MinionProgressionTests`, plus paid level-ups in `GameSessionTests`.
+
+### SCRUM-9: Smith and HQ
+
+- **`SmithService`** (`Deepshaft.Smith`): `CheckUpgrade` / `TryUpgrade` and `CheckBreakthrough` /
+  `TryBreakthrough` for one item of one Minion (slot must fit the Minion's kind), and `CheckRankUp` /
+  `TryRankUp` for the Smith itself. All return a `SmithCheck` (status, cost, shortfall, level, cap,
+  required rank). Tool changes go through `MiningService.ChangeRate`. `GameSession.UpgradeGear`,
+  `BreakthroughGear` and `UpgradeSmith` save and raise `Changed`.
+- **Numbers** (`EquipmentRules` on the GameDatabase, first pass): gear level cost 40 Gold + 20 Iron,
+  ×1.25 per level, plus Silver from level 9 (`LevelCostTerm.fromLevel`). Gear breakthroughs at the cap:
+  Gold + Iron + 3 Spore Silk / Ember Core / Prism Dust (the 3rd also Silver). Smith ranks: 1 Foreman
+  Sigil, 1 Golem Heart, 1 Wyrm Scale; rank N is needed for gear breakthrough N (team decision 2026-11-19).
+- **Save:** `GameState.smith.rank` (new field, still save version 2; old saves start at rank 0).
+- **`ResourceSources.Find`**: where a resource first comes from (Mine tier, automated Expedition or boss),
+  for the "where to get it" hints on every cost.
+- **`GameSession.GetProductionPerHour`**: Mine + running automated Expedition, for the HQ.
+- **Grey-box screen:** HQ shows production per hour and Collect; Smith tab has the rank card and every
+  Minion's gear (upgrade / break, with what's missing and where to get it); the Minion detail card links there.
+- Tests: `SmithTests`, plus gear and production in `GameSessionTests`.
+
+### SCRUM-11: Summoning
+
+- **`SummonService`** (`Deepshaft.Summoning`): `Check` / `TrySummon(pool, shard, wallet, rng)` returns a
+  `SummonResult` (status, cost, shortfall, the Minion, the new `OwnedMinion` or null for a duplicate,
+  Essence given). Paid with shards only. A rarity is rolled from the shard's rates, then a Minion of that
+  rarity from the pool (Miner or Adventure), each equally likely; the pool is sorted by id so a seed
+  always gives the same result. A rarity the pool has none of is left out and the others keep their
+  proportions; `GetRates` returns exactly these chances, and the screen shows them.
+- **One of each Minion:** a duplicate gives Minion Essence by rarity (5 / 15 / 50, team decision
+  2026-11-19). New Minions go through `RosterService.AddMinion`, so they fill a free slot.
+- **`SummonRules`** (on the GameDatabase): Basic 75 / 23 / 2 and Advanced 0 / 85 / 15, 10 shards a
+  summon. No pity in the prototype.
+- **Shard sources:** Basic Shards from boss first wins and Expedition first clears (as before); each boss's
+  first win now also gives 10 Advanced Shards (team decision 2026-11-19).
+- **Content:** 13 placeholder Minions in `Content/Minions` (12 Uncommon / Rare plus a Common Speed Miner)
+  (Uncommon +25% base stats, Rare +60%). Names and art: SCRUM-13.
+- `GameSession.Summon(pool, shard)` saves and raises `Changed`. Tests: `SummonTests`.
+
+### SCRUM-8: playtest tools
+
+- **`PlaytestLog`** (`Deepshaft.Session`): every `GameSession` action, the tab the player opens
+  (`GameSession.LogView`) and debug time skips are recorded with the time in `GameState.playtest`
+  (newest 2000 events, kept in the save). It stays on the device. `ToCsv()` gives
+  `utc,minutes,type,detail`; Settings → Debug → Copy log / Save log file exports it. Replaced by real
+  analytics in SCRUM-17.
+- **`PlaythroughTests`**: a simple free player plays the whole prototype through `GameSession`
+  (check-in every 1 h and every 8 h) and must clear all 3 tiers; it prints the milestone hours for pacing.
+- How to run the playtest: [Playtest Plan](Playtest_Plan_SCRUM-8.md).
 
 ## 12. Team decisions (2026-11-17)
 

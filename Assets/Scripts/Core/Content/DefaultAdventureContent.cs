@@ -68,7 +68,8 @@ namespace Deepshaft.Content
             tier = tier,
             recommendedPower = recommended,
             enemy = new EnemyDefinition(name, 11f * recommended, atk, 2f, 4),
-            firstWinRewards = new List<ResourceAmount> { R(material, 1), R(ResourceId.BasicShard, shards) },
+            // Each boss's first win also gives one Advanced summon (team decision 2026-11-19, SCRUM-11).
+            firstWinRewards = new List<ResourceAmount> { R(material, 1), R(ResourceId.BasicShard, shards), R(ResourceId.AdvancedShard, 10) },
             repeatWinRewards = new List<ResourceAmount> { R(material, 1) },
         };
 
