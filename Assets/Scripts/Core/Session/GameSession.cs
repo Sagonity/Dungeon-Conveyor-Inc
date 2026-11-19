@@ -10,6 +10,7 @@ using Deepshaft.Mining;
 using Deepshaft.Progression;
 using Deepshaft.Roster;
 using Deepshaft.Save;
+using Deepshaft.Smith;
 using Deepshaft.State;
 using Deepshaft.Time;
 using UnityEngine;
@@ -76,6 +77,7 @@ namespace Deepshaft.Session
             Roster = new RosterService(State, database, Mining, Expeditions);
             Bosses = new BossService(State, database, Expeditions, Tiers);
             Minions = new MinionProgressionService(State, database, Mining);
+            Smith = new SmithService(State, database, Mining);
 
             if (State.minions.Count == 0) GrantStarterMinions();
 
@@ -101,12 +103,25 @@ namespace Deepshaft.Session
         public RosterService Roster { get; }
         public BossService Bosses { get; }
         public MinionProgressionService Minions { get; }
+        public SmithService Smith { get; }
 
         /// <summary>False after loading a save from a newer build: nothing will be written.</summary>
         public bool SavingAllowed => saves.SavingAllowed;
 
         /// <summary>Raised after every action, so screens can refresh.</summary>
         public event Action Changed;
+
+        /// <summary>
+        /// Everything earned per hour right now (SCRUM-9, HQ): the Mine plus the running automated
+        /// Expedition, one entry per resource.
+        /// </summary>
+        public List<MinedAmount> GetProductionPerHour()
+        {
+            var total = new List<MinedAmount>();
+            MiningMath.AddProduction(total, Mining.GetHourlyRates(), 1.0);
+            MiningMath.AddProduction(total, Expeditions.GetHourlyRates(), 1.0);
+            return total;
+        }
 
         /// <summary>Banks Mining and the running Expedition, then writes the save. Safe to call any time.</summary>
         public bool Save()
@@ -145,6 +160,15 @@ namespace Deepshaft.Session
 
         /// <summary>Pays a rare Expedition material and raises a Minion's level cap (SCRUM-10).</summary>
         public MinionUpgradeCheck BreakthroughMinion(int instanceId) => Done(Minions.TryBreakthrough(instanceId, Wallet));
+
+        /// <summary>Smith: pays Gold + ores and raises one item of one Minion a level (SCRUM-9).</summary>
+        public SmithCheck UpgradeGear(int instanceId, EquipmentSlot slot) => Done(Smith.TryUpgrade(instanceId, slot, Wallet));
+
+        /// <summary>Smith: pays a rare Expedition material and raises the item's level cap (SCRUM-9).</summary>
+        public SmithCheck BreakthroughGear(int instanceId, EquipmentSlot slot) => Done(Smith.TryBreakthrough(instanceId, slot, Wallet));
+
+        /// <summary>Smith: pays a unique boss material and teaches the Smith its next rank (SCRUM-9).</summary>
+        public SmithCheck UpgradeSmith() => Done(Smith.TryRankUp(Wallet));
 
         T Done<T>(T result)
         {

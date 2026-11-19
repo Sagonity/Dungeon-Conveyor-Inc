@@ -1,12 +1,14 @@
 using System;
 using Deepshaft.Content;
 using Deepshaft.Economy;
+using Deepshaft.Equipment;
 using Deepshaft.Expeditions;
 using Deepshaft.Minions;
 using Deepshaft.Mining;
 using Deepshaft.Roster;
 using Deepshaft.Save;
 using Deepshaft.Session;
+using Deepshaft.Smith;
 using Deepshaft.Time;
 using NUnit.Framework;
 using UnityEngine;
@@ -235,6 +237,36 @@ namespace Deepshaft.Tests
 
             Assert.AreEqual(MinionUpgradeStatus.CantAfford, result.Status);
             Assert.AreEqual(1, session.State.FindMinion(minerId).level);
+        }
+
+        // ---------- Smith and HQ (SCRUM-9) ----------
+
+        [Test]
+        public void UpgradeGear_ThroughTheSession_IsSaved()
+        {
+            GameSession session = NewSession();
+            int minerId = session.Roster.GetMiners()[0].instanceId;
+            session.Wallet.Add(session.Smith.CheckUpgrade(minerId, EquipmentSlot.Tool).Cost);
+
+            Assert.AreEqual(SmithStatus.Ok, session.UpgradeGear(minerId, EquipmentSlot.Tool).Status);
+
+            GameSession reloaded = NewSession();
+            Assert.AreEqual(2, EquipmentRules.GetLevel(reloaded.State.FindMinion(minerId), EquipmentSlot.Tool));
+        }
+
+        [Test]
+        public void ProductionPerHour_AddsTheMineAndTheAutomatedExpedition()
+        {
+            GameSession session = NewSession();
+            foreach (OwnedMinion m in session.Roster.GetTeam()) LevelTo(session, m.instanceId, 16);
+            Assert.IsTrue(session.FightBoss(DefaultAdventureContent.Tier1Boss).Won);
+            Assert.IsTrue(session.FirstClearExpedition(DefaultAdventureContent.Tier1Expedition).Won);
+            session.StartExpedition(DefaultAdventureContent.Tier1Expedition);
+
+            var total = session.GetProductionPerHour();
+
+            Assert.AreEqual(MiningMath.Get(session.Mining.GetHourlyRates(), ResourceId.Gold), MiningMath.Get(total, ResourceId.Gold), 1e-6);
+            Assert.AreEqual(2.0, MiningMath.Get(total, ResourceId.SporeSilk), 1e-6, "2 Spore Silk/h from the Expedition.");
         }
 
         /// <summary>Gives exactly what the level-ups cost and buys them through the session.</summary>

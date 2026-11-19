@@ -216,8 +216,8 @@ summons and check the rates and pity guarantee (SCRUM-11).
 - `Deepshaft.Core.Tests`: EditMode tests for all of the above.
 - `.editorconfig` for consistent formatting.
 
-**Not built yet (later tickets):** HQ and Smith (SCRUM-9), Summon (SCRUM-11).
-Minion levels, breakthroughs and gear: SCRUM-10, below.
+**Not built yet (later tickets):** Summon (SCRUM-11).
+Minion levels, breakthroughs and gear: SCRUM-10, below. Smith and HQ: SCRUM-9, below.
 
 **Updated for Game Design Summary v3.4 (save version 2):** `ResourceId` now has Gold,
 Iron, Silver, Mithril, Basic/Advanced Shards, Minion Essence, rare Expedition materials and
@@ -325,7 +325,7 @@ placement: the player only picks Minions for slots.
   material), tier header with the next goal, bronze-framed cards with gold buttons, and a bottom tab bar
   (HQ, Mine, Exped., Minions, Smith, Boss). Settings (top right) holds Main menu and the debug tools.
   Drawn with IMGUI and generated textures, so no art or scene setup. Portraits, boss art and tier names
-  are placeholders (SCRUM-13); Smith and Summon show as "coming soon" (SCRUM-9, SCRUM-11).
+  are placeholders (SCRUM-13); Summon shows as "coming soon" (SCRUM-11).
   Throwaway until the real UI (SCRUM-12).
 - **Debug:** `OffsetClock` skips time ahead (kept in PlayerPrefs). The "level everyone up" debug action
   was removed in SCRUM-10: Minions now level up for real in the Minions tab.
@@ -359,6 +359,25 @@ placement: the player only picks Minions for slots.
   next level, Level Up, Breakthrough (with its cost shown before the cap), gear, and the Mine / team
   button (assigning moved here from the card tap).
 - Tests: `MinionProgressionTests`, plus paid level-ups in `GameSessionTests`.
+
+### SCRUM-9: Smith and HQ
+
+- **`SmithService`** (`Deepshaft.Smith`): `CheckUpgrade` / `TryUpgrade` and `CheckBreakthrough` /
+  `TryBreakthrough` for one item of one Minion (slot must fit the Minion's kind), and `CheckRankUp` /
+  `TryRankUp` for the Smith itself. All return a `SmithCheck` (status, cost, shortfall, level, cap,
+  required rank). Tool changes go through `MiningService.ChangeRate`. `GameSession.UpgradeGear`,
+  `BreakthroughGear` and `UpgradeSmith` save and raise `Changed`.
+- **Numbers** (`EquipmentRules` on the GameDatabase, first pass): gear level cost 40 Gold + 20 Iron,
+  ×1.25 per level, plus Silver from level 9 (`LevelCostTerm.fromLevel`). Gear breakthroughs at the cap:
+  Gold + Iron + 3 Spore Silk / Ember Core / Prism Dust (the 3rd also Silver). Smith ranks: 1 Foreman
+  Sigil, 1 Golem Heart, 1 Wyrm Scale; rank N is needed for gear breakthrough N (team decision 2026-11-19).
+- **Save:** `GameState.smith.rank` (new field, still save version 2; old saves start at rank 0).
+- **`ResourceSources.Find`**: where a resource first comes from (Mine tier, automated Expedition or boss),
+  for the "where to get it" hints on every cost.
+- **`GameSession.GetProductionPerHour`**: Mine + running automated Expedition, for the HQ.
+- **Grey-box screen:** HQ shows production per hour and Collect; Smith tab has the rank card and every
+  Minion's gear (upgrade / break, with what's missing and where to get it); the Minion detail card links there.
+- Tests: `SmithTests`, plus gear and production in `GameSessionTests`.
 
 ## 12. Team decisions (2026-11-17)
 

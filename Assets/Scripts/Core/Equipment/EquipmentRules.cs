@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Deepshaft.Economy;
 using Deepshaft.Minions;
 using UnityEngine;
 
@@ -38,14 +39,47 @@ namespace Deepshaft.Equipment
     }
 
     /// <summary>
-    /// Gear numbers (Scope §4.5), on the GameDatabase asset so they can be tuned in the Inspector.
-    /// SCRUM-10 builds the slots and their effect on stats; upgrade costs come with the Smith (SCRUM-9).
-    /// Numbers are a first pass until SCRUM-2 / SCRUM-19.
+    /// One Smith rank (SCRUM-9; team decision 2026-11-19): the Smith learns it once, paid with a
+    /// unique boss material, and from then on can do that gear breakthrough (rank 1 → gear
+    /// breakthrough 1, and so on).
+    /// </summary>
+    [Serializable]
+    public class SmithRank
+    {
+        [Tooltip("Shown in the game, e.g. \"Sigil Forging\".")]
+        public string displayName = "";
+        public List<ResourceAmount> cost = new List<ResourceAmount>();
+
+        public SmithRank() { }
+
+        public SmithRank(string displayName, params ResourceAmount[] cost)
+        {
+            this.displayName = displayName;
+            this.cost = new List<ResourceAmount>(cost);
+        }
+    }
+
+    /// <summary>
+    /// Gear and Smith numbers (Scope §4.5), on the GameDatabase asset so they can be tuned in the
+    /// Inspector. First pass until SCRUM-2 / SCRUM-19.
+    ///
+    /// - Slots and their bonuses (SCRUM-10).
+    /// - Upgrades (SCRUM-9): one level-cost table for every slot, Gold + Iron, Silver from level 9.
+    /// - Gear breakthroughs at the cap: Gold + ores + that tier's Expedition material (Spore Silk,
+    ///   Ember Core, Prism Dust), and the Smith must know the matching rank.
+    /// - Smith ranks: learned once with a unique boss material (Foreman Sigil, Golem Heart, Wyrm Scale).
     /// </summary>
     [Serializable]
     public class EquipmentRules
     {
         public List<EquipmentSlotRules> slots = new List<EquipmentSlotRules>();
+
+        [Tooltip("Cost of one gear level at the Smith, from the item's current level.")]
+        public List<LevelCostTerm> levelCost = new List<LevelCostTerm>();
+        [Tooltip("Gear breakthroughs in order. The number of rows is how many an item can have.")]
+        public List<BreakthroughCost> breakthroughs = new List<BreakthroughCost>();
+        [Tooltip("Smith ranks in order. Rank N is needed for gear breakthrough N.")]
+        public List<SmithRank> smithRanks = new List<SmithRank>();
 
         static readonly EquipmentSlot[] MinerSlots = { EquipmentSlot.Tool };
         static readonly EquipmentSlot[] AdventureSlots = { EquipmentSlot.Weapon, EquipmentSlot.Armor };
@@ -58,7 +92,47 @@ namespace Deepshaft.Equipment
                 new EquipmentSlotRules(EquipmentSlot.Weapon, "Weapon", 0.08f),
                 new EquipmentSlotRules(EquipmentSlot.Armor, "Armor", 0.08f),
             },
+            levelCost = new List<LevelCostTerm>
+            {
+                new LevelCostTerm(ResourceId.Gold, 40f, 1.25f),
+                new LevelCostTerm(ResourceId.Iron, 20f, 1.25f),
+                new LevelCostTerm(ResourceId.Silver, 10f, 1.25f, 9),
+            },
+            breakthroughs = new List<BreakthroughCost>
+            {
+                new BreakthroughCost(R(ResourceId.Gold, 300), R(ResourceId.Iron, 150), R(ResourceId.SporeSilk, 3)),
+                new BreakthroughCost(R(ResourceId.Gold, 900), R(ResourceId.Iron, 450), R(ResourceId.EmberCore, 3)),
+                new BreakthroughCost(R(ResourceId.Gold, 2500), R(ResourceId.Iron, 1200), R(ResourceId.Silver, 150), R(ResourceId.PrismDust, 3)),
+            },
+            smithRanks = new List<SmithRank>
+            {
+                new SmithRank("Sigil Forging", R(ResourceId.ForemanSigil, 1)),
+                new SmithRank("Golem Tempering", R(ResourceId.GolemHeart, 1)),
+                new SmithRank("Wyrmscale Smithing", R(ResourceId.WyrmScale, 1)),
+            },
         };
+
+        static ResourceAmount R(ResourceId id, long amount) => new ResourceAmount(id, amount);
+
+        public int MaxBreakthroughs => breakthroughs?.Count ?? 0;
+        public int MaxSmithRank => smithRanks?.Count ?? 0;
+
+        /// <summary>Cost of one gear level from <paramref name="currentLevel"/>.</summary>
+        public List<ResourceAmount> GetLevelUpCost(int currentLevel) => CostTables.LevelCost(levelCost, currentLevel);
+
+        /// <summary>Cost of the gear breakthrough after <paramref name="done"/>, or null if there are no more.</summary>
+        public List<ResourceAmount> GetBreakthroughCost(int done) => CostTables.Breakthrough(breakthroughs, done);
+
+        /// <summary>The Smith rank learned as rank <paramref name="rank"/> (1-based), or null.</summary>
+        public SmithRank GetSmithRank(int rank) =>
+            smithRanks != null && rank >= 1 && rank <= smithRanks.Count ? smithRanks[rank - 1] : null;
+
+        public static int GetBreakthroughs(OwnedMinion minion, EquipmentSlot slot) =>
+            Math.Max(0, Find(minion, slot)?.breakthroughs ?? 0);
+
+        /// <summary>The item's level cap with the breakthroughs it has.</summary>
+        public int GetMaxLevel(OwnedMinion minion, EquipmentSlot slot) =>
+            Get(slot).GetMaxLevel(GetBreakthroughs(minion, slot));
 
         /// <summary>The slots a Minion of this kind has: a tool for Miners, weapon and armor for Adventurers.</summary>
         public static IReadOnlyList<EquipmentSlot> SlotsFor(MinionKind kind) =>

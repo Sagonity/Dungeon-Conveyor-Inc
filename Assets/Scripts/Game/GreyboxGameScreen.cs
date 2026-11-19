@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Deepshaft.Bosses;
+using Deepshaft.Content;
 using Deepshaft.Economy;
 using Deepshaft.Equipment;
 using Deepshaft.Expeditions;
@@ -10,6 +11,7 @@ using Deepshaft.Mining;
 using Deepshaft.Progression;
 using Deepshaft.Roster;
 using Deepshaft.Session;
+using Deepshaft.Smith;
 using UnityEngine;
 
 /// <summary>
@@ -136,7 +138,7 @@ public class GreyboxGameScreen : MonoBehaviour
             case Tab.Mine: DrawMineTab(game); break;
             case Tab.Expeditions: DrawExpeditionsTab(game); break;
             case Tab.Minions: DrawMinionsTab(game); break;
-            case Tab.Smith: DrawSmithCard(); break;
+            case Tab.Smith: DrawSmithTab(game); break;
             case Tab.Boss: DrawBossTab(game); break;
         }
         GUILayout.Space(24f);
@@ -263,10 +265,46 @@ public class GreyboxGameScreen : MonoBehaviour
 
     void DrawHQ(GameSession game)
     {
-        DrawMineCard(game);
+        DrawProductionCard(game);
         DrawExpeditionCard(game, true);
-        DrawSmithCard();
+        DrawSmithSummary(game);
         DrawBossSummary(game);
+    }
+
+    /// <summary>HQ overview (SCRUM-9): everything earned per hour, from the Mine and the automated Expedition.</summary>
+    void DrawProductionCard(GameSession game)
+    {
+        MiningService mining = game.Mining;
+        ExpeditionDefinition active = game.Expeditions.Active;
+        BeginCard();
+        CardHeader("HQ · PRODUCTION", mining.GetWorkingMiners().Count > 0 ? "Running" : "No Miners",
+            mining.GetWorkingMiners().Count > 0 ? s.pillGreen : s.pillRed);
+
+        GUILayout.Label("Per hour, in total", s.body);
+        var perHour = new List<KeyValuePair<ResourceId, double>>();
+        foreach (MinedAmount r in game.GetProductionPerHour()) perHour.Add(Pair(r.id, r.amount));
+        ResourceLine(perHour, "+");
+        GUILayout.Label("Mine: " + DescribeRates(mining.GetHourlyRates()), s.small);
+        GUILayout.Label(active != null
+            ? "Expedition " + active.displayName + ": " + DescribeRates(game.Expeditions.GetHourlyRates()) + " (collect when you stop it)"
+            : "No automated Expedition running.", s.small);
+
+        GUILayout.Space(8f);
+        GUILayout.Label("Waiting in the Mine", s.body);
+        var waiting = new List<KeyValuePair<ResourceId, double>>();
+        List<MinedAmount> pending = mining.GetPending();
+        foreach (MinedAmount r in mining.GetHourlyRates()) waiting.Add(Pair(r.id, MiningMath.Get(pending, r.id)));
+        ResourceLine(waiting, "+");
+        GUILayout.BeginHorizontal();
+        GUILayout.FlexibleSpace();
+        if (GoldButton("Collect", 300f))
+        {
+            List<ResourceAmount> collected = game.CollectMine();
+            Say(collected.Count > 0 ? "Collected " + Describe(collected) + "." : "Nothing to collect yet.", Mood.Good);
+            Exit();
+        }
+        GUILayout.EndHorizontal();
+        EndCard();
     }
 
     // ================================================================ Mine
@@ -635,7 +673,7 @@ public class GreyboxGameScreen : MonoBehaviour
         GUILayout.BeginHorizontal();
         GUILayout.BeginVertical();
         GUILayout.Label(level.Status == MinionUpgradeStatus.AtLevelCap ? "At the level cap" : "Level Up: " + Describe(level.Cost), s.body);
-        if (level.Status == MinionUpgradeStatus.CantAfford) GUILayout.Label("Need " + Describe(level.Shortfall) + " more", s.smallRed);
+        if (level.Status == MinionUpgradeStatus.CantAfford) Missing(game, level.Shortfall);
         else if (level.Status == MinionUpgradeStatus.AtLevelCap) GUILayout.Label(Explain(level.Status), s.small);
         GUILayout.EndVertical();
         GUILayout.FlexibleSpace();
@@ -660,7 +698,7 @@ public class GreyboxGameScreen : MonoBehaviour
         else
         {
             GUILayout.Label("Breakthrough " + (m.breakthroughs + 1) + ": " + Describe(breakthrough.Cost), s.body);
-            if (breakthrough.Shortfall.Count > 0) GUILayout.Label("Need " + Describe(breakthrough.Shortfall) + " more", s.smallRed);
+            if (breakthrough.Shortfall.Count > 0) Missing(game, breakthrough.Shortfall);
             GUILayout.Label(breakthrough.Status == MinionUpgradeStatus.BelowLevelCap
                 ? "Reach level " + max + " first. Raises the cap to " + d.GetMaxLevel(m.breakthroughs + 1) + "."
                 : "Raises the level cap to " + d.GetMaxLevel(m.breakthroughs + 1) + ".", s.small);
@@ -685,8 +723,9 @@ public class GreyboxGameScreen : MonoBehaviour
             int gearLevel = EquipmentRules.GetLevel(m, slot);
             string effect = slot == EquipmentSlot.Tool ? "mining output" : slot == EquipmentSlot.Weapon ? "ATK" : "HP";
             GUILayout.Label("<b>" + rules.displayName + "</b> Lv " + gearLevel + " <color=#A59C8C>· +" +
-                            Percent(rules.GetBonus(gearLevel)) + " " + effect + " · upgraded at the Smith</color>", s.body);
+                            Percent(rules.GetBonus(gearLevel)) + " " + effect + "</color>", s.body);
         }
+        if (DarkButton("Upgrade gear at the Smith")) { tab = Tab.Smith; scroll = Vector2.zero; Exit(); }
 
         // Mine / team
         GUILayout.Space(10f);
@@ -743,13 +782,160 @@ public class GreyboxGameScreen : MonoBehaviour
 
     // ================================================================ Smith
 
-    void DrawSmithCard()
+    /// <summary>HQ: the Smith's rank and a shortcut to the Smith tab.</summary>
+    void DrawSmithSummary(GameSession game)
     {
+        SmithService smith = game.Smith;
         BeginCard();
-        CardHeader("SMITH", "Coming soon", s.pillGold);
-        GUILayout.Label("Upgrade pickaxes and gear with Gold and ores. Breakthroughs use rare Expedition materials.", s.body);
-        GUILayout.Label("Arrives with SCRUM-9. Minions level up and break through in the Minions tab.", s.small);
+        CardHeader("SMITH", "Rank " + smith.Rank + "/" + smith.MaxRank, s.pillGold);
+        GUILayout.Label("Upgrade each Minion's gear with Gold and ores. Breakthroughs use rare Expedition materials.", s.body);
+        GUILayout.BeginHorizontal();
+        GUILayout.FlexibleSpace();
+        if (GoldButton("Go", 300f)) { tab = Tab.Smith; scroll = Vector2.zero; Exit(); }
+        GUILayout.EndHorizontal();
         EndCard();
+    }
+
+    /// <summary>
+    /// The Smith (SCRUM-9): learn ranks with boss materials, then upgrade and break through each
+    /// Minion's own gear. Every row says what's missing and where to get it.
+    /// </summary>
+    void DrawSmithTab(GameSession game)
+    {
+        DrawSmithRankCard(game);
+
+        MinionKind kind = showMiners ? MinionKind.Miner : MinionKind.Adventure;
+        BeginCard();
+        GUILayout.BeginHorizontal();
+        GUILayout.Label(showMiners ? "MINER TOOLS" : "WEAPONS & ARMOR", s.title);
+        GUILayout.FlexibleSpace();
+        if (GUILayout.Button(showMiners ? "Adventure gear" : "Miner tools", s.pillButton))
+        {
+            showMiners = !showMiners;
+            selectedMinionId = 0;
+            Exit();
+        }
+        GUILayout.EndHorizontal();
+
+        RosterService roster = game.Roster;
+        var minions = new List<OwnedMinion>(showMiners ? roster.GetMiners() : roster.GetTeam());
+        minions.AddRange(roster.GetUnassigned(kind));
+        if (minions.Count == 0) GUILayout.Label("No Minions of this kind yet.", s.body);
+        foreach (OwnedMinion m in minions)
+        {
+            MinionDefinition d = game.Database.FindMinion(m.definitionId);
+            if (d == null) continue;
+            GUILayout.Space(10f);
+            GUILayout.Label("<b>" + d.DisplayName + "</b> <color=#A59C8C>· " + (roster.IsAssigned(m.instanceId) ? (showMiners ? "Mining" : "Team") : "Bench") + "</color>", s.body);
+            foreach (EquipmentSlot slot in EquipmentRules.SlotsFor(d.Kind)) GearRow(game, m, d, slot);
+        }
+        EndCard();
+    }
+
+    void DrawSmithRankCard(GameSession game)
+    {
+        SmithService smith = game.Smith;
+        BeginCard();
+        CardHeader("SMITH", "Rank " + smith.Rank + "/" + smith.MaxRank, s.pillGold);
+        SmithCheck check = smith.CheckRankUp(game.Wallet);
+        if (check.Status == SmithStatus.NoMore)
+        {
+            GUILayout.Label("The Smith knows every technique. All gear breakthroughs are open.", s.body);
+            EndCard();
+            return;
+        }
+
+        SmithRank next = smith.NextRank;
+        GUILayout.BeginHorizontal();
+        GUILayout.BeginVertical();
+        GUILayout.Label("<b>" + next.displayName + "</b> <color=#A59C8C>· opens gear breakthrough " + (smith.Rank + 1) + "</color>", s.body);
+        GUILayout.Label("Costs " + Describe(check.Cost) + " (once)", s.small);
+        if (check.Status == SmithStatus.CantAfford) Missing(game, check.Shortfall);
+        GUILayout.EndVertical();
+        GUILayout.FlexibleSpace();
+        if (GoldButton("Learn", 300f, check.CanDo))
+        {
+            SmithCheck result = game.UpgradeSmith();
+            if (result.CanDo) Say("The Smith learned " + next.displayName + "!", Mood.Good);
+            else Say(Explain(result.Status), Mood.Bad);
+            Exit();
+        }
+        GUILayout.EndHorizontal();
+        EndCard();
+    }
+
+    void GearRow(GameSession game, OwnedMinion m, MinionDefinition d, EquipmentSlot slot)
+    {
+        SmithService smith = game.Smith;
+        EquipmentRules gear = game.Database.Equipment;
+        EquipmentSlotRules rules = gear.Get(slot);
+        int level = EquipmentRules.GetLevel(m, slot);
+        int max = gear.GetMaxLevel(m, slot);
+        string effect = slot == EquipmentSlot.Tool ? "mining" : slot == EquipmentSlot.Weapon ? "ATK" : "HP";
+
+        SmithCheck upgrade = smith.CheckUpgrade(m.instanceId, slot, game.Wallet);
+        bool atCap = upgrade.Status == SmithStatus.AtLevelCap;
+        SmithCheck check = atCap ? smith.CheckBreakthrough(m.instanceId, slot, game.Wallet) : upgrade;
+
+        GUILayout.BeginHorizontal(s.row);
+        GUILayout.BeginVertical();
+        string bonus = "+" + Percent(rules.GetBonus(level)) +
+                       (!atCap ? " <color=#5FD88C>→ +" + Percent(rules.GetBonus(level + 1)) + "</color>" : "");
+        GUILayout.Label(rules.displayName + " Lv " + level + "/" + max + " <color=#A59C8C>·</color> " + bonus + " " + effect, s.body);
+        if (atCap && check.Status == SmithStatus.NoMore)
+        {
+            GUILayout.Label("Fully upgraded.", s.small);
+        }
+        else
+        {
+            GUILayout.Label((atCap ? "Breakthrough: " : "Upgrade: ") + Describe(check.Cost), s.small);
+            if (check.Status == SmithStatus.SmithRankTooLow)
+            {
+                SmithRank rank = gear.GetSmithRank(check.RequiredRank);
+                GUILayout.Label("The Smith must learn " + (rank != null ? rank.displayName : "rank " + check.RequiredRank) + " first.", s.smallRed);
+            }
+            if (check.Shortfall.Count > 0) Missing(game, check.Shortfall);
+        }
+        GUILayout.EndVertical();
+        GUILayout.FlexibleSpace();
+        if (check.Status != SmithStatus.NoMore && SmallGoldButton(atCap ? "Break" : "Upgrade", check.CanDo))
+        {
+            SmithCheck result = atCap ? game.BreakthroughGear(m.instanceId, slot) : game.UpgradeGear(m.instanceId, slot);
+            if (result.CanDo)
+            {
+                Say(atCap ? d.DisplayName + "'s " + rules.displayName + " broke through! Cap " + result.MaxLevel + "."
+                          : d.DisplayName + "'s " + rules.displayName + " is now level " + result.Level + ".", Mood.Good);
+            }
+            else Say(Explain(result.Status), Mood.Bad);
+            Exit();
+        }
+        GUILayout.EndHorizontal();
+    }
+
+    /// <summary>"Need 50 Iron more", then where each missing resource comes from (SCRUM-9).</summary>
+    void Missing(GameSession game, IReadOnlyList<ResourceAmount> shortfall)
+    {
+        if (shortfall == null || shortfall.Count == 0) return;
+        GUILayout.Label("Need " + Describe(shortfall) + " more", s.smallRed);
+        var hints = new List<string>();
+        foreach (ResourceAmount a in shortfall) hints.Add(Name(a.id) + ": " + WhereToGet(game, a.id));
+        GUILayout.Label(string.Join(" · ", hints), s.small);
+    }
+
+    static string WhereToGet(GameSession game, ResourceId id)
+    {
+        ResourceSource source = ResourceSources.Find(game.Database, id);
+        switch (source.Kind)
+        {
+            case ResourceSourceKind.Mine:
+                return game.Tiers.HighestUnlockedTier >= source.Tier ? "Mine" : "Mine from " + TierName(source.Tier);
+            case ResourceSourceKind.AutomatedExpedition:
+                return "automate " + source.DisplayName;
+            case ResourceSourceKind.Boss:
+                return "beat " + source.DisplayName;
+            default:
+                return "Summoning and first clears";
+        }
     }
 
     // ================================================================ Boss
@@ -1175,6 +1361,21 @@ public class GreyboxGameScreen : MonoBehaviour
             case MinionUpgradeStatus.NoMoreBreakthroughs: return "Every breakthrough is done.";
             case MinionUpgradeStatus.CantAfford: return "Not enough resources yet.";
             case MinionUpgradeStatus.NotFound: return "That Minion is gone.";
+            default: return "Can't do that: " + status + ".";
+        }
+    }
+
+    static string Explain(SmithStatus status)
+    {
+        switch (status)
+        {
+            case SmithStatus.AtLevelCap: return "At the level cap. A breakthrough raises it.";
+            case SmithStatus.BelowLevelCap: return "Reach the level cap before the breakthrough.";
+            case SmithStatus.SmithRankTooLow: return "The Smith must learn the next technique first (boss material).";
+            case SmithStatus.NoMore: return "Nothing more to upgrade here.";
+            case SmithStatus.CantAfford: return "Not enough resources yet.";
+            case SmithStatus.WrongSlot: return "That Minion can't use this gear.";
+            case SmithStatus.NotFound: return "That Minion is gone.";
             default: return "Can't do that: " + status + ".";
         }
     }

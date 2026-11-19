@@ -192,6 +192,7 @@ not simply how large resource numbers become.
 | Ascension in the prototype? | **Not now.** Minion Essence from duplicates accumulates; decide after the playtest (SCRUM-8). |
 | Equipment: shared or per Minion? | **Per Minion.** Each Miner has its own tool; each Adventure Minion its own weapon and armor. Upgraded at the Smith. |
 | Which rare material does each Minion breakthrough cost? | **By tier:** the 1st uses the Tier 1 Expedition material, the 2nd Tier 2's, the 3rd Tier 3's (plus Gold and ores). |
+| What do unique boss materials do? | **Teach the Smith a rank, once each.** Rank N opens gear breakthrough N; the breakthrough itself costs Gold, ores and that tier's Expedition material. |
 
 ## 9. Prototype scope recommendation
 

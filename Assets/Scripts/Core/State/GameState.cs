@@ -6,6 +6,7 @@ using Deepshaft.Expeditions;
 using Deepshaft.Minions;
 using Deepshaft.Mining;
 using Deepshaft.Roster;
+using Deepshaft.Smith;
 using Deepshaft.Time;
 
 namespace Deepshaft.State
@@ -57,6 +58,9 @@ namespace Deepshaft.State
 
         /// <summary>Expedition first clears and the running automated Expedition. Changed through <see cref="ExpeditionService"/>.</summary>
         public ExpeditionData expeditions = new ExpeditionData();
+
+        /// <summary>Smith ranks learned with boss materials. Changed through <see cref="SmithService"/>.</summary>
+        public SmithData smith = new SmithData();
 
         public static GameState CreateNew(IClock clock)
         {
@@ -115,6 +119,8 @@ namespace Deepshaft.State
             if (expeditions.cleared == null) expeditions.cleared = new List<string>();
             if (expeditions.activeId == null) expeditions.activeId = "";
             if (expeditions.pending == null) expeditions.pending = new List<MinedAmount>();
+            if (smith == null) smith = new SmithData();
+            if (smith.rank < 0) smith.rank = 0;
 
             int maxId = 0;
             foreach (OwnedMinion m in minions)

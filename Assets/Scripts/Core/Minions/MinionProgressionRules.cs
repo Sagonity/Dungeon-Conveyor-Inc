@@ -7,28 +7,37 @@ namespace Deepshaft.Minions
 {
     /// <summary>
     /// One resource in the cost of a standard level-up:
-    /// amount = <see cref="atLevelOne"/> × <see cref="growth"/>^(current level − 1), rounded.
+    /// amount = <see cref="atLevelOne"/> × <see cref="growth"/>^(current level − <see cref="fromLevel"/>), rounded,
+    /// and nothing below <see cref="fromLevel"/>. Used for Minion levels and gear upgrades at the Smith.
     /// </summary>
     [Serializable]
     public class LevelCostTerm
     {
         public ResourceId resource = ResourceId.Gold;
-        [Tooltip("Cost of going from level 1 to 2.")]
+        [Tooltip("Cost of going from level 1 to 2 (or from fromLevel to the next one).")]
         [Min(0)] public float atLevelOne = 25f;
         [Tooltip("Each level costs this much more than the one before. 1.12 = +12%.")]
         [Min(1)] public float growth = 1.12f;
+        [Tooltip("This resource is only part of the cost from this level on (e.g. Silver for high levels). 1 = always.")]
+        [Min(1)] public int fromLevel = 1;
 
         public LevelCostTerm() { }
 
-        public LevelCostTerm(ResourceId resource, float atLevelOne, float growth)
+        public LevelCostTerm(ResourceId resource, float atLevelOne, float growth, int fromLevel = 1)
         {
             this.resource = resource;
             this.atLevelOne = atLevelOne;
             this.growth = growth;
+            this.fromLevel = fromLevel;
         }
 
-        public long GetAmount(int currentLevel) =>
-            (long)Math.Round(atLevelOne * Math.Pow(growth, Math.Max(1, currentLevel) - 1));
+        public long GetAmount(int currentLevel)
+        {
+            int start = Math.Max(1, fromLevel);
+            int level = Math.Max(1, currentLevel);
+            if (level < start) return 0;
+            return (long)Math.Round(atLevelOne * Math.Pow(growth, level - start));
+        }
     }
 
     /// <summary>The cost of one Minion breakthrough.</summary>
@@ -78,11 +87,25 @@ namespace Deepshaft.Minions
         public int MaxBreakthroughs => breakthroughs?.Count ?? 0;
 
         /// <summary>Cost of going from <paramref name="currentLevel"/> to the next level.</summary>
-        public List<ResourceAmount> GetLevelUpCost(int currentLevel)
+        public List<ResourceAmount> GetLevelUpCost(int currentLevel) => CostTables.LevelCost(levelCost, currentLevel);
+
+        /// <summary>
+        /// Cost of the breakthrough after <paramref name="breakthroughsDone"/>, or null if there are no more.
+        /// </summary>
+        public List<ResourceAmount> GetBreakthroughCost(int breakthroughsDone) =>
+            CostTables.Breakthrough(breakthroughs, breakthroughsDone);
+
+        static ResourceAmount R(ResourceId id, long amount) => new ResourceAmount(id, amount);
+    }
+
+    /// <summary>Shared cost-table lookups for Minion levels and gear.</summary>
+    public static class CostTables
+    {
+        public static List<ResourceAmount> LevelCost(List<LevelCostTerm> terms, int currentLevel)
         {
             var cost = new List<ResourceAmount>();
-            if (levelCost == null) return cost;
-            foreach (LevelCostTerm term in levelCost)
+            if (terms == null) return cost;
+            foreach (LevelCostTerm term in terms)
             {
                 if (term == null) continue;
                 long amount = term.GetAmount(currentLevel);
@@ -91,16 +114,12 @@ namespace Deepshaft.Minions
             return cost;
         }
 
-        /// <summary>
-        /// Cost of the breakthrough after <paramref name="breakthroughsDone"/>, or null if there are no more.
-        /// </summary>
-        public List<ResourceAmount> GetBreakthroughCost(int breakthroughsDone)
+        /// <summary>The row after <paramref name="done"/> breakthroughs, or null if there are no more.</summary>
+        public static List<ResourceAmount> Breakthrough(List<BreakthroughCost> rows, int done)
         {
-            if (breakthroughs == null || breakthroughsDone < 0 || breakthroughsDone >= breakthroughs.Count) return null;
-            BreakthroughCost row = breakthroughs[breakthroughsDone];
+            if (rows == null || done < 0 || done >= rows.Count) return null;
+            BreakthroughCost row = rows[done];
             return row?.cost != null ? new List<ResourceAmount>(row.cost) : new List<ResourceAmount>();
         }
-
-        static ResourceAmount R(ResourceId id, long amount) => new ResourceAmount(id, amount);
     }
 }
