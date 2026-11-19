@@ -351,7 +351,7 @@ As of 2026-11-19 (SCRUM-4, 5, 6, 7 and 30 merged; SCRUM-10, 9 and 11 in review).
     0/85/15, shown on the screen (the real chances for that pool). No pity.
   - One of each Minion: duplicates give Minion Essence by rarity, 5 / 15 / 50 (decision 28).
   - Each boss's first win also gives 10 Advanced Shards (decision 27).
-  - 14 placeholder Minions added (Common Speed Miner; Uncommon and Rare Miners and Adventurers),
+  - 13 placeholder Minions added (Common Speed Miner; Uncommon and Rare Miners and Adventurers),
     Uncommon +25% and Rare +60% base stats (SCRUM-13 names and art).
 - **Still to change:** `GameController` sets `Time.timeScale = 0` while a menu is open.
   New systems must use `IClock`, not game time.

@@ -392,7 +392,7 @@ placement: the player only picks Minions for slots.
   summon. No pity in the prototype.
 - **Shard sources:** Basic Shards from boss first wins and Expedition first clears (as before); each boss's
   first win now also gives 10 Advanced Shards (team decision 2026-11-19).
-- **Content:** 13 placeholder Uncommon / Rare Minions plus a Common Speed Miner in `Content/Minions`
+- **Content:** 13 placeholder Minions in `Content/Minions` (12 Uncommon / Rare plus a Common Speed Miner)
   (Uncommon +25% base stats, Rare +60%). Names and art: SCRUM-13.
 - `GameSession.Summon(pool, shard)` saves and raises `Changed`. Tests: `SummonTests`.
 
