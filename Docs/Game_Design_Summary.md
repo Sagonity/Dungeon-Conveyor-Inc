@@ -193,6 +193,8 @@ not simply how large resource numbers become.
 | Equipment: shared or per Minion? | **Per Minion.** Each Miner has its own tool; each Adventure Minion its own weapon and armor. Upgraded at the Smith. |
 | Which rare material does each Minion breakthrough cost? | **By tier:** the 1st uses the Tier 1 Expedition material, the 2nd Tier 2's, the 3rd Tier 3's (plus Gold and ores). |
 | What do unique boss materials do? | **Teach the Smith a rank, once each.** Rank N opens gear breakthrough N; the breakthrough itself costs Gold, ores and that tier's Expedition material. |
+| Where do Advanced Shards come from? | **Each boss's first win gives 10** (one Advanced summon). |
+| Minion Essence per duplicate? | **By rarity:** Common 5, Uncommon 15, Rare 50. |
 
 ## 9. Prototype scope recommendation
 

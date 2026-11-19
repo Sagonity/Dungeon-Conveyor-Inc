@@ -11,6 +11,7 @@ using Deepshaft.Progression;
 using Deepshaft.Roster;
 using Deepshaft.Save;
 using Deepshaft.Smith;
+using Deepshaft.Summoning;
 using Deepshaft.State;
 using Deepshaft.Time;
 using UnityEngine;
@@ -78,6 +79,7 @@ namespace Deepshaft.Session
             Bosses = new BossService(State, database, Expeditions, Tiers);
             Minions = new MinionProgressionService(State, database, Mining);
             Smith = new SmithService(State, database, Mining);
+            Summoning = new SummonService(State, database, Roster);
 
             if (State.minions.Count == 0) GrantStarterMinions();
 
@@ -104,6 +106,7 @@ namespace Deepshaft.Session
         public BossService Bosses { get; }
         public MinionProgressionService Minions { get; }
         public SmithService Smith { get; }
+        public SummonService Summoning { get; }
 
         /// <summary>False after loading a save from a newer build: nothing will be written.</summary>
         public bool SavingAllowed => saves.SavingAllowed;
@@ -166,6 +169,9 @@ namespace Deepshaft.Session
 
         /// <summary>Smith: pays a rare Expedition material and raises the item's level cap (SCRUM-9).</summary>
         public SmithCheck BreakthroughGear(int instanceId, EquipmentSlot slot) => Done(Smith.TryBreakthrough(instanceId, slot, Wallet));
+
+        /// <summary>Pays shards and summons one Minion from the Miner or Adventure pool (SCRUM-11).</summary>
+        public SummonResult Summon(MinionKind pool, ShardType shard) => Done(Summoning.TrySummon(pool, shard, Wallet, rng));
 
         /// <summary>Smith: pays a unique boss material and teaches the Smith its next rank (SCRUM-9).</summary>
         public SmithCheck UpgradeSmith() => Done(Smith.TryRankUp(Wallet));

@@ -7,6 +7,7 @@ using Deepshaft.Minions;
 using Deepshaft.Mining;
 using Deepshaft.Progression;
 using Deepshaft.Roster;
+using Deepshaft.Summoning;
 using UnityEngine;
 
 namespace Deepshaft.Content
@@ -31,6 +32,9 @@ namespace Deepshaft.Content
         [Header("Minion levels, breakthroughs and gear (SCRUM-10)")]
         [SerializeField] MinionProgressionRules minionProgression = MinionProgressionRules.CreateDefault();
         [SerializeField] EquipmentRules equipment = EquipmentRules.CreateDefault();
+
+        [Header("Summoning (SCRUM-11)")]
+        [SerializeField] SummonRules summoning = SummonRules.CreateDefault();
 
         [Header("New game (SCRUM-30)")]
         [Tooltip("Minion definition ids a new game starts with. Miners fill the Mine and Adventure Minions the team, in this order.")]
@@ -66,6 +70,9 @@ namespace Deepshaft.Content
 
         /// <summary>Gear slots and their bonuses (SCRUM-10). Never null.</summary>
         public EquipmentRules Equipment => equipment ?? (equipment = EquipmentRules.CreateDefault());
+
+        /// <summary>Shard costs, rarity rates and Essence per duplicate (SCRUM-11). Never null.</summary>
+        public SummonRules Summoning => summoning ?? (summoning = SummonRules.CreateDefault());
 
         /// <summary>Minion definition ids a new game starts with (SCRUM-30).</summary>
         public IReadOnlyList<string> StarterMinions => starterMinions ?? (starterMinions = new List<string>());
@@ -155,6 +162,9 @@ namespace Deepshaft.Content
 
         /// <summary>For tests and editor tools only.</summary>
         public void EditorSetMinionProgression(MinionProgressionRules rules) => minionProgression = rules;
+
+        /// <summary>For tests and editor tools only.</summary>
+        public void EditorSetSummoning(SummonRules rules) => summoning = rules;
 
         /// <summary>For tests and editor tools only.</summary>
         public void EditorSetEquipment(EquipmentRules rules) => equipment = rules;

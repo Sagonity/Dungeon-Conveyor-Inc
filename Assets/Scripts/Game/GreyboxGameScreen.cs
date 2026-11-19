@@ -12,6 +12,7 @@ using Deepshaft.Progression;
 using Deepshaft.Roster;
 using Deepshaft.Session;
 using Deepshaft.Smith;
+using Deepshaft.Summoning;
 using UnityEngine;
 
 /// <summary>
@@ -62,6 +63,7 @@ public class GreyboxGameScreen : MonoBehaviour
     bool resetArmed;
     bool showMiners;
     int selectedMinionId; // 0 = none; the Minions tab shows its detail card
+    bool summonAdvanced;  // Summon card: Advanced instead of Basic shards
     UIManager ui;
 
     Vector2 pressStart;
@@ -750,35 +752,78 @@ public class GreyboxGameScreen : MonoBehaviour
     static string Percent(float fraction) =>
         Math.Round(fraction * 100f).ToString("0", CultureInfo.InvariantCulture) + "%";
 
+    /// <summary>
+    /// Summoning (SCRUM-11; wireframes §4.6): pick the pool (follows the Minions tab: Miners or
+    /// Adventure) and the shard, see the real rates, summon one. Short on shards: says where they come from.
+    /// </summary>
     void DrawSummonCard(GameSession game)
     {
+        MinionKind pool = showMiners ? MinionKind.Miner : MinionKind.Adventure;
+        ShardType shard = summonAdvanced ? ShardType.Advanced : ShardType.Basic;
+
         BeginCard();
         GUILayout.BeginHorizontal();
         GUILayout.Label("SUMMON", s.title);
         GUILayout.FlexibleSpace();
-        Rect icon = GUILayoutUtility.GetRect(44f, 44f, GUILayout.Width(44f), GUILayout.Height(44f));
-        DrawIcon(new Rect(icon.x, icon.y + 6f, 40f, 40f), ResourceId.BasicShard);
-        GUILayout.Label(Short(game.Wallet.Get(ResourceId.BasicShard)), s.chipInline);
+        foreach (ResourceId id in new[] { ResourceId.BasicShard, ResourceId.AdvancedShard })
+        {
+            Rect icon = GUILayoutUtility.GetRect(44f, 44f, GUILayout.Width(44f), GUILayout.Height(44f));
+            DrawIcon(new Rect(icon.x, icon.y + 6f, 40f, 40f), id);
+            GUILayout.Label(Short(game.Wallet.Get(id)), s.chipInline);
+            GUILayout.Space(12f);
+        }
         GUILayout.EndHorizontal();
 
-        bool was = GUI.enabled;
-        GUI.enabled = false;
         GUILayout.BeginHorizontal();
-        GUILayout.Button("Miner", s.segment);
-        GUILayout.Button("Adventure", s.segmentOn);
-        GUILayout.Button("Basic", s.segmentOn);
-        GUILayout.Button("Advanced", s.segment);
+        if (GUILayout.Button("Miner", showMiners ? s.segmentOn : s.segment)) { showMiners = true; selectedMinionId = 0; Exit(); }
+        if (GUILayout.Button("Adventure", showMiners ? s.segment : s.segmentOn)) { showMiners = false; selectedMinionId = 0; Exit(); }
+        GUILayout.Space(18f);
+        if (GUILayout.Button("Basic", summonAdvanced ? s.segment : s.segmentOn)) { summonAdvanced = false; Exit(); }
+        if (GUILayout.Button("Advanced", summonAdvanced ? s.segmentOn : s.segment)) { summonAdvanced = true; Exit(); }
         GUILayout.EndHorizontal();
-        GUI.enabled = was;
 
-        GUILayout.Label("C 75% · <color=#5FD88C>U 23%</color> · <color=#4FA3FF>R 2%</color> · duplicates → Essence", s.body);
+        // Rates shown on the screen itself (store compliance, SCRUM-25): the real chances for this pool.
+        Dictionary<Rarity, double> rates = game.Summoning.GetRates(pool, shard);
+        GUILayout.Label("Common " + Pct(rates[Rarity.Common]) + " · <color=#5FD88C>Uncommon " + Pct(rates[Rarity.Uncommon]) +
+                        "</color> · <color=#4FA3FF>Rare " + Pct(rates[Rarity.Rare]) + "</color>", s.body);
+        GUILayout.Label("You own one of each Minion: duplicates become Minion Essence (" +
+                        game.Database.Summoning.GetEssence(Rarity.Common) + " / " +
+                        game.Database.Summoning.GetEssence(Rarity.Uncommon) + " / " +
+                        game.Database.Summoning.GetEssence(Rarity.Rare) + " by rarity). No pity.", s.small);
+
+        SummonResult check = game.Summoning.Check(pool, shard, game.Wallet);
         GUILayout.BeginHorizontal();
-        GUILayout.Label("Summoning comes with SCRUM-11.", s.small);
+        GUILayout.BeginVertical();
+        if (check.Status == SummonStatus.CantAfford)
+        {
+            GUILayout.Label("Need " + Describe(check.Shortfall) + " more", s.smallRed);
+            GUILayout.Label(summonAdvanced ? "Advanced Shards: each boss's first win." : "Basic Shards: boss wins and Expedition first clears.", s.small);
+        }
+        else if (check.Status == SummonStatus.EmptyPool)
+        {
+            GUILayout.Label("This shard can't give a Minion from this pool.", s.smallRed);
+        }
+        GUILayout.EndVertical();
         GUILayout.FlexibleSpace();
-        GoldButton("Summon x1 · 10", 380f, false);
+        if (GoldButton("Summon x1 · " + check.Cost.amount, 380f, check.Ok))
+        {
+            SummonResult result = game.Summon(pool, shard);
+            if (!result.Ok) Say("Can't summon: " + result.Status + ".", Mood.Bad);
+            else if (result.IsDuplicate) Say(result.Definition.Rarity + " " + result.Definition.DisplayName + " again: +" + result.Essence + " Minion Essence.", Mood.Neutral);
+            else
+            {
+                Say("NEW! " + result.Definition.DisplayName + " (" + result.Definition.Rarity + ") joined " +
+                    (game.Roster.IsAssigned(result.Added.instanceId) ? (showMiners ? "the Mine." : "the team.") : "the bench."), Mood.Good);
+                selectedMinionId = result.Added.instanceId;
+            }
+            Exit();
+        }
         GUILayout.EndHorizontal();
         EndCard();
     }
+
+    static string Pct(double fraction) =>
+        (fraction * 100.0).ToString(fraction * 100.0 % 1.0 == 0.0 ? "0" : "0.#", CultureInfo.InvariantCulture) + "%";
 
     // ================================================================ Smith
 

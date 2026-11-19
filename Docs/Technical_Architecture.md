@@ -162,7 +162,7 @@ progress = clamp((clock.UtcNow - startedAt) / duration, 0, 1)
 Summons, loot and combat take a **`System.Random` passed in**, never
 `UnityEngine.Random` or a new `Random()` inside the system. Tests pass a seeded
 `Random` and get the same results every run. Drop-rate tests run many seeded
-summons and check the rates and pity guarantee (SCRUM-11).
+summons and check the rates (SCRUM-11, `SummonTests`; no pity in the prototype).
 
 ---
 
@@ -216,8 +216,7 @@ summons and check the rates and pity guarantee (SCRUM-11).
 - `Deepshaft.Core.Tests`: EditMode tests for all of the above.
 - `.editorconfig` for consistent formatting.
 
-**Not built yet (later tickets):** Summon (SCRUM-11).
-Minion levels, breakthroughs and gear: SCRUM-10, below. Smith and HQ: SCRUM-9, below.
+Minion levels, breakthroughs and gear: SCRUM-10, below. Smith and HQ: SCRUM-9. Summoning: SCRUM-11.
 
 **Updated for Game Design Summary v3.4 (save version 2):** `ResourceId` now has Gold,
 Iron, Silver, Mithril, Basic/Advanced Shards, Minion Essence, rare Expedition materials and
@@ -325,7 +324,7 @@ placement: the player only picks Minions for slots.
   material), tier header with the next goal, bronze-framed cards with gold buttons, and a bottom tab bar
   (HQ, Mine, Exped., Minions, Smith, Boss). Settings (top right) holds Main menu and the debug tools.
   Drawn with IMGUI and generated textures, so no art or scene setup. Portraits, boss art and tier names
-  are placeholders (SCRUM-13); Summon shows as "coming soon" (SCRUM-11).
+  are placeholders (SCRUM-13).
   Throwaway until the real UI (SCRUM-12).
 - **Debug:** `OffsetClock` skips time ahead (kept in PlayerPrefs). The "level everyone up" debug action
   was removed in SCRUM-10: Minions now level up for real in the Minions tab.
@@ -378,6 +377,24 @@ placement: the player only picks Minions for slots.
 - **Grey-box screen:** HQ shows production per hour and Collect; Smith tab has the rank card and every
   Minion's gear (upgrade / break, with what's missing and where to get it); the Minion detail card links there.
 - Tests: `SmithTests`, plus gear and production in `GameSessionTests`.
+
+### SCRUM-11: Summoning
+
+- **`SummonService`** (`Deepshaft.Summoning`): `Check` / `TrySummon(pool, shard, wallet, rng)` returns a
+  `SummonResult` (status, cost, shortfall, the Minion, the new `OwnedMinion` or null for a duplicate,
+  Essence given). Paid with shards only. A rarity is rolled from the shard's rates, then a Minion of that
+  rarity from the pool (Miner or Adventure), each equally likely; the pool is sorted by id so a seed
+  always gives the same result. A rarity the pool has none of is left out and the others keep their
+  proportions; `GetRates` returns exactly these chances, and the screen shows them.
+- **One of each Minion:** a duplicate gives Minion Essence by rarity (5 / 15 / 50, team decision
+  2026-11-19). New Minions go through `RosterService.AddMinion`, so they fill a free slot.
+- **`SummonRules`** (on the GameDatabase): Basic 75 / 23 / 2 and Advanced 0 / 85 / 15, 10 shards a
+  summon. No pity in the prototype.
+- **Shard sources:** Basic Shards from boss first wins and Expedition first clears (as before); each boss's
+  first win now also gives 10 Advanced Shards (team decision 2026-11-19).
+- **Content:** 13 placeholder Uncommon / Rare Minions plus a Common Speed Miner in `Content/Minions`
+  (Uncommon +25% base stats, Rare +60%). Names and art: SCRUM-13.
+- `GameSession.Summon(pool, shard)` saves and raises `Changed`. Tests: `SummonTests`.
 
 ## 12. Team decisions (2026-11-17)
 
