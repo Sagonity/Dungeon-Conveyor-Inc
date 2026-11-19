@@ -56,6 +56,8 @@ public class GreyboxGameScreen : MonoBehaviour
     static readonly Color Blue = Hex("4FA3FF");
 
     Tab tab = Tab.HQ;
+    Tab? loggedTab; // last tab written to the playtest log (SCRUM-8)
+    string playtestNote = "";
     Overlay overlay;
     Vector2 scroll;
     string message = "";
@@ -89,6 +91,8 @@ public class GreyboxGameScreen : MonoBehaviour
     {
         Say(DescribeWelcome(session.Offline), Mood.Good);
         tab = Tab.HQ;
+        loggedTab = null;
+        playtestNote = "";
         overlay = Overlay.None;
     }
 
@@ -100,6 +104,12 @@ public class GreyboxGameScreen : MonoBehaviour
     {
         GameSession game = Session;
         if (game == null || !IsVisible) return;
+        if (loggedTab != tab)
+        {
+            // Playtest log (SCRUM-8): where the tester goes, e.g. back to Minions after a lost fight.
+            game.LogView("tab " + TabNames[(int)tab]);
+            loggedTab = tab;
+        }
         if (s == null) s = new Styles();
 
         float scale = Mathf.Min(Screen.width, Screen.height) / ReferenceSize;
@@ -1190,7 +1200,24 @@ public class GreyboxGameScreen : MonoBehaviour
         GUILayout.EndHorizontal();
 
         GUILayout.Space(16f);
-        if (DarkButton(resetArmed ? "Tap again to DELETE the save" : "Reset game"))
+        GUILayout.Label("Playtest log (SCRUM-8): " + game.Playtest.Events.Count + " events on this device", s.small);
+        GUILayout.BeginHorizontal();
+        if (DarkButton("Copy log"))
+        {
+            GUIUtility.systemCopyBuffer = game.Playtest.ToCsv();
+            playtestNote = "Copied " + game.Playtest.Events.Count + " events to the clipboard.";
+            Exit();
+        }
+        if (DarkButton("Save log file"))
+        {
+            playtestNote = SavePlaytestLog(game);
+            Exit();
+        }
+        GUILayout.EndHorizontal();
+        if (!string.IsNullOrEmpty(playtestNote)) GUILayout.Label(playtestNote, s.small);
+
+        GUILayout.Space(16f);
+        if (DarkButton(resetArmed ? "Tap again to DELETE the save and its playtest log" : "Reset game (copy the log first)"))
         {
             if (!resetArmed)
             {
@@ -1205,6 +1232,22 @@ public class GreyboxGameScreen : MonoBehaviour
             Exit();
         }
         GUILayout.EndArea();
+    }
+
+    /// <summary>Writes the playtest log as CSV next to the save and returns where it went.</summary>
+    static string SavePlaytestLog(GameSession game)
+    {
+        try
+        {
+            string path = System.IO.Path.Combine(Application.persistentDataPath,
+                "playtest_log_" + DateTime.UtcNow.ToString("yyyyMMdd_HHmmss", CultureInfo.InvariantCulture) + ".csv");
+            System.IO.File.WriteAllText(path, game.Playtest.ToCsv());
+            return "Saved to " + path;
+        }
+        catch (Exception e)
+        {
+            return "Could not save the log: " + e.Message;
+        }
     }
 
     void Skip(GameSessionRunner runner, int hours)

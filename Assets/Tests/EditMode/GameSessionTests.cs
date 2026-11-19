@@ -269,6 +269,49 @@ namespace Deepshaft.Tests
             Assert.AreEqual(2.0, MiningMath.Get(total, ResourceId.SporeSilk), 1e-6, "2 Spore Silk/h from the Expedition.");
         }
 
+        // ---------- Playtest log (SCRUM-8) ----------
+
+        [Test]
+        public void PlaytestLog_RecordsActions_AndSurvivesReload()
+        {
+            GameSession session = NewSession();
+            session.FightBoss(DefaultAdventureContent.Tier1Boss);
+            session.LogView("Minions");
+            session.LevelUpMinion(session.Roster.GetMiners()[0].instanceId); // no Gold yet
+
+            GameSession reloaded = NewSession();
+            var types = new System.Collections.Generic.List<string>();
+            foreach (PlaytestEvent e in reloaded.Playtest.Events) types.Add(e.type);
+
+            CollectionAssert.AreEqual(new[] { "new_game", "boss_fight", "view", "level_up", "session_start" }, types);
+            StringAssert.Contains("spore_foreman", reloaded.Playtest.Events[1].detail);
+            StringAssert.Contains("rec=80", reloaded.Playtest.Events[1].detail);
+            StringAssert.Contains("CantAfford", reloaded.Playtest.Events[3].detail);
+        }
+
+        [Test]
+        public void PlaytestLog_Csv_HasTheMinutesAndQuotesCommas()
+        {
+            GameSession session = NewSession();
+            clock.Advance(TimeSpan.FromMinutes(90));
+            session.LogView("a, \"quoted\" thing");
+
+            string[] lines = session.Playtest.ToCsv().Split('\n');
+
+            Assert.AreEqual("utc,minutes,type,detail", lines[0]);
+            StringAssert.EndsWith(",90.0,view,\"a, \"\"quoted\"\" thing\"", lines[2]);
+        }
+
+        [Test]
+        public void PlaytestLog_KeepsOnlyTheNewestEvents()
+        {
+            GameSession session = NewSession();
+            for (int i = 0; i < PlaytestLog.MaxEvents + 50; i++) session.LogView("tab " + i);
+
+            Assert.AreEqual(PlaytestLog.MaxEvents, session.Playtest.Events.Count);
+            Assert.AreEqual("tab " + (PlaytestLog.MaxEvents + 49), session.Playtest.Events[PlaytestLog.MaxEvents - 1].detail);
+        }
+
         /// <summary>Gives exactly what the level-ups cost and buys them through the session.</summary>
         static void LevelTo(GameSession session, int instanceId, int level)
         {

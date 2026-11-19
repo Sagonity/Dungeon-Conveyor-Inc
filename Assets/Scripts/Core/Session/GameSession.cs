@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Deepshaft.Bosses;
 using Deepshaft.Content;
 using Deepshaft.Economy;
@@ -81,6 +82,7 @@ namespace Deepshaft.Session
             Smith = new SmithService(State, database, Mining);
             Summoning = new SummonService(State, database, Roster);
 
+            Playtest = new PlaytestLog(State.playtest, clock);
             if (State.minions.Count == 0) GrantStarterMinions();
 
             bool fromSave = LoadStatus == LoadStatus.Loaded || LoadStatus == LoadStatus.LoadedFromBackup;
@@ -88,6 +90,9 @@ namespace Deepshaft.Session
                 ? Math.Max(0.0, (UnixTime.ToUnixMs(clock.UtcNow) - lastSavedMs) / 3600000.0)
                 : 0.0;
             Offline = new OfflineReport(hoursAway, Mining.GetPending(), Expeditions.GetPending());
+            Playtest.Add(fromSave ? "session_start" : "new_game",
+                "hours_away=" + hoursAway.ToString("0.0", CultureInfo.InvariantCulture) + " tier=" + Tiers.HighestUnlockedTier +
+                " waiting_mine=" + Describe(Offline.Mine) + " waiting_expedition=" + Describe(Offline.Expedition));
 
             Save();
         }
@@ -107,6 +112,9 @@ namespace Deepshaft.Session
         public MinionProgressionService Minions { get; }
         public SmithService Smith { get; }
         public SummonService Summoning { get; }
+
+        /// <summary>Local playtest event log (SCRUM-8). Settings → Debug copies it.</summary>
+        public PlaytestLog Playtest { get; }
 
         /// <summary>False after loading a save from a newer build: nothing will be written.</summary>
         public bool SavingAllowed => saves.SavingAllowed;
@@ -138,43 +146,146 @@ namespace Deepshaft.Session
         public void DeleteSave() => storage.DeleteAll();
 
         // ---------- Actions ----------
+        // Each action is also written to the playtest log (SCRUM-8).
 
-        public List<ResourceAmount> CollectMine() => Done(Mining.Collect(Wallet));
+        public List<ResourceAmount> CollectMine()
+        {
+            List<ResourceAmount> collected = Mining.Collect(Wallet);
+            Playtest.Add("collect_mine", Describe(collected));
+            return Done(collected);
+        }
 
-        public AssignResult AssignMiner(int instanceId) => Done(Roster.AssignMiner(instanceId));
-        public AssignResult UnassignMiner(int instanceId) => Done(Roster.UnassignMiner(instanceId));
-        public AssignResult AssignToTeam(int instanceId) => Done(Roster.AssignToTeam(instanceId));
-        public AssignResult RemoveFromTeam(int instanceId) => Done(Roster.RemoveFromTeam(instanceId));
+        public AssignResult AssignMiner(int instanceId) => Done(LogAssign("assign_miner", instanceId, Roster.AssignMiner(instanceId)));
+        public AssignResult UnassignMiner(int instanceId) => Done(LogAssign("unassign_miner", instanceId, Roster.UnassignMiner(instanceId)));
+        public AssignResult AssignToTeam(int instanceId) => Done(LogAssign("assign_team", instanceId, Roster.AssignToTeam(instanceId)));
+        public AssignResult RemoveFromTeam(int instanceId) => Done(LogAssign("remove_team", instanceId, Roster.RemoveFromTeam(instanceId)));
 
-        public BossFightResult FightBoss(string bossId) => Done(Bosses.Fight(bossId, Wallet, rng));
+        public BossFightResult FightBoss(string bossId)
+        {
+            float power = Bosses.GetTeamPower();
+            BossFightResult result = Bosses.Fight(bossId, Wallet, rng);
+            float recommended = Database.FindBoss(bossId)?.recommendedPower ?? 0f;
+            Playtest.Add("boss_fight", bossId + " " + (result.Check != BossCheck.Ok ? result.Check.ToString() : result.Won ? "won" : "lost") +
+                                       " power=" + Num(power) + " rec=" + Num(recommended) + (result.FirstWin ? " first_win" : ""));
+            return Done(result);
+        }
 
-        public FirstClearResult FirstClearExpedition(string expeditionId) =>
-            Done(Expeditions.TryFirstClear(expeditionId, Wallet, rng));
+        public FirstClearResult FirstClearExpedition(string expeditionId)
+        {
+            float power = Expeditions.GetTeamPower();
+            FirstClearResult result = Expeditions.TryFirstClear(expeditionId, Wallet, rng);
+            float recommended = Database.FindExpedition(expeditionId)?.recommendedPower ?? 0f;
+            Playtest.Add("first_clear", expeditionId + " " + (result.Check != ExpeditionCheck.Ok ? result.Check.ToString() : result.Won ? "won" : "lost") +
+                                        " power=" + Num(power) + " rec=" + Num(recommended));
+            return Done(result);
+        }
 
-        public ExpeditionCheck StartExpedition(string expeditionId) => Done(Expeditions.Start(expeditionId));
+        public ExpeditionCheck StartExpedition(string expeditionId)
+        {
+            ExpeditionCheck check = Expeditions.Start(expeditionId);
+            Playtest.Add("expedition_start", expeditionId + " " + check);
+            return Done(check);
+        }
 
-        public ExpeditionCollectResult StopExpedition() => Done(Expeditions.StopAndCollect(Wallet));
+        public ExpeditionCollectResult StopExpedition()
+        {
+            ExpeditionCollectResult result = Expeditions.StopAndCollect(Wallet);
+            Playtest.Add("expedition_stop", result.ExpeditionId + " hours=" + result.HoursRun.ToString("0.0", CultureInfo.InvariantCulture) +
+                                            " " + Describe(result.Collected));
+            return Done(result);
+        }
 
         /// <summary>Pays for and unlocks the next tier, for tiers with a cost. Free tiers unlock by themselves.</summary>
-        public TierUnlockCheck UnlockNextTier() => Done(Tiers.TryUnlockNext(Wallet));
+        public TierUnlockCheck UnlockNextTier()
+        {
+            TierUnlockCheck check = Tiers.TryUnlockNext(Wallet);
+            Playtest.Add("tier_unlock", "tier=" + check.Tier + " " + check.Status);
+            return Done(check);
+        }
 
         /// <summary>Pays Gold + ores and raises a Minion one level (SCRUM-10).</summary>
-        public MinionUpgradeCheck LevelUpMinion(int instanceId) => Done(Minions.TryLevelUp(instanceId, Wallet));
+        public MinionUpgradeCheck LevelUpMinion(int instanceId)
+        {
+            MinionUpgradeCheck result = Minions.TryLevelUp(instanceId, Wallet);
+            Playtest.Add("level_up", MinionName(instanceId) + " " + result.Status + " level=" + result.Level);
+            return Done(result);
+        }
 
         /// <summary>Pays a rare Expedition material and raises a Minion's level cap (SCRUM-10).</summary>
-        public MinionUpgradeCheck BreakthroughMinion(int instanceId) => Done(Minions.TryBreakthrough(instanceId, Wallet));
+        public MinionUpgradeCheck BreakthroughMinion(int instanceId)
+        {
+            MinionUpgradeCheck result = Minions.TryBreakthrough(instanceId, Wallet);
+            Playtest.Add("minion_breakthrough", MinionName(instanceId) + " " + result.Status + " cap=" + result.MaxLevel);
+            return Done(result);
+        }
 
         /// <summary>Smith: pays Gold + ores and raises one item of one Minion a level (SCRUM-9).</summary>
-        public SmithCheck UpgradeGear(int instanceId, EquipmentSlot slot) => Done(Smith.TryUpgrade(instanceId, slot, Wallet));
+        public SmithCheck UpgradeGear(int instanceId, EquipmentSlot slot)
+        {
+            SmithCheck result = Smith.TryUpgrade(instanceId, slot, Wallet);
+            Playtest.Add("gear_upgrade", MinionName(instanceId) + " " + slot + " " + result.Status + " level=" + result.Level);
+            return Done(result);
+        }
 
         /// <summary>Smith: pays a rare Expedition material and raises the item's level cap (SCRUM-9).</summary>
-        public SmithCheck BreakthroughGear(int instanceId, EquipmentSlot slot) => Done(Smith.TryBreakthrough(instanceId, slot, Wallet));
+        public SmithCheck BreakthroughGear(int instanceId, EquipmentSlot slot)
+        {
+            SmithCheck result = Smith.TryBreakthrough(instanceId, slot, Wallet);
+            Playtest.Add("gear_breakthrough", MinionName(instanceId) + " " + slot + " " + result.Status + " cap=" + result.MaxLevel);
+            return Done(result);
+        }
 
         /// <summary>Pays shards and summons one Minion from the Miner or Adventure pool (SCRUM-11).</summary>
-        public SummonResult Summon(MinionKind pool, ShardType shard) => Done(Summoning.TrySummon(pool, shard, Wallet, rng));
+        public SummonResult Summon(MinionKind pool, ShardType shard)
+        {
+            SummonResult result = Summoning.TrySummon(pool, shard, Wallet, rng);
+            Playtest.Add("summon", pool + " " + shard + " " + (!result.Ok ? result.Status.ToString()
+                : (result.IsDuplicate ? "duplicate " : "new ") + result.Definition.Id + " " + result.Definition.Rarity +
+                  (result.IsDuplicate ? " essence=" + result.Essence : "")));
+            return Done(result);
+        }
 
         /// <summary>Smith: pays a unique boss material and teaches the Smith its next rank (SCRUM-9).</summary>
-        public SmithCheck UpgradeSmith() => Done(Smith.TryRankUp(Wallet));
+        public SmithCheck UpgradeSmith()
+        {
+            SmithCheck result = Smith.TryRankUp(Wallet);
+            Playtest.Add("smith_rank", result.Status + " rank=" + Smith.Rank);
+            return Done(result);
+        }
+
+        /// <summary>
+        /// For the UI: records something the player looked at (e.g. the tab they opened), so the
+        /// playtest log shows where they went after a loss. Doesn't save by itself.
+        /// </summary>
+        public void LogView(string what) => Playtest.Add("view", what);
+
+        AssignResult LogAssign(string type, int instanceId, AssignResult result)
+        {
+            Playtest.Add(type, MinionName(instanceId) + " " + result);
+            return result;
+        }
+
+        string MinionName(int instanceId)
+        {
+            OwnedMinion m = State.FindMinion(instanceId);
+            return m != null ? m.definitionId + "#" + instanceId : "#" + instanceId;
+        }
+
+        static string Num(float value) => value.ToString("0", CultureInfo.InvariantCulture);
+
+        static string Describe(IEnumerable<ResourceAmount> amounts)
+        {
+            var parts = new List<string>();
+            if (amounts != null) foreach (ResourceAmount a in amounts) if (a.amount > 0) parts.Add(a.amount + " " + a.id);
+            return parts.Count > 0 ? string.Join(" + ", parts) : "nothing";
+        }
+
+        static string Describe(IEnumerable<MinedAmount> amounts)
+        {
+            var parts = new List<string>();
+            if (amounts != null) foreach (MinedAmount a in amounts) if (a.amount >= 1.0) parts.Add(Math.Floor(a.amount) + " " + a.id);
+            return parts.Count > 0 ? string.Join(" + ", parts) : "nothing";
+        }
 
         T Done<T>(T result)
         {

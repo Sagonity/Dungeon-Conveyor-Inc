@@ -396,6 +396,17 @@ placement: the player only picks Minions for slots.
   (Uncommon +25% base stats, Rare +60%). Names and art: SCRUM-13.
 - `GameSession.Summon(pool, shard)` saves and raises `Changed`. Tests: `SummonTests`.
 
+### SCRUM-8: playtest tools
+
+- **`PlaytestLog`** (`Deepshaft.Session`): every `GameSession` action, the tab the player opens
+  (`GameSession.LogView`) and debug time skips are recorded with the time in `GameState.playtest`
+  (newest 2000 events, kept in the save). It stays on the device. `ToCsv()` gives
+  `utc,minutes,type,detail`; Settings → Debug → Copy log / Save log file exports it. Replaced by real
+  analytics in SCRUM-17.
+- **`PlaythroughTests`**: a simple free player plays the whole prototype through `GameSession`
+  (check-in every 1 h and every 8 h) and must clear all 3 tiers; it prints the milestone hours for pacing.
+- How to run the playtest: [Playtest Plan](Playtest_Plan_SCRUM-8.md).
+
 ## 12. Team decisions (2026-11-17)
 
 1. **Branch naming:** `SCRUM-<n>-<topic>`, as in §10.
