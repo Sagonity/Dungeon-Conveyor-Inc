@@ -27,9 +27,11 @@
 Do these before the playtest day.
 
 - [ ] Review and merge PR #21 (SCRUM-10, 9, 11, and this plan)
-- [ ] Run the EditMode tests in Unity (Test Runner → EditMode → Run All). Expect 177 to pass
+- [x] Run the EditMode tests in Unity (Test Runner → EditMode → Run All). **Passed in Unity, 2026-11-19**
 - [ ] Open the project and check that the 13 new Minion assets in `Assets/Content/Minions` import without warnings
-- [ ] Build `APK/Expedition Deepshaft v0.0.3.apk` and install it on the test phone(s)
+- [ ] Build `APK/Expedition Deepshaft v0.0.3.apk` and the iOS build of 0.0.3, and install them on the test phones
+- [ ] On iPhones, use **Copy log** to export the playtest log: **Save log file** writes into the app's own folder,
+  which the Files app doesn't show unless file sharing is turned on in the Xcode project
 - [ ] On each phone: play 2 minutes, then Settings → Debug → **Copy log** and paste it somewhere. You should see `new_game`, `tab …` and your actions
 - [ ] On each phone: Settings → **Reset game** so every tester starts fresh (copy the log first; reset deletes it)
 - [ ] Charge the phones, turn on Do Not Disturb, set the screen timeout to 10 minutes or more
