@@ -3,19 +3,19 @@ using UnityEngine;
 using UnityEngine.Events;
 
 /// <summary>
-/// Screen state controller. Owns which view is visible and crossfades between them.
+/// Screen state controller. The game boots straight into the Game state (the Main menu was removed in
+/// SCRUM-33); Settings (sound) opens from the in-game Settings panel and returns to the game. Owns which view is visible and crossfades between them.
 /// Game logic hooks in through the UnityEvents (wired in the Inspector) or the
 /// StateChanged C# event, so this class never references game code directly.
 /// </summary>
 public class UIManager : MonoBehaviour
 {
     [Header("Views (auto-found in children if empty)")]
-    [SerializeField] private MainMenuView mainMenuView;
     [SerializeField] private GameHUDView gameView;
     [SerializeField] private SettingsView settingsView;
 
     [Header("Transitions")]
-    [SerializeField] private UIState initialState = UIState.MainMenu;
+    [SerializeField] private UIState initialState = UIState.Game;
     [Tooltip("Seconds for a full fade between screens. 0 = instant.")]
     [SerializeField, Min(0f)] private float fadeDuration = 0.25f;
 
@@ -36,9 +36,11 @@ public class UIManager : MonoBehaviour
 
     void Awake()
     {
-        if (mainMenuView == null) mainMenuView = GetComponentInChildren<MainMenuView>(true);
         if (gameView == null) gameView = GetComponentInChildren<GameHUDView>(true);
         if (settingsView == null) settingsView = GetComponentInChildren<SettingsView>(true);
+
+        // An unknown start state (e.g. 0, the removed Main menu, in an old scene) boots into the game.
+        if (!Enum.IsDefined(typeof(UIState), initialState)) initialState = UIState.Game;
 
         foreach (UIState state in Enum.GetValues(typeof(UIState)))
         {
@@ -81,7 +83,6 @@ public class UIManager : MonoBehaviour
     }
 
     // Parameterless helpers so states can also be set from Button.onClick in the Inspector.
-    public void ShowMainMenu() => SetState(UIState.MainMenu);
     public void ShowGame() => SetState(UIState.Game);
     public void ShowSettings() => SetState(UIState.Settings);
 
@@ -89,7 +90,6 @@ public class UIManager : MonoBehaviour
     {
         switch (state)
         {
-            case UIState.MainMenu: return mainMenuView;
             case UIState.Game: return gameView;
             case UIState.Settings: return settingsView;
             default: return null;

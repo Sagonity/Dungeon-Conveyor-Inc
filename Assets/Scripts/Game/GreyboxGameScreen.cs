@@ -1334,7 +1334,7 @@ public class GreyboxGameScreen : MonoBehaviour
         GameSessionRunner runner = GameSessionRunner.Instance;
         GUILayout.BeginArea(r, s.panel);
         GUILayout.Label("Settings", s.title);
-        if (ui != null && DarkButton("Main menu")) { overlay = Overlay.None; ui.ShowMainMenu(); Exit(); }
+        if (ui != null && DarkButton("Sound")) { overlay = Overlay.None; ui.ShowSettings(); Exit(); }
 
         GUILayout.Space(16f);
         GUILayout.Label("Debug (playtest only)", s.panelHeading);

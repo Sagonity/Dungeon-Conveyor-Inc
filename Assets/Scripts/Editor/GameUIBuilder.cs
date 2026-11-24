@@ -76,13 +76,12 @@ public static class GameUIBuilder
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
         scaler.matchWidthOrHeight = 0.5f; // works in both portrait and landscape
 
-        // Game HUD first so it sits behind the full-screen menus in draw order.
+        // Game HUD first so it sits behind the full-screen Settings screen in draw order.
+        // There's no Main menu: the game boots straight into the game (SCRUM-33).
         GameHUDView hud = BuildGameHUD(canvasGO.transform, controller);
-        MainMenuView mainMenu = BuildMainMenu(canvasGO.transform);
         SettingsView settings = BuildSettings(canvasGO.transform);
 
         UIManager manager = canvasGO.AddComponent<UIManager>();
-        SetRef(manager, "mainMenuView", mainMenu);
         SetRef(manager, "gameView", hud);
         SetRef(manager, "settingsView", settings);
 
@@ -99,28 +98,6 @@ public static class GameUIBuilder
     }
 
     // ---------------------------------------------------------------- Views
-
-    static MainMenuView BuildMainMenu(Transform parent)
-    {
-        MainMenuView view = CreateView<MainMenuView>("MainMenuView", parent, true);
-        RectTransform column = CreateColumn("Content", CreateSafeArea(view), 48f);
-
-        TextMeshProUGUI title = CreateText("Title", column, Application.productName, 120f,
-            TitleColor, TextAlignmentOptions.Center, FontStyles.Bold);
-        title.enableAutoSizing = true;
-        title.fontSizeMin = 60f;
-        title.fontSizeMax = 130f;
-        SetPreferredSize(title.gameObject, 950f, 360f);
-
-        Spacer(column, 60f);
-        Button play = CreateButton("PlayButton", column, "Play", 640f, 160f, AccentColor);
-        Button settings = CreateButton("SettingsButton", column, "Settings", 640f, 160f, ButtonColor);
-
-        SetRef(view, "titleText", title);
-        SetRef(view, "playButton", play);
-        SetRef(view, "settingsButton", settings);
-        return view;
-    }
 
     static GameHUDView BuildGameHUD(Transform parent, GameController controller)
     {
