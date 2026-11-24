@@ -1114,6 +1114,9 @@ public class GreyboxGameScreen : MonoBehaviour
 
     static string WhereToGet(GameSession game, ResourceId id)
     {
+        // Rare Expedition and boss materials: a hint that follows the player's progress (SCRUM-33).
+        string rare = SourceHints.ForRareMaterial(game, id);
+        if (rare != null) return rare;
         ResourceSource source = ResourceSources.Find(game.Database, id);
         switch (source.Kind)
         {
@@ -1303,7 +1306,7 @@ public class GreyboxGameScreen : MonoBehaviour
         PanelGroup(game, "Boss materials", ResourceId.ForemanSigil, ResourceId.GolemHeart, ResourceId.WyrmScale);
         PanelGroup(game, "Other", ResourceId.MinionEssence);
         GUILayout.Space(8f);
-        GUILayout.Label("Rare materials come from automated Expeditions.", s.small);
+        GUILayout.Label("Expedition materials pay for breakthroughs; boss materials teach the Smith.", s.small);
         GUILayout.EndArea();
     }
 
@@ -1320,6 +1323,9 @@ public class GreyboxGameScreen : MonoBehaviour
             GUILayout.FlexibleSpace();
             GUILayout.Label(Format(game.Wallet.Get(id)), s.panelText);
             GUILayout.EndHorizontal();
+            // Where each rare material comes from, right under it (SCRUM-33).
+            string hint = SourceHints.ForRareMaterial(game, id);
+            if (hint != null) GUILayout.Label("From: " + hint, s.small);
         }
     }
 

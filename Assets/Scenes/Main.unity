@@ -3851,11 +3851,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b04ad6a458894a21a250c335ee661513, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameController
-  minionPrefab: {fileID: 8963429978675593790, guid: 33745483e8f5c944e8bcefc9a00a520b, type: 3}
-  minionParent: {fileID: 0}
-  minionsPerRow: 4
-  minionSpacing: 1.5
-  pauseTimeWhenInactive: 1
 --- !u!4 &1028272143
 Transform:
   m_ObjectHideFlags: 0

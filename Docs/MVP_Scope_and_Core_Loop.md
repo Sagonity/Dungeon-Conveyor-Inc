@@ -353,8 +353,8 @@ As of 2026-11-19 (SCRUM-4, 5, 6, 7 and 30 merged; SCRUM-10, 9 and 11 in review).
   - Each boss's first win also gives 10 Advanced Shards (decision 27).
   - 13 placeholder Minions added (Common Speed Miner; Uncommon and Rare Miners and Adventurers),
     Uncommon +25% and Rare +60% base stats (SCRUM-13 names and art).
-- **Still to change:** `GameController` sets `Time.timeScale = 0` while a menu is open.
-  New systems must use `IClock`, not game time.
+- **Cleaned up (SCRUM-33):** `GameController` no longer freezes Unity's game time while a menu is open.
+  New systems must still use `IClock`, not game time.
 
 **Missing for Step A:** nothing in code. Next: review PR #21 (SCRUM-10/9/11), build v0.0.3, then run the
 playtest with the [Playtest Plan](Playtest_Plan_SCRUM-8.md) (SCRUM-8). The plan also lists pacing findings
