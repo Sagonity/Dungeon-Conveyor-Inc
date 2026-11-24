@@ -160,6 +160,14 @@ namespace Deepshaft.Session
         public AssignResult AssignToTeam(int instanceId) => Done(LogAssign("assign_team", instanceId, Roster.AssignToTeam(instanceId)));
         public AssignResult RemoveFromTeam(int instanceId) => Done(LogAssign("remove_team", instanceId, Roster.RemoveFromTeam(instanceId)));
 
+        /// <summary>Swaps a resting Miner in for a working one, in the same slot (SCRUM-34).</summary>
+        public AssignResult SwapMiner(int incomingId, int outgoingId) =>
+            Done(LogSwap("swap_miner", incomingId, outgoingId, Roster.SwapMiner(incomingId, outgoingId)));
+
+        /// <summary>Swaps a benched Adventurer in for a team member, in the same slot (SCRUM-34).</summary>
+        public AssignResult SwapIntoTeam(int incomingId, int outgoingId) =>
+            Done(LogSwap("swap_team", incomingId, outgoingId, Roster.SwapIntoTeam(incomingId, outgoingId)));
+
         public BossFightResult FightBoss(string bossId)
         {
             float power = Bosses.GetTeamPower();
@@ -281,6 +289,12 @@ namespace Deepshaft.Session
         AssignResult LogAssign(string type, int instanceId, AssignResult result)
         {
             Playtest.Add(type, MinionName(instanceId) + " " + result);
+            return result;
+        }
+
+        AssignResult LogSwap(string type, int incomingId, int outgoingId, AssignResult result)
+        {
+            Playtest.Add(type, MinionName(incomingId) + " for " + MinionName(outgoingId) + " " + result);
             return result;
         }
 

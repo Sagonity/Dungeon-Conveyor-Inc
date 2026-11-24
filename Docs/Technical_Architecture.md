@@ -424,6 +424,14 @@ placement: the player only picks Minions for slots.
   with "Start automation" (or "Switch to this one").
 - Tests: new cases in `GameSessionTests`. `PlaythroughTests` now starts with the starting resources too.
 
+### SCRUM-34: swap into a full team or Mine
+
+- `RosterService.SwapIntoTeam` / `SwapMiner(incoming, outgoing)`: the incoming Minion takes the outgoing one's
+  slot in one step. Miners bank the old rate first; team swaps are refused while the team is busy.
+  `GameSession.SwapIntoTeam` / `SwapMiner` save and log (`swap_team`, `swap_miner`).
+- Grey-box: when the team or the Mine is full, an unassigned Minion's detail card lists "Swap with …" for each
+  member, with their power or mining power. Tests in `RosterTests`.
+
 ## 12. Team decisions (2026-11-17)
 
 1. **Branch naming:** `SCRUM-<n>-<topic>`, as in §10.

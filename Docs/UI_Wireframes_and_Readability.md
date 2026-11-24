@@ -210,6 +210,8 @@ decision 2026-11-24). The rewards reach the wallet when the Expedition is stoppe
 │ Weapon Lv 1 · +0% ATK   Armor Lv 1 · +0% HP     │  (Miners: Pickaxe · +mining output)
 │ [Upgrade gear at the Smith]                     │
 │ [Bench] / [Add to team] / [Put in Mine] / [Take out of Mine]
+│ Full? "The team is full. Swap with:"            │  one button per member (SCRUM-34)
+│ [Swap with Common Tank · Lv 12 · 42 power] …    │
 └─────────────────────────────────────────────────┘
 ┌ SUMMON ─────────────────────── ◆ 30   ◆ 10 ─────┐
 │ [Miner] [Adventure]   [Basic] [Advanced]        │  pool follows the toggle above

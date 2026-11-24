@@ -125,6 +125,48 @@ namespace Deepshaft.Roster
         }
 
         /// <summary>
+        /// Puts an unassigned Miner into the Mine in place of a working one, in the same slot
+        /// (SCRUM-34). Mining banks at the old rate first.
+        /// </summary>
+        public AssignResult SwapMiner(int incomingId, int outgoingId)
+        {
+            AssignResult check = CheckSwap(incomingId, outgoingId, MinionKind.Miner, GetMiners());
+            if (check != AssignResult.Ok) return check;
+            mining.ChangeRate(() =>
+            {
+                RosterLogic.Prune(state, database, Data.miners, MinionKind.Miner, MinerSlots);
+                Data.miners[Data.miners.IndexOf(outgoingId)] = incomingId;
+            });
+            Changed?.Invoke();
+            return AssignResult.Ok;
+        }
+
+        /// <summary>
+        /// Puts a benched Adventure Minion into the team in place of a member, in the same slot
+        /// (SCRUM-34). Not while the team is on an automated Expedition.
+        /// </summary>
+        public AssignResult SwapIntoTeam(int incomingId, int outgoingId)
+        {
+            if (IsTeamBusy) return AssignResult.TeamBusy;
+            AssignResult check = CheckSwap(incomingId, outgoingId, MinionKind.Adventure, GetTeam());
+            if (check != AssignResult.Ok) return check;
+            RosterLogic.Prune(state, database, Data.adventureTeam, MinionKind.Adventure, AdventureSlots);
+            Data.adventureTeam[Data.adventureTeam.IndexOf(outgoingId)] = incomingId;
+            Changed?.Invoke();
+            return AssignResult.Ok;
+        }
+
+        AssignResult CheckSwap(int incomingId, int outgoingId, MinionKind kind, List<OwnedMinion> current)
+        {
+            OwnedMinion incoming = state.FindMinion(incomingId);
+            if (incoming == null || database.FindMinion(incoming.definitionId) == null) return AssignResult.NotOwned;
+            if (!RosterLogic.IsKind(database, incoming, kind)) return AssignResult.WrongKind;
+            if (Contains(current, incomingId)) return AssignResult.AlreadyAssigned;
+            if (!Contains(current, outgoingId)) return AssignResult.NotAssigned;
+            return AssignResult.Ok;
+        }
+
+        /// <summary>
         /// Adds a new Minion (e.g. from a summon). A Miner fills a free Miner slot and starts
         /// mining now; an Adventure Minion fills a free team slot unless the team is busy.
         /// </summary>
