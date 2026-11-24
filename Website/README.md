@@ -37,13 +37,14 @@ Open `Website/index.html` in a browser. It works straight from the folder, with 
 - **Privacy policy and terms** are placeholder pages. Write them before release (SCRUM-25). They're also needed for the store listings.
 - **The name** is the working title (SCRUM-25).
 
-## Hosting (to decide)
+## Hosting
 
-Any static host works: upload the `Website/` folder as it is.
+**Live at https://dungeonconveyorinc.vercel.app** (Vercel, free Hobby plan; chosen 2026-11-24).
 
-- **GitHub Pages:** GitHub Pages only serves the repository root or a `/docs` folder from a branch, so a site in
-  `Website/` needs a small GitHub Actions workflow to publish it. On a private repository, Pages needs a paid
-  GitHub plan.
-- **Netlify or Cloudflare Pages:** free; connect the repository and set the publish folder to `Website`, with no build command.
-
-Use the host's free address until the game has its final name, then add a real domain.
+- Vercel publishes this folder: the project's **Root Directory** is `Website`, with no framework, no build command
+  and the default output directory.
+- Every push to `main` that changes `Website/` updates the live site. Other branches get a preview address.
+- **Before release:** Vercel's Hobby plan is for non-commercial use. A site for a game that's for sale probably
+  needs Vercel Pro, or a move to a host whose free plan allows commercial use (e.g. Cloudflare Pages: same
+  setup, publish folder `Website`).
+- Add a real domain once the game has its final name (SCRUM-25).
