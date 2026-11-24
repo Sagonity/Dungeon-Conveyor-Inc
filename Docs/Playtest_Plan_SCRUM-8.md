@@ -123,6 +123,10 @@ fixed since: team swaps in one tap (SCRUM-34) and "where to get it" hints for ra
 
 Mix of testers: at least 2 who play idle or gacha mobile games and at least 1 who doesn't.
 
+**Remote testers:** instead of a phone, they can play in a browser at `/playtest` on the website with a tester
+code; their log is sent automatically and downloaded from `/playtest/admin.html` (no Copy log needed). Setup:
+`Website/playtest/README.md` (SCRUM-35). Run the interview by video call.
+
 ---
 
 ## 5. Facilitator script

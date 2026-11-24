@@ -432,6 +432,18 @@ placement: the player only picks Minions for slots.
 - Grey-box: when the team or the Mine is full, an unassigned Minion's detail card lists "Swap with …" for each
   member, with their power or mining power. Tests in `RosterTests`.
 
+### SCRUM-35: web playtest
+
+- **Web build:** `Assets/WebGLTemplates/Deepshaft` (full-page template). `WebSaveStorage` wraps `FileSaveStorage`
+  and, in WebGL builds, syncs `persistentDataPath` to IndexedDB after every write
+  (`Assets/Plugins/WebGL/DeepshaftWeb.jslib`), so saves survive a reload.
+- **`PlaytestUploader`** (on the "Game Session" object): only active when the page URL has `?code=…`. Sends unsent
+  playtest log lines to `/api/playtest/log` every 60 s and when the tab is hidden (via the jslib); remembers
+  the last line sent in PlayerPrefs. The Settings panel shows the status and a "Send now" button.
+- **Website:** `/playtest` (code → consent → game in a frame), `/playtest/admin.html` (password → list,
+  CSV, delete) and Vercel functions in `Website/api/playtest/` (no npm packages; Upstash Redis over REST).
+  Setup and build steps: `Website/playtest/README.md`.
+
 ## 12. Team decisions (2026-11-17)
 
 1. **Branch naming:** `SCRUM-<n>-<topic>`, as in §10.

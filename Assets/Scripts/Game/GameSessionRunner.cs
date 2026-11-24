@@ -46,6 +46,7 @@ public class GameSessionRunner : MonoBehaviour
         DontDestroyOnLoad(go);
         go.AddComponent<GameSessionRunner>();
         go.AddComponent<GreyboxGameScreen>();
+        go.AddComponent<PlaytestUploader>(); // does nothing unless opened from the web playtest page (SCRUM-35)
     }
 
     void Awake()
@@ -97,7 +98,8 @@ public class GameSessionRunner : MonoBehaviour
     {
         try
         {
-            Session = new GameSession(database, FileSaveStorage.CreateDefault(), Clock);
+            // WebSaveStorage = FileSaveStorage, plus a sync to the browser's storage in web builds (SCRUM-35).
+            Session = new GameSession(database, new WebSaveStorage(), Clock);
         }
         catch (Exception e)
         {

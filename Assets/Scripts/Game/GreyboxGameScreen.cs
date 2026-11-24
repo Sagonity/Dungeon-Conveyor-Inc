@@ -1387,6 +1387,17 @@ public class GreyboxGameScreen : MonoBehaviour
         GUILayout.EndHorizontal();
         if (!string.IsNullOrEmpty(playtestNote)) GUILayout.Label(playtestNote, s.small);
 
+        // Web playtest (SCRUM-35): the log is sent to the website automatically.
+        PlaytestUploader uploader = PlaytestUploader.Instance;
+        if (uploader != null && uploader.Active)
+        {
+            string last = uploader.LastUploadUtc.HasValue ? uploader.LastUploadUtc.Value.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture) : "not yet";
+            GUILayout.Label("Sent to the website automatically as <b>" + uploader.Code + "</b> · last sent " + last +
+                            " · " + uploader.PendingCount + " waiting" +
+                            (string.IsNullOrEmpty(uploader.LastError) ? "" : "\n<color=#FF5A4E>Last try failed: " + uploader.LastError + "</color>"), s.small);
+            if (DarkButton("Send now")) { uploader.UploadNow(); Exit(); }
+        }
+
         GUILayout.Space(16f);
         if (DarkButton(resetArmed ? "Tap again to DELETE the save and its playtest log" : "Reset game (copy the log first)"))
         {

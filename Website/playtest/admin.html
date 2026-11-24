@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Playtest admin</title>
+  <link rel="icon" href="/images/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/playtest/playtest.css">
+</head>
+<body class="playtest">
+  <!-- Playtest admin (SCRUM-35): list testers by code and download their playtest logs as CSV. -->
+  <main class="gate admin">
+    <h1>Playtest logs</h1>
+
+    <form id="login" class="panel" autocomplete="off">
+      <label for="password">Admin password</label>
+      <input id="password" type="password" required>
+      <button type="submit">Show logs</button>
+      <p id="login-error" class="error" role="alert"></p>
+    </form>
+
+    <section id="list" class="panel" hidden>
+      <p class="muted small">Each tester's log has the same columns as Copy log in the game, plus the device and
+        game version. Times are UTC. Delete the logs when the playtest is over.</p>
+      <table>
+        <thead><tr><th>Code</th><th>Events</th><th>First event (UTC)</th><th>Last upload (UTC)</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <p id="empty" class="muted" hidden>No logs yet.</p>
+      <div class="row-actions" style="margin-top:16px">
+        <button id="refresh">Refresh</button>
+        <button id="delete-all" class="danger">Delete all logs</button>
+      </div>
+      <p id="list-error" class="error" role="alert"></p>
+    </section>
+  </main>
+
+  <script>
+  (function () {
+    "use strict";
+    var password = "";
+    var $ = function (id) { return document.getElementById(id); };
+    function api(method, query) {
+      return fetch("/api/playtest/admin" + (query || ""), { method: method, headers: { "x-admin-password": password } });
+    }
+    function when(ms) { return ms ? new Date(ms).toISOString().replace("T", " ").slice(0, 16) : "–"; }
+
+    function load() {
+      $("list-error").textContent = "";
+      return api("GET").then(function (r) {
+        if (r.status === 401) throw new Error("Wrong password.");
+        return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "HTTP " + r.status); return d; });
+      }).then(function (d) {
+        var rows = $("rows");
+        rows.textContent = "";
+        $("empty").hidden = d.testers.length > 0;
+        d.testers.forEach(function (t) {
+          var tr = document.createElement("tr");
+          [t.code, t.events, when(t.first), when(t.last)].forEach(function (v) {
+            var td = document.createElement("td"); td.textContent = v; tr.appendChild(td);
+          });
+          var actions = document.createElement("td");
+          var dl = document.createElement("button"); dl.textContent = "Download CSV";
+          dl.onclick = function () { download(t.code); };
+          var del = document.createElement("button"); del.textContent = "Delete"; del.className = "danger";
+          del.onclick = function () {
+            if (!confirm("Delete the log of " + t.code + "? This can't be undone.")) return;
+            api("DELETE", "?code=" + encodeURIComponent(t.code)).then(load);
+          };
+          actions.appendChild(dl); actions.appendChild(del); tr.appendChild(actions);
+          rows.appendChild(tr);
+        });
+        $("login").hidden = true;
+        $("list").hidden = false;
+      });
+    }
+
+    function download(code) {
+      api("GET", "?code=" + encodeURIComponent(code)).then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.blob();
+      }).then(function (blob) {
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "playtest-" + code + ".csv";
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+      }).catch(function (e) { $("list-error").textContent = "Download failed: " + e.message; });
+    }
+
+    $("login").addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      password = $("password").value;
+      $("login-error").textContent = "";
+      load().catch(function (e) { $("login-error").textContent = e.message; });
+    });
+    $("refresh").addEventListener("click", function () { load().catch(function (e) { $("list-error").textContent = e.message; }); });
+    $("delete-all").addEventListener("click", function () {
+      if (!confirm("Delete ALL playtest logs? This can't be undone.")) return;
+      api("DELETE", "?all=yes").then(load).catch(function (e) { $("list-error").textContent = e.message; });
+    });
+  })();
+  </script>
+</body>
+</html>
