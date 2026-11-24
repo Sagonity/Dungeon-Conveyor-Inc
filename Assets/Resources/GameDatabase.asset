@@ -152,6 +152,8 @@ MonoBehaviour:
       amount: 20
     - id: 21
       amount: 10
+    - id: 0
+      amount: 200
     repeatWinRewards:
     - id: 40
       amount: 1
@@ -319,6 +321,11 @@ MonoBehaviour:
     - slag_golem
     requiredFirstClears: []
     cost: []
+  newGameResources:
+  - id: 0
+    amount: 300
+  - id: 11
+    amount: 120
   starterMinions:
   - Minion_Miner:C
   - Minion_Miner_Ore:C

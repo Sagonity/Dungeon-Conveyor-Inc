@@ -409,6 +409,21 @@ placement: the player only picks Minions for slots.
   gives test Minions the Uncommon / Rare stats.
 - How to run the playtest: [Playtest Plan](Playtest_Plan_SCRUM-8.md).
 
+### SCRUM-32: playtest fixes
+
+- **Starting resources:** `GameDatabase.NewGameResources` (default 300 Gold + 120 Iron) is given once, with the
+  starter Minions, to a new game. The Tier 1 boss's first win also gives 200 Gold (`DefaultAdventureContent`
+  and the asset).
+- **Max buttons:** `BulkPurchase.Plan` adds up level costs while the running total is affordable.
+  `MinionProgressionService.CheckLevelUpMax` / `TryLevelUpMax` and `SmithService.CheckUpgradeMax` /
+  `TryUpgradeMax` use it, up to the cap. `GameSession.LevelUpMinionMax` / `UpgradeGearMax` save and log once
+  (`level_up_max`, `gear_upgrade_max`).
+- **Grey-box screen:** "Max ×N" on the Minion detail card and on each gear row at the Smith (shown when 2 or more
+  levels are affordable); a "Lost to …" card after a lost fight with the power gap and buttons to the Minions tab
+  and the Smith (logged as `view loss_hint …`), until the next win; a "… cleared" card after a won first clear
+  with "Start automation" (or "Switch to this one").
+- Tests: new cases in `GameSessionTests`. `PlaythroughTests` now starts with the starting resources too.
+
 ## 12. Team decisions (2026-11-17)
 
 1. **Branch naming:** `SCRUM-<n>-<topic>`, as in §10.

@@ -152,6 +152,31 @@ namespace Deepshaft.Smith
             return Done(check, m, slot);
         }
 
+        /// <summary>
+        /// How many levels of this item the wallet can pay for in a row, up to its cap (SCRUM-32 "Max" button).
+        /// Doesn't spend anything. Nothing for a wrong slot or a missing Minion.
+        /// </summary>
+        public BulkPurchase CheckUpgradeMax(int instanceId, EquipmentSlot slot, Wallet wallet)
+        {
+            if (wallet == null) throw new ArgumentNullException(nameof(wallet));
+            if (!TryFind(instanceId, slot, out OwnedMinion m, out _)) return BulkPurchase.None;
+            int max = Rules.GetMaxLevel(m, slot);
+            return BulkPurchase.Plan(EquipmentRules.GetLevel(m, slot), level => level < max ? Rules.GetLevelUpCost(level) : null, wallet);
+        }
+
+        /// <summary>Buys as many levels of this item as the wallet can pay for, up to its cap. Returns what was bought.</summary>
+        public BulkPurchase TryUpgradeMax(int instanceId, EquipmentSlot slot, Wallet wallet)
+        {
+            BulkPurchase plan = CheckUpgradeMax(instanceId, slot, wallet);
+            for (int i = 0; i < plan.Levels; i++)
+            {
+                if (!TryUpgrade(instanceId, slot, wallet).CanDo) break; // can't happen: the plan was affordable
+            }
+            OwnedMinion m = state.FindMinion(instanceId);
+            int level = m != null ? EquipmentRules.GetLevel(m, slot) : 0;
+            return new BulkPurchase(level - plan.FromLevel, plan.Cost, plan.FromLevel, level);
+        }
+
         /// <summary>Pays and does the item's next breakthrough (its level cap goes up), or does nothing and says why.</summary>
         public SmithCheck TryBreakthrough(int instanceId, EquipmentSlot slot, Wallet wallet)
         {

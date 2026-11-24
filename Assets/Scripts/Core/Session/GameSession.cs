@@ -211,6 +211,17 @@ namespace Deepshaft.Session
             return Done(result);
         }
 
+        /// <summary>
+        /// Buys as many levels as the player can afford, up to the cap, in one tap (SCRUM-32).
+        /// Saves and logs once, not per level.
+        /// </summary>
+        public BulkPurchase LevelUpMinionMax(int instanceId)
+        {
+            BulkPurchase bought = Minions.TryLevelUpMax(instanceId, Wallet);
+            Playtest.Add("level_up_max", MinionName(instanceId) + " levels=" + bought.Levels + " level=" + bought.ToLevel);
+            return Done(bought);
+        }
+
         /// <summary>Pays a rare Expedition material and raises a Minion's level cap (SCRUM-10).</summary>
         public MinionUpgradeCheck BreakthroughMinion(int instanceId)
         {
@@ -225,6 +236,14 @@ namespace Deepshaft.Session
             SmithCheck result = Smith.TryUpgrade(instanceId, slot, Wallet);
             Playtest.Add("gear_upgrade", MinionName(instanceId) + " " + slot + " " + result.Status + " level=" + result.Level);
             return Done(result);
+        }
+
+        /// <summary>Smith: buys as many levels of one item as the player can afford, up to its cap (SCRUM-32).</summary>
+        public BulkPurchase UpgradeGearMax(int instanceId, EquipmentSlot slot)
+        {
+            BulkPurchase bought = Smith.TryUpgradeMax(instanceId, slot, Wallet);
+            Playtest.Add("gear_upgrade_max", MinionName(instanceId) + " " + slot + " levels=" + bought.Levels + " level=" + bought.ToLevel);
+            return Done(bought);
         }
 
         /// <summary>Smith: pays a rare Expedition material and raises the item's level cap (SCRUM-9).</summary>
@@ -294,8 +313,10 @@ namespace Deepshaft.Session
             return result;
         }
 
+        /// <summary>A new game: the starter Minions and the starting resources (SCRUM-32).</summary>
         void GrantStarterMinions()
         {
+            Wallet.Add(Database.NewGameResources);
             foreach (string id in Database.StarterMinions)
             {
                 if (Database.FindMinion(id) == null)

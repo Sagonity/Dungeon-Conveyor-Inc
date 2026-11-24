@@ -129,6 +129,30 @@ namespace Deepshaft.Minions
             return new MinionUpgradeCheck(MinionUpgradeStatus.Ok, check.Cost, null, m.level, GetMaxLevel(m));
         }
 
+        /// <summary>
+        /// How many levels the wallet can pay for in a row, up to the level cap (SCRUM-32 "Max" button).
+        /// Doesn't spend anything.
+        /// </summary>
+        public BulkPurchase CheckLevelUpMax(int instanceId, Wallet wallet)
+        {
+            if (wallet == null) throw new ArgumentNullException(nameof(wallet));
+            if (!TryFind(instanceId, out OwnedMinion m, out MinionDefinition d)) return BulkPurchase.None;
+            int max = d.GetMaxLevel(m.breakthroughs);
+            return BulkPurchase.Plan(m.level, level => level < max ? Rules.GetLevelUpCost(level) : null, wallet);
+        }
+
+        /// <summary>Buys as many levels as the wallet can pay for, up to the level cap. Returns what was bought.</summary>
+        public BulkPurchase TryLevelUpMax(int instanceId, Wallet wallet)
+        {
+            BulkPurchase plan = CheckLevelUpMax(instanceId, wallet);
+            for (int i = 0; i < plan.Levels; i++)
+            {
+                if (!TryLevelUp(instanceId, wallet).CanDo) break; // can't happen: the plan was affordable
+            }
+            OwnedMinion m = state.FindMinion(instanceId);
+            return new BulkPurchase(m != null ? m.level - plan.FromLevel : 0, plan.Cost, plan.FromLevel, m?.level ?? 0);
+        }
+
         /// <summary>Pays and does the next breakthrough (the level cap goes up), or does nothing and says why.</summary>
         public MinionUpgradeCheck TryBreakthrough(int instanceId, Wallet wallet)
         {
