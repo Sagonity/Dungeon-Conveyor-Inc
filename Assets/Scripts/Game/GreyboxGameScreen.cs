@@ -66,6 +66,11 @@ public class GreyboxGameScreen : MonoBehaviour
     bool showMiners;
     int selectedMinionId; // 0 = none; the Minions tab shows its detail card
     bool summonAdvanced;  // Summon card: Advanced instead of Basic shards
+
+    // SCRUM-32: the last lost fight (for the "what to do next" hint) and a first clear to offer automating.
+    string lossName = "";
+    float lossPower, lossRecommended;
+    string automatePromptId = "";
     UIManager ui;
 
     Vector2 pressStart;
@@ -93,6 +98,8 @@ public class GreyboxGameScreen : MonoBehaviour
         tab = Tab.HQ;
         loggedTab = null;
         playtestNote = "";
+        lossName = "";
+        automatePromptId = "";
         overlay = Overlay.None;
     }
 
@@ -277,6 +284,8 @@ public class GreyboxGameScreen : MonoBehaviour
 
     void DrawHQ(GameSession game)
     {
+        DrawLossHint(game);
+        DrawAutomatePrompt(game);
         DrawProductionCard(game);
         DrawExpeditionCard(game, true);
         DrawSmithSummary(game);
@@ -408,6 +417,8 @@ public class GreyboxGameScreen : MonoBehaviour
 
     void DrawExpeditionsTab(GameSession game)
     {
+        DrawLossHint(game);
+        DrawAutomatePrompt(game);
         if (game.Expeditions.IsRunning) DrawExpeditionCard(game, false);
         DrawTeamSlotsCard(game, "ADVENTURE TEAM", "Only one Expedition runs at a time.");
         DrawExpeditionList(game);
@@ -501,12 +512,16 @@ public class GreyboxGameScreen : MonoBehaviour
             {
                 if (status == ExpeditionStatus.FirstClearAvailable)
                 {
+                    float powerBefore = game.Expeditions.GetTeamPower();
                     FirstClearResult result = game.FirstClearExpedition(e.id);
                     Say(DescribeFirstClear(e, result), result.Won ? Mood.Good : Mood.Bad);
+                    if (result.Check == ExpeditionCheck.Ok) RememberFight(result.Won, e.displayName, powerBefore, e.recommendedPower);
+                    if (result.Won) automatePromptId = e.id;
                 }
                 else
                 {
                     ExpeditionCheck started = game.StartExpedition(e.id);
+                    if (started == ExpeditionCheck.Ok) automatePromptId = "";
                     Say(started == ExpeditionCheck.Ok ? e.displayName + " is running. It keeps going while the app is closed."
                         : Explain(started), started == ExpeditionCheck.Ok ? Mood.Good : Mood.Bad);
                 }
@@ -689,6 +704,13 @@ public class GreyboxGameScreen : MonoBehaviour
         else if (level.Status == MinionUpgradeStatus.AtLevelCap) GUILayout.Label(Explain(level.Status), s.small);
         GUILayout.EndVertical();
         GUILayout.FlexibleSpace();
+        BulkPurchase levelMax = minions.CheckLevelUpMax(m.instanceId, game.Wallet);
+        if (levelMax.Levels >= 2 && GoldButton("Max ×" + levelMax.Levels, 240f))
+        {
+            BulkPurchase bought = game.LevelUpMinionMax(m.instanceId);
+            Say(d.DisplayName + " +" + bought.Levels + " levels, now level " + bought.ToLevel + ". Paid " + Describe(bought.Cost) + ".", Mood.Good);
+            Exit();
+        }
         if (GoldButton("Level Up", 300f, level.CanDo))
         {
             MinionUpgradeCheck result = game.LevelUpMinion(m.instanceId);
@@ -697,6 +719,7 @@ public class GreyboxGameScreen : MonoBehaviour
             Exit();
         }
         GUILayout.EndHorizontal();
+        if (levelMax.Levels >= 2) GUILayout.Label("Max buys " + levelMax.Levels + " levels for " + Describe(levelMax.Cost) + ".", s.small);
 
         // Breakthrough
         GUILayout.Space(10f);
@@ -837,6 +860,111 @@ public class GreyboxGameScreen : MonoBehaviour
 
     // ================================================================ Smith
 
+    // ================================================================ Playtest fixes (SCRUM-32)
+
+    /// <summary>Remembers a lost fight for the hint card; a win clears it.</summary>
+    void RememberFight(bool won, string name, float power, float recommended)
+    {
+        if (won)
+        {
+            lossName = "";
+            return;
+        }
+        lossName = name;
+        lossPower = power;
+        lossRecommended = recommended;
+    }
+
+    /// <summary>
+    /// After a lost fight: how far the team is from the recommended power, and where to get stronger.
+    /// Stays until the next win or until the player closes it.
+    /// </summary>
+    void DrawLossHint(GameSession game)
+    {
+        if (string.IsNullOrEmpty(lossName)) return;
+        float now = game.Bosses.GetTeamPower();
+        BeginCard();
+        CardHeader("LOST TO " + lossName.ToUpperInvariant(), "Free retries", s.pillRed);
+        if (now < lossRecommended)
+        {
+            GUILayout.Label("Your team has <b>" + Format(now) + "</b> power; " + lossName + " recommends <b>" + Format(lossRecommended) +
+                            "</b>. You need about <color=#FF5A4E>" + Format(Math.Ceiling(lossRecommended - now)) + " more</color>.", s.body);
+        }
+        else
+        {
+            GUILayout.Label("Your team has <b>" + Format(now) + "</b> power, enough for the recommended " + Format(lossRecommended) +
+                            ". Fights have some luck: try again, or bring a Support and a Tank.", s.body);
+        }
+        GUILayout.Label(CanAffordAnyTeamUpgrade(game)
+            ? "<color=#5FD88C>You can afford upgrades right now.</color>"
+            : "Level up your team and upgrade their gear. Collect the Mine first if you're short.", s.small);
+        GUILayout.BeginHorizontal();
+        if (GoldButton("Level up", 280f))
+        {
+            game.LogView("loss_hint Minions");
+            tab = Tab.Minions; showMiners = false; scroll = Vector2.zero; Exit();
+        }
+        if (GoldButton("Upgrade gear", 300f))
+        {
+            game.LogView("loss_hint Smith");
+            tab = Tab.Smith; showMiners = false; scroll = Vector2.zero; Exit();
+        }
+        GUILayout.FlexibleSpace();
+        if (DarkButton("Close")) { lossName = ""; Exit(); }
+        GUILayout.EndHorizontal();
+        EndCard();
+    }
+
+    static bool CanAffordAnyTeamUpgrade(GameSession game)
+    {
+        foreach (OwnedMinion m in game.Roster.GetTeam())
+        {
+            if (game.Minions.CheckLevelUp(m.instanceId, game.Wallet).CanDo) return true;
+            if (game.Smith.CheckUpgrade(m.instanceId, EquipmentSlot.Weapon, game.Wallet).CanDo) return true;
+            if (game.Smith.CheckUpgrade(m.instanceId, EquipmentSlot.Armor, game.Wallet).CanDo) return true;
+        }
+        return false;
+    }
+
+    /// <summary>After a won first clear: offer to start automating it straight away.</summary>
+    void DrawAutomatePrompt(GameSession game)
+    {
+        if (string.IsNullOrEmpty(automatePromptId)) return;
+        ExpeditionDefinition e = game.Database.FindExpedition(automatePromptId);
+        ExpeditionDefinition running = game.Expeditions.Active;
+        if (e == null || running == e)
+        {
+            automatePromptId = "";
+            return;
+        }
+        BeginCard();
+        CardHeader(e.displayName.ToUpperInvariant() + " CLEARED", "Automate it", s.pillPurple);
+        GUILayout.Label("Automate it now: it earns <b>" + DescribeRates(MiningMath.ToRates(e.automatedPerHour)) +
+                        "</b> per hour, never fails and keeps going while the phone is locked.", s.body);
+        GUILayout.Label(running != null
+            ? "This stops " + running.displayName + " and collects its rewards first."
+            : "Your Adventure team stays busy while it runs. Stop it any time to fight; the rewards are collected when you stop.", s.small);
+        GUILayout.BeginHorizontal();
+        if (GoldButton(running != null ? "Switch to this one" : "Start automation", 440f))
+        {
+            string prefix = "";
+            if (running != null)
+            {
+                ExpeditionCollectResult stopped = game.StopExpedition();
+                prefix = running.displayName + " stopped (+" + Describe(stopped.Collected) + "). ";
+            }
+            ExpeditionCheck started = game.StartExpedition(e.id);
+            Say(started == ExpeditionCheck.Ok ? prefix + e.displayName + " is running. It keeps going while the app is closed."
+                : prefix + Explain(started), started == ExpeditionCheck.Ok ? Mood.Good : Mood.Bad);
+            automatePromptId = "";
+            Exit();
+        }
+        GUILayout.FlexibleSpace();
+        if (DarkButton("Not now")) { automatePromptId = ""; Exit(); }
+        GUILayout.EndHorizontal();
+        EndCard();
+    }
+
     /// <summary>HQ: the Smith's rank and a shortcut to the Smith tab.</summary>
     void DrawSmithSummary(GameSession game)
     {
@@ -953,6 +1081,13 @@ public class GreyboxGameScreen : MonoBehaviour
         }
         GUILayout.EndVertical();
         GUILayout.FlexibleSpace();
+        BulkPurchase gearMax = atCap ? BulkPurchase.None : smith.CheckUpgradeMax(m.instanceId, slot, game.Wallet);
+        if (gearMax.Levels >= 2 && GoldButton("Max ×" + gearMax.Levels, 200f))
+        {
+            BulkPurchase bought = game.UpgradeGearMax(m.instanceId, slot);
+            Say(d.DisplayName + "'s " + rules.displayName + " +" + bought.Levels + " levels, now level " + bought.ToLevel + ".", Mood.Good);
+            Exit();
+        }
         if (check.Status != SmithStatus.NoMore && SmallGoldButton(atCap ? "Break" : "Upgrade", check.CanDo))
         {
             SmithCheck result = atCap ? game.BreakthroughGear(m.instanceId, slot) : game.UpgradeGear(m.instanceId, slot);
@@ -1022,6 +1157,8 @@ public class GreyboxGameScreen : MonoBehaviour
             return;
         }
 
+        DrawLossHint(game);
+
         // Art placeholder (SCRUM-13).
         Rect art = GUILayoutUtility.GetRect(100f, 380f, GUILayout.ExpandWidth(true), GUILayout.Height(380f));
         GUI.Box(art, GUIContent.none, s.artCard);
@@ -1048,8 +1185,10 @@ public class GreyboxGameScreen : MonoBehaviour
                 ExpeditionCollectResult stopped = game.StopExpedition();
                 prefix = "Expedition stopped (+" + Describe(stopped.Collected) + "). ";
             }
+            float powerBefore = game.Bosses.GetTeamPower();
             BossFightResult result = game.FightBoss(boss.id);
             Say(prefix + DescribeFight(game, boss, result), result.Won ? Mood.Good : Mood.Bad);
+            if (result.Check == BossCheck.Ok) RememberFight(result.Won, boss.displayName, powerBefore, boss.recommendedPower);
             Exit();
         }
         GUILayout.EndHorizontal();
@@ -1092,8 +1231,10 @@ public class GreyboxGameScreen : MonoBehaviour
                 GUILayout.ExpandWidth(true));
             if (SmallGoldButton(beaten ? "Fight again" : "Fight", check == BossCheck.Ok))
             {
+                float powerBefore = game.Bosses.GetTeamPower();
                 BossFightResult result = game.FightBoss(b.id);
                 Say(DescribeFight(game, b, result), result.Won ? Mood.Good : Mood.Bad);
+                if (result.Check == BossCheck.Ok) RememberFight(result.Won, b.displayName, powerBefore, b.recommendedPower);
                 Exit();
             }
             GUILayout.EndHorizontal();

@@ -49,6 +49,8 @@ namespace Deepshaft.Tests
             database.EditorSetMinions(new[] { miner, tank, fighter, support, mage });
             database.EditorSetRoster(new RosterRules { minerSlots = 3, adventureSlots = 3 });
             database.EditorSetStarterMinions(new[] { "miner", "tank", "fighter", "support", "mage" });
+            // These tests count resources from 0; starting resources have their own test below.
+            database.EditorSetNewGameResources(new ResourceAmount[0]);
         }
 
         [TearDown]
@@ -237,6 +239,92 @@ namespace Deepshaft.Tests
 
             Assert.AreEqual(MinionUpgradeStatus.CantAfford, result.Status);
             Assert.AreEqual(1, session.State.FindMinion(minerId).level);
+        }
+
+        // ---------- Playtest fixes (SCRUM-32) ----------
+
+        [Test]
+        public void NewGame_StartsWithTheStartingResources_OnlyOnce()
+        {
+            database.EditorSetNewGameResources(GameDatabase.DefaultNewGameResources());
+
+            GameSession session = NewSession();
+            Assert.AreEqual(300, session.Wallet.Get(ResourceId.Gold));
+            Assert.AreEqual(120, session.Wallet.Get(ResourceId.Iron));
+
+            session.Wallet.TrySpend(ResourceId.Gold, 300);
+            session.Save();
+            GameSession reloaded = NewSession();
+            Assert.AreEqual(0, reloaded.Wallet.Get(ResourceId.Gold), "A loaded save doesn't get them again.");
+        }
+
+        [Test]
+        public void StartingResources_BuySeveralLevelUpsStraightAway()
+        {
+            database.EditorSetNewGameResources(GameDatabase.DefaultNewGameResources());
+            GameSession session = NewSession();
+            int levels = 0;
+            foreach (OwnedMinion m in session.Roster.GetTeam()) levels += session.LevelUpMinionMax(m.instanceId).Levels;
+            Assert.GreaterOrEqual(levels, 6, "The first session should have upgrades to buy.");
+        }
+
+        [Test]
+        public void Tier1BossFirstWin_AlsoGivesGold()
+        {
+            var boss = DefaultAdventureContent.Bosses()[0];
+            Assert.IsTrue(boss.firstWinRewards.Exists(r => r.id == ResourceId.Gold && r.amount == 200));
+            Assert.IsFalse(boss.repeatWinRewards.Exists(r => r.id == ResourceId.Gold), "Only the first win.");
+        }
+
+        [Test]
+        public void LevelUpMax_BuysEverythingAffordable_InOneSaveAndOneLogLine()
+        {
+            GameSession session = NewSession();
+            int minerId = session.Roster.GetMiners()[0].instanceId;
+            session.Wallet.Add(ResourceId.Gold, 100); // 25 + 28 + 31 = 84 for 3 levels; the 4th costs 35
+            session.Wallet.Add(ResourceId.Iron, 1000);
+            int logBefore = session.Playtest.Events.Count;
+
+            BulkPurchase preview = session.Minions.CheckLevelUpMax(minerId, session.Wallet);
+            BulkPurchase bought = session.LevelUpMinionMax(minerId);
+
+            Assert.AreEqual(3, preview.Levels);
+            Assert.AreEqual(3, bought.Levels);
+            Assert.AreEqual(4, bought.ToLevel);
+            Assert.AreEqual(4, session.State.FindMinion(minerId).level);
+            Assert.AreEqual(16, session.Wallet.Get(ResourceId.Gold));
+            Assert.AreEqual(logBefore + 1, session.Playtest.Events.Count);
+            Assert.AreEqual("level_up_max", session.Playtest.Events[logBefore].type);
+            Assert.AreEqual(4, NewSession().State.FindMinion(minerId).level, "Saved.");
+        }
+
+        [Test]
+        public void LevelUpMax_StopsAtTheLevelCap()
+        {
+            GameSession session = NewSession();
+            int minerId = session.Roster.GetMiners()[0].instanceId;
+            session.Wallet.Add(ResourceId.Gold, 10_000_000);
+            session.Wallet.Add(ResourceId.Iron, 10_000_000);
+
+            Assert.AreEqual(19, session.LevelUpMinionMax(minerId).Levels);
+            Assert.AreEqual(20, session.State.FindMinion(minerId).level);
+            Assert.AreEqual(0, session.LevelUpMinionMax(minerId).Levels, "At the cap nothing more is bought.");
+        }
+
+        [Test]
+        public void UpgradeGearMax_StopsAtTheItemCap_AndWithoutMoney()
+        {
+            GameSession session = NewSession();
+            int tankId = session.Roster.GetTeam()[0].instanceId;
+            Assert.AreEqual(0, session.UpgradeGearMax(tankId, EquipmentSlot.Weapon).Levels, "Nothing affordable.");
+            Assert.AreEqual(0, session.Smith.CheckUpgradeMax(tankId, EquipmentSlot.Tool, session.Wallet).Levels, "Wrong slot.");
+
+            session.Wallet.Add(ResourceId.Gold, 100_000);
+            session.Wallet.Add(ResourceId.Iron, 100_000);
+            BulkPurchase bought = session.UpgradeGearMax(tankId, EquipmentSlot.Weapon);
+
+            Assert.AreEqual(3, bought.Levels, "Level 1 → 4, the cap before the first breakthrough.");
+            Assert.AreEqual(4, EquipmentRules.GetLevel(session.State.FindMinion(tankId), EquipmentSlot.Weapon));
         }
 
         // ---------- Smith and HQ (SCRUM-9) ----------

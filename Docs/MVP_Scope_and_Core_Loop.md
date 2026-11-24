@@ -2,7 +2,7 @@
 
 *Working title. Previously "Dungeon Conveyor Inc."*
 
-**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** Final, v2.8 (2026-11-19), updated to Game Design Summary v3.4
+**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** Final, v2.9 (2026-11-24), updated to Game Design Summary v3.4
 **Platform:** Android first (iOS later), all four orientations (portrait and landscape) · **Engine:** Unity 6 (6000.6)
 
 > **Design source of truth:** [Game Design Summary v3.4](Game_Design_Summary.md).
@@ -359,6 +359,9 @@ As of 2026-11-19 (SCRUM-4, 5, 6, 7 and 30 merged; SCRUM-10, 9 and 11 in review).
 **Missing for Step A:** nothing in code. Next: review PR #21 (SCRUM-10/9/11), build v0.0.3, then run the
 playtest with the [Playtest Plan](Playtest_Plan_SCRUM-8.md) (SCRUM-8). The plan also lists pacing findings
 from a simulated free player (all 3 tiers cleared in about 11 hours of play), for SCRUM-2.
+- **Playtest fixes (SCRUM-32):** new games start with 300 Gold + 120 Iron and the Tier 1 boss's first win gives
+  200 Gold; "Max ×N" buttons for Minion levels and gear; a hint card after a lost fight; a "Start automation"
+  card after a won first clear.
 - **Playtest tools (SCRUM-8):** a local playtest event log (every action and tab, saved with the game);
   Settings → Debug → Copy log / Save log file exports it as CSV.
 
@@ -446,6 +449,7 @@ Minion, breakthrough materials, boss materials at the Smith, Advanced Shards and
 | 2.2 | 2026-11-15 | Updated "Where the current build stands" after SCRUM-5, 6 and 7, including the placeholders that stand in for open decisions. Added offline-clock protection, return motivation and the game name to the open questions. |
 | 2.3 | 2026-11-17 | Team answers: next tier unlocks on the boss win, keep 3 + 3 slots, tune numbers by playtesting, server clock against clock cheating, shop sells resources/shards, keep "Expedition: Deepshaft". Remaining open questions updated. |
 | 2.4 | 2026-11-17 | SCRUM-1 closed. Status set to final; the remaining open questions (§10) live in their own tickets. |
+| 2.9 | 2026-11-24 | SCRUM-32 playtest fixes: starting resources, Max buttons, loss hint, automate prompt. |
 | 2.8 | 2026-11-19 | SCRUM-8 prep: playtest plan, playtest event log, simulated free-player playthrough. |
 | 2.7 | 2026-11-19 | SCRUM-11 built (summoning, Essence, placeholder Uncommon/Rare Minions). Decisions 27–28. |
 | 2.6 | 2026-11-19 | SCRUM-9 built (Smith ranks, gear upgrades and breakthroughs, HQ production). Decision 26: boss materials teach Smith ranks. |

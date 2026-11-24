@@ -32,7 +32,7 @@ namespace Deepshaft.Content
 
         public static List<BossDefinition> Bosses() => new List<BossDefinition>
         {
-            Boss(Tier1Boss, "Spore Foreman", 1, 80, 26, ResourceId.ForemanSigil, 20),
+            Boss(Tier1Boss, "Spore Foreman", 1, 80, 26, ResourceId.ForemanSigil, 20, firstWinGold: 200),
             Boss(Tier2Boss, "Slag Golem", 2, 135, 43, ResourceId.GolemHeart, 30),
             Boss(Tier3Boss, "Prism Wyrm", 3, 240, 77, ResourceId.WyrmScale, 40),
         };
@@ -61,7 +61,7 @@ namespace Deepshaft.Content
         };
 
         static BossDefinition Boss(string id, string name, int tier, float recommended, float atk,
-            ResourceId material, long shards) => new BossDefinition
+            ResourceId material, long shards, long firstWinGold = 0) => new BossDefinition
         {
             id = id,
             displayName = name,
@@ -69,9 +69,17 @@ namespace Deepshaft.Content
             recommendedPower = recommended,
             enemy = new EnemyDefinition(name, 11f * recommended, atk, 2f, 4),
             // Each boss's first win also gives one Advanced summon (team decision 2026-11-19, SCRUM-11).
-            firstWinRewards = new List<ResourceAmount> { R(material, 1), R(ResourceId.BasicShard, shards), R(ResourceId.AdvancedShard, 10) },
+            // The Tier 1 boss's first win also gives Gold, so the first session keeps going (SCRUM-32).
+            firstWinRewards = FirstWin(material, shards, firstWinGold),
             repeatWinRewards = new List<ResourceAmount> { R(material, 1) },
         };
+
+        static List<ResourceAmount> FirstWin(ResourceId material, long shards, long gold)
+        {
+            var rewards = new List<ResourceAmount> { R(material, 1), R(ResourceId.BasicShard, shards), R(ResourceId.AdvancedShard, 10) };
+            if (gold > 0) rewards.Add(R(ResourceId.Gold, gold));
+            return rewards;
+        }
 
         static ExpeditionDefinition Expedition(string id, string name, int tier, string boss, float recommended,
             string enemyName, float enemyAtk, ResourceAmount[] firstClear, ResourceAmount[] perHour)

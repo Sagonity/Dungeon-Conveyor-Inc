@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Deepshaft.Bosses;
 using Deepshaft.Combat;
+using Deepshaft.Economy;
 using Deepshaft.Equipment;
 using Deepshaft.Expeditions;
 using Deepshaft.Minions;
@@ -36,7 +37,10 @@ namespace Deepshaft.Content
         [Header("Summoning (SCRUM-11)")]
         [SerializeField] SummonRules summoning = SummonRules.CreateDefault();
 
-        [Header("New game (SCRUM-30)")]
+        [Header("New game (SCRUM-30, SCRUM-32)")]
+        [Tooltip("Resources a new game starts with, so the first session has upgrades to buy (SCRUM-32).")]
+        [SerializeField] List<ResourceAmount> newGameResources = DefaultNewGameResources();
+
         [Tooltip("Minion definition ids a new game starts with. Miners fill the Mine and Adventure Minions the team, in this order.")]
         [SerializeField] List<string> starterMinions = new List<string>();
 
@@ -73,6 +77,17 @@ namespace Deepshaft.Content
 
         /// <summary>Shard costs, rarity rates and Essence per duplicate (SCRUM-11). Never null.</summary>
         public SummonRules Summoning => summoning ?? (summoning = SummonRules.CreateDefault());
+
+        /// <summary>Resources a new game starts with (SCRUM-32). Never null.</summary>
+        public IReadOnlyList<ResourceAmount> NewGameResources =>
+            newGameResources ?? (newGameResources = new List<ResourceAmount>());
+
+        /// <summary>The first-pass starting resources: enough for a few level-ups in the first minutes.</summary>
+        public static List<ResourceAmount> DefaultNewGameResources() => new List<ResourceAmount>
+        {
+            new ResourceAmount(ResourceId.Gold, 300),
+            new ResourceAmount(ResourceId.Iron, 120),
+        };
 
         /// <summary>Minion definition ids a new game starts with (SCRUM-30).</summary>
         public IReadOnlyList<string> StarterMinions => starterMinions ?? (starterMinions = new List<string>());
@@ -168,6 +183,10 @@ namespace Deepshaft.Content
 
         /// <summary>For tests and editor tools only.</summary>
         public void EditorSetEquipment(EquipmentRules rules) => equipment = rules;
+
+        /// <summary>For tests and editor tools only.</summary>
+        public void EditorSetNewGameResources(IEnumerable<ResourceAmount> amounts) =>
+            newGameResources = new List<ResourceAmount>(amounts);
 
         /// <summary>For tests and editor tools only.</summary>
         public void EditorSetStarterMinions(IEnumerable<string> ids) => starterMinions = new List<string>(ids);
