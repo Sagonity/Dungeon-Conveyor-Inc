@@ -141,3 +141,6 @@ crashlytics-build.properties
 # Python tools
 __pycache__/
 *.pyc
+
+# Burst output from Web builds (SCRUM-35); regenerated on every build
+/Data/
