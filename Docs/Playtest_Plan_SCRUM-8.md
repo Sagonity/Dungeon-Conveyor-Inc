@@ -27,9 +27,11 @@
 Do these before the playtest day.
 
 - [ ] Review and merge PR #21 (SCRUM-10, 9, 11, and this plan)
-- [ ] Run the EditMode tests in Unity (Test Runner → EditMode → Run All). Expect 177 to pass
+- [x] Run the EditMode tests in Unity (Test Runner → EditMode → Run All). **Passed in Unity, 2026-11-19**
 - [ ] Open the project and check that the 13 new Minion assets in `Assets/Content/Minions` import without warnings
-- [ ] Build `APK/Expedition Deepshaft v0.0.3.apk` and install it on the test phone(s)
+- [ ] Build `APK/Expedition Deepshaft v0.0.3.apk` and the iOS build of 0.0.3, and install them on the test phones
+- [ ] On iPhones, use **Copy log** to export the playtest log: **Save log file** writes into the app's own folder,
+  which the Files app doesn't show unless file sharing is turned on in the Xcode project
 - [ ] On each phone: play 2 minutes, then Settings → Debug → **Copy log** and paste it somewhere. You should see `new_game`, `tab …` and your actions
 - [ ] On each phone: Settings → **Reset game** so every tester starts fresh (copy the log first; reset deletes it)
 - [ ] Charge the phones, turn on Do Not Disturb, set the screen timeout to 10 minutes or more
@@ -40,38 +42,44 @@ Do these before the playtest day.
 
 ## 3. What the simulated player already shows
 
-`PlaythroughTests` plays the whole prototype as a simple free player with the default numbers.
-It checks in every hour (an engaged player) or every 8 hours (about three sessions a day).
-Each check-in it collects, buys the cheapest upgrade it can afford until it can't, summons, and fights
-when the team is within 90% of the recommended power.
+`PlaythroughTests` plays the whole prototype as a simple free player with the default numbers and the
+prototype roster (7 starter Commons, plus the Uncommon and Rare Minions from summons). It runs three
+play rhythms with 5 seeds each.
+Each check-in it collects (stopping the Expedition to get its loot), summons, puts its best Minions to
+work, does every breakthrough it can, buys the cheapest upgrade until nothing is affordable, and fights
+every next step it's within 90% of. It plays perfectly, so real players will be slower.
+Run it again after any tuning change; the table is in the test output.
 
-| Milestone | Check-in every 1 h | Check-in every 8 h |
-|---|---|---|
-| Beat Tier 1 boss (Spore Foreman) | hour 1 | hour 8 |
-| First clear Spore Caverns | hour 3 | hour 16 |
-| Beat Tier 2 boss (Slag Golem) | hour 4 | hour 24 |
-| First clear Magma Works | hour 6 | hour 32 |
-| Beat Tier 3 boss (Prism Wyrm) | hour 8 | hour 40 |
-| First clear Crystal Depths (end) | **hour 11** | **hour 48 (day 3)** |
-| Minion breakthroughs used | **none** (all Minions stay at the level-20 cap) | 2 per Minion |
-| Team power at the end (needed: 300) | 286 | **522** |
+**Hour of game time each step was first cleared** (2026-11-19, default numbers; hour 0 = first launch):
+
+| Check-in | T1 boss | T1 Exped. | T2 boss | T2 Exped. | T3 boss | **T3 Exped. (end)** | Visits | Lost fights | Minion breakthroughs |
+|---|---|---|---|---|---|---|---|---|---|
+| Every 1 h | 1 | 2–3 | 4–5 | 5–7 | 7–9 | **10–15 h** | 11–16 | 2–6 | 0 |
+| Every 8 h | 8 | 8 | 16 | 16 | 16 | **24–32 h** | 4–5 | 0–1 | 0 or 7 |
+| Once a day | 24 | 24 | 24 | 24 | 48 | **48 h (day 2)** | 3 | 0 | 0 |
+
+In every rhythm the first launch has nothing to buy, gear breakthroughs happen 8–12 times, and summons are
+about half duplicates (Basic summons mostly give Commons the player already owns).
+
+A real phone test (Marcus, 2026-11-19, with debug time skips) matched this: the first ~70 minutes had
+nothing to buy (5 Gold from the first collect), then one 24-hour skip gave ~12,000 Gold and everything
+except the last Expedition was cleared within 2 minutes. Levelling took one tap per level (~480 taps).
 
 **Findings for SCRUM-2 (economy owner), before or after the playtest:**
 
-1. **C6 passes:** both players clear all 3 tiers without paying; there's no dead end.
-2. **The whole prototype takes about 11 hours of play,** or 2 days for someone who plays three times a day.
-   Pacing per tier is still undecided (SCRUM-2); this is the first real number for that discussion.
-3. **Minion breakthroughs aren't needed** by an engaged player: gear upgrades alone carry the team
-   to the end. "Break through" is one of the 5 loop steps testers should learn (C1, C3). Testers may
-   never do one in a 30-minute session.
-4. **Long absences beat active play by a lot.** The 8-hour player ends with almost twice the needed
-   power, because mining has no cap and the Mine keeps running. SCRUM-2 has an open item to check exactly this.
-5. **A level-1 starting team can already beat the Tier 1 boss** (power 66 vs. 80 recommended). The first
-   "lose, then upgrade" moment (C2) may not happen until Tier 2. Note at what point testers first lose.
-6. **Expedition loot is invisible until the player stops the Expedition.** Rare materials are earned
-   all the time but only reach the wallet on "Stop & Collect". Watch whether testers realise this (C3, C7).
-7. **Most Basic summons are duplicates.** New players already own 7 of the 8 Common Minions, so 75% of
-   Basic summons give Essence, and Essence has no use in the prototype (no Ascension).
+1. **C6 passes:** every run clears all 3 tiers without paying; there's no dead end.
+2. **The prototype lasts 2–3 return visits:** a once-a-day player finishes on day 2, an 8-hourly player on day 1–2.
+3. **Being away beats playing.** The daily player clears Tier 1 and Tier 2 together on its first return and
+   never loses; the hourly player loses fights for the same progress. Mining has no cap, so a long break
+   earns more than active play can spend.
+4. **Losing is rare** unless the player checks in very often, so the "lose, upgrade, win" moment (C2) may
+   barely happen. A level-1 starting team can even beat the Tier 1 boss (power 66 vs. 80 recommended).
+5. **Minion breakthroughs are almost never needed:** gear upgrades carry the team. "Break through" is one of
+   the 5 loop steps testers should learn (C1, C3).
+6. **The first session has nothing to buy:** a new game starts with 0 Gold and earns about 3 Gold a minute.
+7. **Expedition loot is invisible until the Expedition is stopped,** and automation was started late in the phone test.
+8. **About half of all summons are duplicates,** and Essence has no use in the prototype (no Ascension).
+9. **One tap per level** makes levelling tedious (about 480 taps in the phone test).
 
 **Suggestion:** run the playtest with the numbers as they are, since the findings above are what we
 want to see in people. If the team would rather tune first, the quickest single change is to raise the

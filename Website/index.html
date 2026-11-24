@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- The title, name and all text come from content/site.js (SCRUM-31). -->
+  <title>Mobile mining game</title>
+  <meta name="description" content="A mobile mining and auto-battler game: mine, upgrade, beat the boss, automate Expeditions and dig deeper.">
+  <meta name="theme-color" content="#0E0C12">
+  <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+  <script src="content/site.js" defer></script>
+  <script src="content/events.js" defer></script>
+  <script src="main.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#about">Skip to content</a>
+
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="#top"><img src="images/favicon.svg" alt="" width="28" height="28"><span data-site="name"></span></a>
+      <nav aria-label="Sections">
+        <a href="#about">The game</a>
+        <a href="#screenshots">Screenshots</a>
+        <a href="#features">Features</a>
+        <a href="#events">Events</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <img class="hero-art" src="images/placeholder-hero.svg" alt="">
+      <div class="wrap hero-inner">
+        <p class="eyebrow">Coming to Android and iPhone</p>
+        <h1 data-site="name"></h1>
+        <p class="tagline" data-site="tagline"></p>
+        <div class="stores" id="stores"></div>
+      </div>
+    </section>
+
+    <section id="about" class="wrap section">
+      <h2>What is <span data-site="name"></span>?</h2>
+      <p class="lead" data-site="pitch"></p>
+      <ol class="loop" id="loop"></ol>
+    </section>
+
+    <section id="screenshots" class="section band">
+      <div class="wrap">
+        <h2>Screenshots</h2>
+        <p class="muted">Early prototype. Placeholder art until the real art is ready.</p>
+      </div>
+      <div class="gallery" id="gallery" tabindex="0" aria-label="Screenshots, scroll sideways"></div>
+    </section>
+
+    <section id="features" class="wrap section">
+      <h2>Features</h2>
+      <div class="features" id="features-list"></div>
+    </section>
+
+    <section id="events" class="section band">
+      <div class="wrap">
+        <h2>Events</h2>
+        <div id="events-list" class="events"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <p>© <span id="year"></span> <span data-site="studio"></span>. <span data-site="name"></span> is a working title.</p>
+      <nav aria-label="Legal and contact" id="footer-links">
+        <a href="privacy.html">Privacy policy</a>
+        <a href="terms.html">Terms</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>

@@ -403,8 +403,10 @@ placement: the player only picks Minions for slots.
   (newest 2000 events, kept in the save). It stays on the device. `ToCsv()` gives
   `utc,minutes,type,detail`; Settings → Debug → Copy log / Save log file exports it. Replaced by real
   analytics in SCRUM-17.
-- **`PlaythroughTests`**: a simple free player plays the whole prototype through `GameSession`
-  (check-in every 1 h and every 8 h) and must clear all 3 tiers; it prints the milestone hours for pacing.
+- **`PlaythroughTests`**: a simple free player plays the whole prototype through `GameSession` with the
+  prototype roster (check-in every 1 h, every 8 h and once a day, 5 seeds each) and must clear all 3 tiers;
+  it prints the hour each step was first cleared, for pacing (SCRUM-2). `MinionDefinition.EditorScaleStats`
+  gives test Minions the Uncommon / Rare stats.
 - How to run the playtest: [Playtest Plan](Playtest_Plan_SCRUM-8.md).
 
 ## 12. Team decisions (2026-11-17)
