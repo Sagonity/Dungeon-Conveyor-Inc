@@ -1,6 +1,6 @@
 # Expedition: Deepshaft — Core Loop Playtest Plan
 
-**Jira:** SCRUM-8 (Step A milestone) · **Status:** Ready to run once PR #21 is merged and a new APK is built
+**Jira:** SCRUM-8 (Step A milestone) · **Status:** Ready to run with **v0.0.5** (2026-11-25)
 **Build:** grey-box (IMGUI) · **Testers:** 5+ people who haven't seen the game
 **Success criteria from:** [MVP Scope](MVP_Scope_and_Core_Loop.md) §8 · **Feeds:** SCRUM-2 (economy), SCRUM-19 (balancing)
 
@@ -11,9 +11,9 @@
 | # | Success criterion | How we check it | Pass if |
 |---|---|---|---|
 | C1 | Testers can explain "mine, upgrade, beat the boss, clear and automate the Expedition, break through" after 10 minutes | Ask question Q1 at 10 min (§5); write the answer down word for word | 4 of 5 name at least 4 of the 5 steps |
-| C2 | After losing a boss or first clear, testers go back to upgrading without being told | Watch; check the log: after a `boss_fight … lost` or `first_clear … lost`, is the next action a `level_up`, `gear_upgrade` or breakthrough? | 4 of 5 |
+| C2 | After losing a boss or first clear, testers go back to upgrading without being told | Watch; check the log: after a `boss_fight … lost` or `first_clear … lost`, is the next action a `level_up(_max)`, `gear_upgrade(_max)`, breakthrough or `swap_team`? A `view loss_hint …` means they used the "Lost to …" card's buttons (counts, but note it) | 4 of 5 |
 | C3 | Testers understand that Expedition materials are needed for breakthroughs | Q3 in the interview; check the log for a `minion_breakthrough` or `gear_breakthrough` | 4 of 5 answer correctly |
-| C4 | Every session ends with at least one meaningful upgrade | Log: at least one `level_up`, `gear_upgrade`, breakthrough or `smith_rank` with status `Ok` per session | Every session of every tester |
+| C4 | Every session ends with at least one meaningful upgrade | Log: at least one `level_up` / `gear_upgrade` / breakthrough / `smith_rank` with status `Ok`, or a `level_up_max` / `gear_upgrade_max` with `levels` ≥ 1, per session | Every session of every tester |
 | C5 | Testers who come back after a long break feel rewarded, not punished | Session 2 (§4); Q6 and the reaction to the "Welcome back" message | 4 of 5 say rewarded or neutral; nobody says punished |
 | C6 | All 3 tiers can be cleared without paying | Already checked by the simulated player (§3); confirm nobody hits a dead end | No dead end seen |
 | C7 | Is stopping an automated Expedition to fight a fair choice or a chore? | Watch the moment it happens; Q5 | Notes only (decision input) |
@@ -24,19 +24,32 @@
 
 ## 2. Readiness checklist
 
-Do these before the playtest day.
+Do these before the playtest day. Playtest build: **v0.0.5** (everything up to SCRUM-34).
 
-- [ ] Review and merge PR #21 (SCRUM-10, 9, 11, and this plan)
-- [x] Run the EditMode tests in Unity (Test Runner → EditMode → Run All). **Passed in Unity, 2026-11-19**
-- [ ] Open the project and check that the 13 new Minion assets in `Assets/Content/Minions` import without warnings
-- [ ] Build `APK/Expedition Deepshaft v0.0.3.apk` and the iOS build of 0.0.3, and install them on the test phones
-- [ ] On iPhones, use **Copy log** to export the playtest log: **Save log file** writes into the app's own folder,
-  which the Files app doesn't show unless file sharing is turned on in the Xcode project
-- [ ] On each phone: play 2 minutes, then Settings → Debug → **Copy log** and paste it somewhere. You should see `new_game`, `tab …` and your actions
-- [ ] On each phone: Settings → **Reset game** so every tester starts fresh (copy the log first; reset deletes it)
+- [x] All code for the playtest merged to `main` (SCRUM-9, 10, 11, 32, 33, 34)
+- [x] EditMode tests passed in Unity before SCRUM-34 (187 tests, 2026-11-24)
+- [ ] Run the EditMode tests in Unity once more on 0.0.5 (expect 190)
+- [x] `APK/Expedition Deepshaft v0.0.5.apk` built; internal phone tests of 0.0.3–0.0.5 done (findings on SCRUM-8)
+- [x] Pacing: run the playtest with the current numbers and tune afterwards (team decision 2026-11-25; §3)
+- [ ] Build the iOS version of 0.0.5 and share it through TestFlight (for testers on their own iPhones)
+- [ ] Install 0.0.5 on every test phone. On Android, uninstall older builds first, or reset the game (below)
+- [ ] On each phone: play 2 minutes, then Settings → Debug → **Copy log** and paste it somewhere. You should see `new_game`, `view tab …` and your actions
+- [ ] On each phone: Settings → **Reset game** so every tester starts fresh (copy the log first; reset deletes it). A new game shows **300 Gold and 120 Iron**
+- [ ] On iPhones, export logs with **Copy log**: **Save log file** writes into the app's own folder, which the Files app doesn't show
+- [ ] Tell testers not to open Settings → Debug (the facilitator uses it for the break and the log)
 - [ ] Charge the phones, turn on Do Not Disturb, set the screen timeout to 10 minutes or more
 - [ ] Print the observation sheet (§6), one per tester
-- [ ] Decide whether to change the pacing first (§3). If not, change the session lengths below to match
+
+### What testers will see in 0.0.5
+
+- The game opens straight into the game screen (no Main menu). Settings (top right) has **Sound** and the debug tools.
+- A new game starts with 300 Gold and 120 Iron, so there's something to buy straight away; the Tier 1 boss's first win also gives 200 Gold.
+- **Max ×N** buttons on a Minion's card and on gear rows at the Smith buy several levels in one tap.
+- After a lost fight, a **"Lost to …"** card shows the power gap with **Level up** / **Upgrade gear** buttons.
+- After a first clear, a **"… cleared"** card offers **Start automation**. A running Expedition shows its rate, not
+  "earned so far": its loot arrives when it's stopped.
+- When the team or the Mine is full, a benched Minion's card offers **Swap with …**.
+- Wherever something can't be afforded, the screen says what's missing and where to get it.
 
 ---
 
@@ -50,20 +63,23 @@ work, does every breakthrough it can, buys the cheapest upgrade until nothing is
 every next step it's within 90% of. It plays perfectly, so real players will be slower.
 Run it again after any tuning change; the table is in the test output.
 
-**Hour of game time each step was first cleared** (2026-11-19, default numbers; hour 0 = first launch):
+**Hour of game time each step was first cleared** (2026-11-25, with the SCRUM-32 fixes; hour 0 = first launch):
 
-| Check-in | T1 boss | T1 Exped. | T2 boss | T2 Exped. | T3 boss | **T3 Exped. (end)** | Visits | Lost fights | Minion breakthroughs |
-|---|---|---|---|---|---|---|---|---|---|
-| Every 1 h | 1 | 2–3 | 4–5 | 5–7 | 7–9 | **10–15 h** | 11–16 | 2–6 | 0 |
-| Every 8 h | 8 | 8 | 16 | 16 | 16 | **24–32 h** | 4–5 | 0–1 | 0 or 7 |
-| Once a day | 24 | 24 | 24 | 24 | 48 | **48 h (day 2)** | 3 | 0 | 0 |
+| Check-in | T1 boss | T1 Exped. | T2 boss | T2 Exped. | T3 boss | **T3 Exped. (end)** | Lost fights | Minion breakthroughs |
+|---|---|---|---|---|---|---|---|---|
+| Every 1 h | 0 | 1–2 | 2–4 | 3–5 | 5–8 | **7–14 h** | 1–7 | 0 |
+| Every 8 h | 0 | 8 | 8 | 8–16 | 16 | **24–32 h** | 1–2 | 1–3 |
+| Once a day | 0 | 24 | 24 | 24 | 24–48 | **48–72 h** | 1 | 3–8 |
 
-In every rhythm the first launch has nothing to buy, gear breakthroughs happen 8–12 times, and summons are
-about half duplicates (Basic summons mostly give Commons the player already owns).
+The first launch always has something to buy; summons are about half duplicates. Before the fixes, the first launch
+had nothing to buy, and daily players never lost a fight or needed a Minion breakthrough (economy doc §9).
 
-A real phone test (Marcus, 2026-11-19, with debug time skips) matched this: the first ~70 minutes had
-nothing to buy (5 Gold from the first collect), then one 24-hour skip gave ~12,000 Gold and everything
-except the last Expedition was cleared within 2 minutes. Levelling took one tap per level (~480 taps).
+**Internal phone tests (Marcus):**
+- **0.0.3, real time:** first launch empty; levelling found only on day 2; 26 retries in a row on Crystal Depths.
+- **0.0.4, hourly debug skips:** the loss card's buttons were used at once; Max used 25 times; everything cleared at
+  ~11 h of game time, inside the simulated 7–14 h.
+- **0.0.5:** Minions levelled in the first minute; Swap used 3 times.
+- Details on SCRUM-8.
 
 **Findings for SCRUM-2 (economy owner), before or after the playtest:**
 
@@ -74,6 +90,7 @@ except the last Expedition was cleared within 2 minutes. Levelling took one tap 
    earns more than active play can spend.
 4. **Losing is rare** unless the player checks in very often, so the "lose, upgrade, win" moment (C2) may
    barely happen. A level-1 starting team can even beat the Tier 1 boss (power 66 vs. 80 recommended).
+   (Since SCRUM-32, every rhythm loses at least once.)
 5. **Minion breakthroughs are almost never needed:** gear upgrades carry the team. "Break through" is one of
    the 5 loop steps testers should learn (C1, C3).
 6. **The first session has nothing to buy:** a new game starts with 0 Gold and earns about 3 Gold a minute.
@@ -87,9 +104,8 @@ A card after a lost fight shows the power gap and links to the Minions tab and t
 clear offers "Start automation". With these, the simulated player always has something to buy on the first
 launch and beats the Tier 1 boss in the first session. Overall pacing (findings 2–5) is unchanged and stays with SCRUM-2.
 
-**Suggestion:** run the playtest with the numbers as they are, since the findings above are what we
-want to see in people. If the team would rather tune first, the quickest single change is to raise the
-boss and Expedition recommended power (and enemy stats) on the GameDatabase asset.
+**Decided (2026-11-25):** run the playtest with the numbers as they are and tune afterwards (SCRUM-2). Also
+fixed since: team swaps in one tap (SCRUM-34) and "where to get it" hints for rare materials (SCRUM-33).
 
 ---
 
@@ -144,13 +160,14 @@ Tester #___   Date ______   Plays mobile games: none / casual / idle-gacha   Pho
 
 Session 1 start __:__
  [ ] Found Collect without help          time __:__
- [ ] First level-up                      time __:__
+ [ ] First level-up                      time __:__   used Max ×N? Y / N
  [ ] First Smith upgrade                 time __:__
  [ ] First summon                        time __:__   result _________
  [ ] First boss fight                    time __:__   won / lost
  [ ] First LOSS (boss or first clear)    time __:__   what next? ______________________  (C2)
+     Used the "Lost to …" card's buttons?  Y / N
  [ ] First first clear                   time __:__
- [ ] Started automation                  time __:__
+ [ ] Started automation                  time __:__   from the "… cleared" card? Y / N
  [ ] Stopped Expedition to fight         time __:__   reaction __________________     (C7)
  [ ] Breakthrough (Minion or gear)       time __:__                                    (C3)
  Q1 answer (10 min): ____________________________________________________________ (C1)
@@ -174,14 +191,16 @@ is kept in the save, so it survives app restarts. **Reset game deletes it**, so 
 | type | detail (example) | Use |
 |---|---|---|
 | `new_game` / `session_start` | `hours_away=8.0 tier=2 waiting_mine=… waiting_expedition=…` | Session boundaries (C4, C5) |
-| `view` | `tab Minions` | Where the tester went, e.g. after a loss (C2) |
+| `view` | `tab Minions` / `loss_hint Minions` / `loss_hint Smith` | Where the tester went, e.g. after a loss (C2); `loss_hint …` = a button on the "Lost to …" card |
 | `collect_mine` | `412 Gold + 160 Iron` | |
 | `level_up` / `minion_breakthrough` | `Minion_Tank:C#3 Ok level=5` / `CantAfford` | Upgrades (C4); failed taps show confusion |
+| `level_up_max` / `gear_upgrade_max` | `Minion_Tank:C#3 levels=7 level=10` | Several levels in one tap (C4) |
 | `gear_upgrade` / `gear_breakthrough` / `smith_rank` | `… Tool Ok level=3` | Upgrades (C3, C4) |
 | `summon` | `Adventure Basic new Minion_Mage:U Uncommon` / `duplicate … essence=5` | |
 | `boss_fight` / `first_clear` | `spore_foreman lost power=72 rec=80` | Losses (C2), power vs. recommended |
 | `expedition_start` / `expedition_stop` | `spore_caverns hours=3.2 6 SporeSilk + …` | Automation (C7) |
-| `assign_*` / `remove_team` | `Minion_Archer:C#7 Ok` | |
+| `assign_*` / `remove_team` / `unassign_miner` | `Minion_Archer:C#7 Ok` / `NoFreeSlot` | |
+| `swap_team` / `swap_miner` | `Minion_Archer:R#9 for Minion_Fighter:C#4 Ok` | Team changes in one tap |
 | `debug_skip` | `hours=8` | Same-day break (session 2) |
 
 The `minutes` column counts from the first event and includes debug skips, so a skipped break shows up as a jump.

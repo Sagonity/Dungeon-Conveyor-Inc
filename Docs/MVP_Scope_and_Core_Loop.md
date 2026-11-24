@@ -357,8 +357,8 @@ As of 2026-11-19 (SCRUM-4, 5, 6, 7 and 30 merged; SCRUM-10, 9 and 11 in review).
 - **Cleaned up (SCRUM-33):** `GameController` no longer freezes Unity's game time while a menu is open.
   New systems must still use `IClock`, not game time.
 
-**Missing for Step A:** nothing in code. Next: review PR #21 (SCRUM-10/9/11), build v0.0.3, then run the
-playtest with the [Playtest Plan](Playtest_Plan_SCRUM-8.md) (SCRUM-8). The plan also lists pacing findings
+**Missing for Step A:** nothing in code. The playtest build is **v0.0.5**; run the playtest with the
+[Playtest Plan](Playtest_Plan_SCRUM-8.md) (SCRUM-8). The plan also lists pacing findings
 from a simulated free player (all 3 tiers cleared in about 11 hours of play), for SCRUM-2.
 - **Playtest fixes (SCRUM-32):** new games start with 300 Gold + 120 Iron and the Tier 1 boss's first win gives
   200 Gold; "Max ×N" buttons for Minion levels and gear; a hint card after a lost fight; a "Start automation"
