@@ -2,7 +2,7 @@
 
 *Working title. Previously "Dungeon Conveyor Inc."*
 
-**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** Final, v2.9 (2026-11-24), updated to Game Design Summary v3.4
+**Jira:** SCRUM-1 · **Sprint:** Discovery · **Status:** Final, v2.10 (2026-11-24), updated to Game Design Summary v3.4
 **Platform:** Android first (iOS later), all four orientations (portrait and landscape) · **Engine:** Unity 6 (6000.6)
 
 > **Design source of truth:** [Game Design Summary v3.4](Game_Design_Summary.md).
@@ -298,8 +298,9 @@ always chooses to watch one for a reward). No interstitial or pop-up ads.
 
 As of 2026-11-19 (SCRUM-4, 5, 6, 7 and 30 merged; SCRUM-10, 9 and 11 in review).
 
-- **Done:** main menu, settings, UI state machine, safe-area UI for all four rotations,
-  wireframes for the v1.1 screens (SCRUM-3; need updating for v3.4, see that doc).
+- **Done:** sound settings, UI state machine and safe-area UI for all four rotations. The Main menu was removed
+  in SCRUM-33: the game boots straight into the game screen. The [UI doc](UI_Wireframes_and_Readability.md)
+  and the [economy doc](Economy_and_Progression.md) were rewritten to match the current build (SCRUM-33).
 - **Done (SCRUM-4), updated for v3.4:** the `Deepshaft.Core` foundations:
   - `ResourceId`: Gold, Iron, Silver, Mithril, Basic/Advanced Shards, Minion Essence,
     rare Expedition materials and unique boss materials. Copper and Upgrade Materials are retired.
@@ -432,7 +433,7 @@ Minion, breakthrough materials, boss materials at the Smith, Advanced Shards and
 
 | Area | Question | Status / placeholder in the build | Ticket |
 |---|---|---|---|
-| Progression pacing | How long should each tier take? **Most important next step.** | Leaning towards: the player must finish all of Tier 1 before Tier 2 and up. What "all" means (boss, every Expedition first clear, breakthroughs?) and the time per tier are still open. The economy doc still uses the v1 model and needs rebuilding for v3.4 | SCRUM-2 |
+| Progression pacing | How long should each tier take? **Most important next step.** | Leaning towards: the player must finish all of Tier 1 before Tier 2 and up. What "all" means (boss, every Expedition first clear, breakthroughs?) and the time per tier are still open. The [economy doc](Economy_and_Progression.md) lists the current numbers and `PlaythroughTests` measures pacing; tuning comes after the playtest | SCRUM-2 |
 | Summoning | Final shard rates, free shard income, pity | Decided in SCRUM-11 | SCRUM-11, SCRUM-2 |
 | Monetization | Exact shop items and prices | Leaning towards resources, shards and other items. Not built | SCRUM-24 |
 | Server | Which backend, and does the game need to be online to play? (Follows from decision 20.) | Not started. Device UTC clock (`IClock`) for now | SCRUM-16, SCRUM-17 |
@@ -449,6 +450,7 @@ Minion, breakthrough materials, boss materials at the Smith, Advanced Shards and
 | 2.2 | 2026-11-15 | Updated "Where the current build stands" after SCRUM-5, 6 and 7, including the placeholders that stand in for open decisions. Added offline-clock protection, return motivation and the game name to the open questions. |
 | 2.3 | 2026-11-17 | Team answers: next tier unlocks on the boss win, keep 3 + 3 slots, tune numbers by playtesting, server clock against clock cheating, shop sells resources/shards, keep "Expedition: Deepshaft". Remaining open questions updated. |
 | 2.4 | 2026-11-17 | SCRUM-1 closed. Status set to final; the remaining open questions (§10) live in their own tickets. |
+| 2.10 | 2026-11-24 | SCRUM-33: Main menu removed (boots straight into the game), UI and economy docs rewritten for the current build, rare-material hints, no menu time freeze. |
 | 2.9 | 2026-11-24 | SCRUM-32 playtest fixes: starting resources, Max buttons, loss hint, automate prompt. |
 | 2.8 | 2026-11-19 | SCRUM-8 prep: playtest plan, playtest event log, simulated free-player playthrough. |
 | 2.7 | 2026-11-19 | SCRUM-11 built (summoning, Essence, placeholder Uncommon/Rare Minions). Decisions 27–28. |
