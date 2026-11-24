@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{{{ PRODUCT_NAME }}}</title>
+  <!-- Deepshaft web playtest template (SCRUM-35): the game fills the whole page (or the iframe on /playtest). -->
+  <style>
+    html, body { margin: 0; height: 100%; background: #0E0C12; overflow: hidden; }
+    #unity-canvas { width: 100%; height: 100%; display: block; background: #0E0C12; outline: none; }
+    #loading { position: fixed; inset: 0; display: grid; place-items: center; color: #A59C8C;
+      font: 16px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    #bar { width: 220px; height: 6px; background: #1A1620; border-radius: 3px; overflow: hidden; margin-top: 12px; }
+    #fill { width: 0; height: 100%; background: #F5B83D; }
+  </style>
+</head>
+<body>
+  <canvas id="unity-canvas" tabindex="-1"></canvas>
+  <div id="loading"><div>Loading the game…<div id="bar"><div id="fill"></div></div></div></div>
+  <script>
+    var buildUrl = "Build";
+    var config = {
+      dataUrl: buildUrl + "/{{{ DATA_FILENAME }}}",
+      frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
+#if USE_WASM
+      codeUrl: buildUrl + "/{{{ CODE_FILENAME }}}",
+#endif
+#if MEMORY_FILENAME
+      memoryUrl: buildUrl + "/{{{ MEMORY_FILENAME }}}",
+#endif
+#if SYMBOLS_FILENAME
+      symbolsUrl: buildUrl + "/{{{ SYMBOLS_FILENAME }}}",
+#endif
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+      productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+      productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+      // Sharp on high-density phone screens, but capped so phones don't render 3× the pixels.
+      devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+    };
+    var script = document.createElement("script");
+    script.src = buildUrl + "/{{{ LOADER_FILENAME }}}";
+    script.onload = function () {
+      createUnityInstance(document.querySelector("#unity-canvas"), config, function (progress) {
+        document.querySelector("#fill").style.width = Math.round(progress * 100) + "%";
+      }).then(function () {
+        document.querySelector("#loading").remove();
+      }).catch(function (message) {
+        document.querySelector("#loading").textContent = "The game couldn't start: " + message;
+      });
+    };
+    document.body.appendChild(script);
+  </script>
+</body>
+</html>

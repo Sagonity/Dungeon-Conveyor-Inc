@@ -15,6 +15,12 @@ Website/
   terms.html          placeholder terms (SCRUM-25)
 ```
 
+## Web playtest
+
+`/playtest` lets remote testers play the Unity web build behind a tester code, with their playtest log sent
+automatically; `/playtest/admin.html` downloads the logs. Setup, build and privacy steps:
+[playtest/README.md](playtest/README.md) (SCRUM-35). It isn't linked from the public page.
+
 ## Preview
 
 Open `Website/index.html` in a browser. It works straight from the folder, with no server needed.

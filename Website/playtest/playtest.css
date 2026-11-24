@@ -1,0 +1,30 @@
+/* Web playtest page (SCRUM-35). Uses the site's colours from ../styles.css. */
+body.playtest { min-height: 100vh; }
+.gate { max-width: 520px; margin: 0 auto; padding: 48px 20px; }
+.gate h1 { font-size: clamp(1.6rem, 5vw, 2.2rem); }
+.panel { background: var(--card); border: 2px solid var(--bronze); border-radius: var(--radius); padding: 24px; margin-top: 24px; }
+.panel label { display: block; font-weight: 700; margin-bottom: 8px; }
+.panel input[type="text"], .panel input:not([type]), .panel input[type="password"] {
+  width: 100%; font: inherit; font-size: 1.2rem; letter-spacing: .08em; padding: 14px 16px; border-radius: 10px;
+  border: 2px solid var(--bronze); background: var(--bg); color: var(--text); text-transform: uppercase;
+}
+.panel input[type="password"] { text-transform: none; letter-spacing: normal; }
+.panel button { margin-top: 16px; width: 100%; min-height: 52px; font: inherit; font-weight: 700; font-size: 1.1rem;
+  border: 0; border-radius: 12px; background: var(--gold); color: var(--gold-dark); cursor: pointer; }
+.panel button:disabled { opacity: .45; cursor: not-allowed; }
+.check { display: flex !important; gap: 10px; align-items: center; font-weight: 400 !important; margin-top: 8px; }
+.check input { width: 22px; height: 22px; }
+.error { color: #FF5A4E; min-height: 1.2em; margin: 12px 0 0; }
+.small { font-size: .9rem; }
+
+.game { position: fixed; inset: 0; background: var(--bg); }
+.game iframe { width: 100%; height: 100%; border: 0; display: block; }
+.leave { position: fixed; top: max(8px, env(safe-area-inset-top)); left: 8px; width: 36px; height: 36px; border-radius: 50%;
+  display: grid; place-items: center; background: rgba(14,12,18,.7); color: var(--muted); text-decoration: none; font-size: 22px; }
+
+/* Admin page */
+.admin { max-width: 860px; }
+.admin table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+.admin th, .admin td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #2A2430; }
+.admin td button, .admin .row-actions button { width: auto; min-height: 36px; margin: 0 6px 0 0; padding: 0 14px; font-size: .95rem; }
+.admin button.danger { background: transparent; color: #FF5A4E; border: 2px solid #FF5A4E; }

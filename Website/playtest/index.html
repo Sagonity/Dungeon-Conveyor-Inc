@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Playtest</title>
+  <link rel="icon" href="/images/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/playtest/playtest.css">
+  <script src="/content/site.js"></script>
+</head>
+<body class="playtest">
+  <!-- Web playtest (SCRUM-35): tester code → consent → the game, with the playtest log sent automatically. -->
+  <main id="gate" class="gate">
+    <h1><span data-site="name"></span> · Playtest</h1>
+
+    <form id="code-form" class="panel" autocomplete="off">
+      <label for="code">Your tester code</label>
+      <input id="code" name="code" placeholder="e.g. DS-7K4Q" maxlength="32" autocapitalize="characters" spellcheck="false" required>
+      <button type="submit">Continue</button>
+      <p id="code-error" class="error" role="alert"></p>
+    </form>
+
+    <section id="consent" class="panel" hidden>
+      <h2>Before you play</h2>
+      <p>This is an early test version. While you play, the game sends <b>what you do in the game</b>
+        (for example "levelled up a Minion", "lost to a boss") with the time, together with your tester code
+        <b id="consent-code"></b>, to the developers.</p>
+      <p>It also sends the game version and a random ID made by the game, so we can tell two of your devices
+        apart. It doesn't send your name, e-mail, location or anything else about you or your device. The data
+        is only used to improve the game and is deleted after the playtest.</p>
+      <label class="check"><input type="checkbox" id="agree"> I understand and agree</label>
+      <button id="start" disabled>Start playing</button>
+      <p class="muted small"><a href="#" id="change-code">Not your code?</a></p>
+    </section>
+
+    <p id="missing-build" class="panel error" hidden>The game isn't uploaded yet. Please try again later.</p>
+  </main>
+
+  <div id="game" class="game" hidden>
+    <iframe id="frame" title="Game" allow="fullscreen; autoplay" allowfullscreen></iframe>
+    <a href="#" id="leave" class="leave" title="Leave the game">×</a>
+  </div>
+
+  <script src="/playtest/playtest.js"></script>
+</body>
+</html>
