@@ -81,6 +81,12 @@ except the last Expedition was cleared within 2 minutes. Levelling took one tap 
 8. **About half of all summons are duplicates,** and Essence has no use in the prototype (no Ascension).
 9. **One tap per level** makes levelling tedious (about 480 taps in the phone test).
 
+**Fixed in SCRUM-32 (2026-11-24):** findings 6, 7 and 9, and the retry loop after a loss. New games start with
+300 Gold + 120 Iron, and the Tier 1 boss's first win gives 200 Gold. "Max ×N" buttons buy many levels in one tap.
+A card after a lost fight shows the power gap and links to the Minions tab and the Smith. A card after a first
+clear offers "Start automation". With these, the simulated player always has something to buy on the first
+launch and beats the Tier 1 boss in the first session. Overall pacing (findings 2–5) is unchanged and stays with SCRUM-2.
+
 **Suggestion:** run the playtest with the numbers as they are, since the findings above are what we
 want to see in people. If the team would rather tune first, the quickest single change is to raise the
 boss and Expedition recommended power (and enemy stats) on the GameDatabase asset.
