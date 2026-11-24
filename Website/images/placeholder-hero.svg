@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" width="1200" height="700" font-family="Verdana, sans-serif">
+<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1B1424"/><stop offset="1" stop-color="#0E0C12"/></linearGradient>
+<radialGradient id="glow" cx="0.5" cy="0.75" r="0.5"><stop offset="0" stop-color="#F5B83D" stop-opacity="0.55"/><stop offset="1" stop-color="#F5B83D" stop-opacity="0"/></radialGradient></defs>
+<rect width="1200" height="700" fill="url(#g)"/>
+<path d="M0 260 L180 200 L300 250 L460 170 L600 230 L760 160 L900 230 L1050 190 L1200 240 L1200 700 L0 700 Z" fill="#241B2C"/>
+<path d="M0 380 L160 330 L320 380 L480 320 L640 390 L820 330 L980 380 L1200 340 L1200 700 L0 700 Z" fill="#2C2033"/>
+<path d="M470 700 L540 430 L660 430 L730 700 Z" fill="#100C14"/>
+<rect x="540" y="400" width="120" height="34" fill="#6B4E26"/><rect x="548" y="430" width="14" height="270" fill="#6B4E26"/><rect x="638" y="430" width="14" height="270" fill="#6B4E26"/>
+<ellipse cx="600" cy="640" rx="420" ry="160" fill="url(#glow)"/>
+<polygon points="520,572 534,590 520,608 506,590" fill="#F5B83D" opacity="0.9"/><polygon points="690,592 704,610 690,628 676,610" fill="#D9DDE3" opacity="0.9"/><polygon points="600,542 614,560 600,578 586,560" fill="#F5B83D" opacity="0.9"/><polygon points="430,622 444,640 430,658 416,640" fill="#9AA3AE" opacity="0.9"/><polygon points="780,632 794,650 780,668 766,650" fill="#F5B83D" opacity="0.9"/><polygon points="640,642 654,660 640,678 626,660" fill="#B48CFF" opacity="0.9"/>
+<g transform="translate(300,560)"><circle r="26" fill="#4FA3FF" opacity="0.85"/><circle cx="-8" cy="-6" r="4" fill="#0E0C12"/><circle cx="8" cy="-6" r="4" fill="#0E0C12"/></g><g transform="translate(380,600)"><circle r="26" fill="#5FD88C" opacity="0.85"/><circle cx="-8" cy="-6" r="4" fill="#0E0C12"/><circle cx="8" cy="-6" r="4" fill="#0E0C12"/></g><g transform="translate(860,580)"><circle r="26" fill="#FF5A4E" opacity="0.85"/><circle cx="-8" cy="-6" r="4" fill="#0E0C12"/><circle cx="8" cy="-6" r="4" fill="#0E0C12"/></g><g transform="translate(930,620)"><circle r="26" fill="#B48CFF" opacity="0.85"/><circle cx="-8" cy="-6" r="4" fill="#0E0C12"/><circle cx="8" cy="-6" r="4" fill="#0E0C12"/></g>
+<text x="1180" y="684" font-size="16" fill="#A59C8C" text-anchor="end" letter-spacing="3">KEY ART PLACEHOLDER</text>
+</svg>
