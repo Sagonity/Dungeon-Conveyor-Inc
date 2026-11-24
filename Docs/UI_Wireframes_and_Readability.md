@@ -167,7 +167,9 @@ missing resource comes from:
 ```
 ┌ LOST TO … / … CLEARED ┐  the SCRUM-32 cards, as on HQ
 ┌ EXPEDITION (running) ─────────────── Automated ┐
-│ Spore Caverns · earned so far: +6 Spore Silk   │
+│ Spore Caverns · running for 3 h 10 min         │
+│ Farms 2 Spore Silk per hour. Collected when    │
+│ you stop it.                                   │
 │ Never fails · no time limit · keeps running    │
 │                              [Stop & Collect]  │
 └────────────────────────────────────────────────┘
@@ -179,8 +181,8 @@ missing resource comes from:
 └────────────────────────────────────────────────┘
 ```
 
-The running card's "earned so far" is the Expedition's own running total, shown only while it runs; the rewards
-reach the wallet when it's stopped.
+The running card shows the rate, not a running total: there's no "earned so far" for rare materials (team
+decision 2026-11-24). The rewards reach the wallet when the Expedition is stopped.
 
 - Only **one** Expedition runs at a time, and the Adventure team is **busy** while it runs: no team changes,
   no boss fights or first clears until it's stopped.

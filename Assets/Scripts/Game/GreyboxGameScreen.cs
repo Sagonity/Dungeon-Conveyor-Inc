@@ -94,7 +94,7 @@ public class GreyboxGameScreen : MonoBehaviour
 
     void OnSessionStarted(GameSession session)
     {
-        Say(DescribeWelcome(session.Offline), Mood.Good);
+        Say(DescribeWelcome(session), Mood.Good);
         tab = Tab.HQ;
         loggedTab = null;
         playtestNote = "";
@@ -432,12 +432,10 @@ public class GreyboxGameScreen : MonoBehaviour
         if (active != null)
         {
             CardHeader("EXPEDITION", "Automated · running", s.pillPurple);
-            GUILayout.Label("<b>" + active.displayName + "</b> <color=#A59C8C>· earned so far · " +
+            // No "earned so far" for rare materials (team decision 2026-11-24): show the rate, not a running total.
+            GUILayout.Label("<b>" + active.displayName + "</b> <color=#A59C8C>· running for " +
                             Hours(expeditions.HoursRunning) + "</color>", s.body);
-            var earned = new List<KeyValuePair<ResourceId, double>>();
-            List<MinedAmount> pending = expeditions.GetPending();
-            foreach (MinedAmount r in expeditions.GetHourlyRates()) earned.Add(Pair(r.id, MiningMath.Get(pending, r.id)));
-            ResourceLine(earned, "+");
+            GUILayout.Label("Farms " + DescribeRates(expeditions.GetHourlyRates()) + " per hour. Collected when you stop it.", s.body);
             GUILayout.Label("Never fails · no time limit · keeps running while the phone is locked", s.small);
             GUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
@@ -1530,12 +1528,15 @@ public class GreyboxGameScreen : MonoBehaviour
         return parts.Count > 0 ? string.Join(" · ", parts) : "its boss material";
     }
 
-    static string DescribeWelcome(OfflineReport offline)
+    static string DescribeWelcome(GameSession session)
     {
+        OfflineReport offline = session.Offline;
         if (offline == null || offline.HoursAway < 1.0 / 60.0) return "";
         string text = "Welcome back! You were away " + Hours(offline.HoursAway) + ". Mine: " +
                       Describe(offline.Mine) + " waiting.";
-        if (offline.Expedition.Count > 0) text += " Expedition: " + Describe(offline.Expedition) + " earned.";
+        // The Expedition's rare materials aren't counted up here (team decision 2026-11-24).
+        ExpeditionDefinition running = session.Expeditions.Active;
+        if (running != null) text += " " + running.displayName + " is still farming; stop it to collect.";
         return text + "  (tap to close)";
     }
 
