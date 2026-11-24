@@ -190,12 +190,25 @@ perfectly, so real players are slower. Results on 2026-11-24 (with the SCRUM-32 
 | Every 8 h | 0 | 8 | 8 | 8–16 | 16 | **24–32 h** |
 | Once a day | 0 | 24 | 24 | 24 | 24–48 | **48–72 h** |
 
+**Before → after the SCRUM-32 playtest fixes** (starting resources, Tier 1 first-win Gold; rerun 2026-11-25):
+
+| Measure | Every 1 h | Every 8 h | Once a day |
+|---|---|---|---|
+| Finished at | 10–15 h → **7–14 h** | 24–32 h → **24–32 h** | 48 h → **48–72 h** |
+| Visits with nothing to buy | 1–3 → **0–2** | 1 → **0** | 1 → **0** |
+| Lost fights | 2–6 → **1–7** | 0–1 → **1–2** | 0 → **1** |
+| Minion breakthroughs | 0 → **0** | 0 or 7 → **1–3** | 0 → **3–8** |
+
+The first launch now always has something to buy, every rhythm loses at least one fight, and Minion
+breakthroughs appear for 8-hourly and daily players. A phone test of 0.0.4 with hourly debug skips finished
+at ~11 h of game time, inside the simulated 7–14 h, so the simulation is a fair predictor.
+
 **What the economy pass (SCRUM-2) needs to fix, after the playtest:**
 
-1. The whole prototype lasts only 2–4 return visits.
+1. The whole prototype lasts only 2–4 return visits (an hourly player: 7–14 h; a daily player: 2–3 days).
 2. Being away beats playing: uncapped mining makes long breaks earn more than active play can spend.
 3. Fights are rarely lost unless the player checks in very often.
-4. Minion breakthroughs are barely needed: gear upgrades carry the team.
+4. Minion breakthroughs are barely needed by active players: gear upgrades carry the team.
 5. About half of summons are duplicates, and Essence has no use yet.
 
 Decide first: **how long each tier should take** for a once-a-day player. Then tune costs, recommended power and

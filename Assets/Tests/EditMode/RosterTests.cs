@@ -73,6 +73,59 @@ namespace Deepshaft.Tests
 
         double GoldPerHour() => MiningMath.Get(mining.GetHourlyRates(), ResourceId.Gold);
 
+        // ---------- Swaps (SCRUM-34) ----------
+
+        [Test]
+        public void SwapIntoTeam_TakesTheSameSlot_InOneStep()
+        {
+            RosterService roster = NewRoster();
+            OwnedMinion a = roster.AddMinion("tank");
+            OwnedMinion b = roster.AddMinion("mage");
+            OwnedMinion c = roster.AddMinion("tank");
+            OwnedMinion benched = roster.AddMinion("mage"); // team full
+
+            Assert.AreEqual(AssignResult.NoFreeSlot, roster.AssignToTeam(benched.instanceId));
+            Assert.AreEqual(AssignResult.Ok, roster.SwapIntoTeam(benched.instanceId, b.instanceId));
+
+            CollectionAssert.AreEqual(new[] { a, benched, c }, roster.GetTeam(), "The new Minion takes b's slot.");
+            Assert.IsFalse(roster.IsAssigned(b.instanceId));
+        }
+
+        [Test]
+        public void SwapIntoTeam_IsRefused_WhileBusy_OrWithBadIds()
+        {
+            RosterService roster = NewRoster();
+            OwnedMinion a = roster.AddMinion("tank");
+            OwnedMinion benchedMiner = roster.AddMinion("miner");
+            roster.UnassignMiner(benchedMiner.instanceId);
+            OwnedMinion b = roster.AddMinion("mage");
+            roster.RemoveFromTeam(b.instanceId);
+
+            Assert.AreEqual(AssignResult.WrongKind, roster.SwapIntoTeam(benchedMiner.instanceId, a.instanceId));
+            Assert.AreEqual(AssignResult.AlreadyAssigned, roster.SwapIntoTeam(a.instanceId, a.instanceId));
+            Assert.AreEqual(AssignResult.NotAssigned, roster.SwapIntoTeam(b.instanceId, benchedMiner.instanceId));
+            Assert.AreEqual(AssignResult.NotOwned, roster.SwapIntoTeam(999, a.instanceId));
+
+            busy.busy = true;
+            Assert.AreEqual(AssignResult.TeamBusy, roster.SwapIntoTeam(b.instanceId, a.instanceId));
+            Assert.IsTrue(roster.IsAssigned(a.instanceId));
+        }
+
+        [Test]
+        public void SwapMiner_BanksTheOldRate_AndKeepsTheSlot()
+        {
+            rules.minerSlots = 1;
+            RosterService roster = NewRoster();
+            OwnedMinion a = roster.AddMinion("miner");
+            OwnedMinion b = roster.AddMinion("miner"); // no free slot
+            clock.Advance(TimeSpan.FromHours(1));
+
+            Assert.AreEqual(AssignResult.Ok, roster.SwapMiner(b.instanceId, a.instanceId));
+
+            CollectionAssert.AreEqual(new[] { b }, roster.GetMiners());
+            Assert.AreEqual(100, mining.GetPending(ResourceId.Gold), Tolerance, "Hour 1 was mined by a and banked.");
+        }
+
         // ---------- Miner slots ----------
 
         [Test]

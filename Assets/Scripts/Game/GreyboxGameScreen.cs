@@ -764,8 +764,34 @@ public class GreyboxGameScreen : MonoBehaviour
         GUILayout.Space(10f);
         RosterService roster = game.Roster;
         bool assigned = roster.IsAssigned(m.instanceId);
-        string assignLabel = isMiner ? (assigned ? "Take out of Mine" : "Put in Mine") : (assigned ? "Bench" : "Add to team");
+        List<OwnedMinion> members = isMiner ? roster.GetMiners() : roster.GetTeam();
+        bool full = members.Count >= (isMiner ? roster.MinerSlots : roster.AdventureSlots);
         if (!isMiner && roster.IsTeamBusy) GUILayout.Label("The team is on an Expedition. Stop it to change the team.", s.small);
+        if (!assigned && full && (isMiner || !roster.IsTeamBusy))
+        {
+            // Full: swap in one tap instead of bench-then-add (SCRUM-34).
+            GUILayout.Label(isMiner ? "All Mine slots are full. Swap with:" : "The team is full. Swap with:", s.small);
+            foreach (OwnedMinion other in members)
+            {
+                MinionDefinition od = game.Database.FindMinion(other.definitionId);
+                if (od == null) continue;
+                string strength = isMiner
+                    ? Format(MinionStatCalculator.GetMiningPower(od, other.level)) + " mining power"
+                    : Format(game.Database.Combat.GetPower(MinionStatCalculator.GetHp(game.Database, other),
+                        MinionStatCalculator.GetAtk(game.Database, other))) + " power";
+                if (DarkButton("Swap with " + od.DisplayName + " · Lv " + other.level + " · " + strength))
+                {
+                    AssignResult swapped = isMiner ? game.SwapMiner(m.instanceId, other.instanceId)
+                                                   : game.SwapIntoTeam(m.instanceId, other.instanceId);
+                    if (swapped == AssignResult.Ok) Say(d.DisplayName + " is in; " + od.DisplayName + (isMiner ? " is resting." : " is on the bench."), Mood.Good);
+                    else Say(Explain(swapped), Mood.Bad);
+                    Exit();
+                }
+            }
+            EndCard();
+            return;
+        }
+        string assignLabel = isMiner ? (assigned ? "Take out of Mine" : "Put in Mine") : (assigned ? "Bench" : "Add to team");
         if (DarkButton(assignLabel))
         {
             AssignResult result;
