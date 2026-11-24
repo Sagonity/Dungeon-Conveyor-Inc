@@ -22,6 +22,6 @@ public class GameHUDView : UIView
             mainMenuButton.gameObject.SetActive(false);
             return;
         }
-        mainMenuButton.onClick.AddListener(() => Manager.SetState(UIState.MainMenu));
+        mainMenuButton.onClick.AddListener(() => Manager.SetState(UIState.Settings));
     }
 }

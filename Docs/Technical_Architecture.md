@@ -113,8 +113,8 @@ progress = clamp((clock.UtcNow - startedAt) / duration, 0, 1)
 
 - **`IClock`** is passed into every system. The game uses `SystemClock.Instance`;
   tests and debug tools use `ManualClock` to jump ahead hours in one line.
-- Because nothing depends on `Time.timeScale`, `GameController` can keep pausing
-  visuals in menus without stopping the economy.
+- Nothing in the game depends on `Time.timeScale`. `GameController` no longer changes it (SCRUM-33);
+  autosave and UI fades use unscaled time.
 - **Changes to a production rate** (assigning a Miner, a Smith upgrade, a new mine tier,
   stopping an Expedition): first bank the
   production earned so far at the old rate, then apply the change. Each system does
@@ -322,7 +322,7 @@ placement: the player only picks Minions for slots.
   `Resources/GameDatabase`, saves every 30 s and on pause, focus loss and quit.
 - **`GreyboxGameScreen`**: the game screen, styled after the UI mock-up: resource bar (tap for every
   material), tier header with the next goal, bronze-framed cards with gold buttons, and a bottom tab bar
-  (HQ, Mine, Exped., Minions, Smith, Boss). Settings (top right) holds Main menu and the debug tools.
+  (HQ, Mine, Exped., Minions, Smith, Boss). Settings (top right) holds Sound (the volume screen) and the debug tools. There's no Main menu: the game boots straight into the game screen (SCRUM-33).
   Drawn with IMGUI and generated textures, so no art or scene setup. Portraits, boss art and tier names
   are placeholders (SCRUM-13).
   Throwaway until the real UI (SCRUM-12).

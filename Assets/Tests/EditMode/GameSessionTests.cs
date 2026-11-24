@@ -327,6 +327,47 @@ namespace Deepshaft.Tests
             Assert.AreEqual(4, EquipmentRules.GetLevel(session.State.FindMinion(tankId), EquipmentSlot.Weapon));
         }
 
+        // ---------- Where to get rare materials (SCRUM-33) ----------
+
+        [Test]
+        public void RareMaterialHint_FollowsTheExpeditionsProgress()
+        {
+            GameSession session = NewSession();
+            string Hint() => SourceHints.ForRareMaterial(session, ResourceId.SporeSilk);
+
+            StringAssert.StartsWith("beat Spore Foreman to open Spore Caverns", Hint());
+
+            foreach (OwnedMinion m in session.Roster.GetTeam()) LevelTo(session, m.instanceId, 16);
+            Assert.IsTrue(session.FightBoss(DefaultAdventureContent.Tier1Boss).Won);
+            StringAssert.StartsWith("first-clear Spore Caverns", Hint());
+
+            Assert.IsTrue(session.FirstClearExpedition(DefaultAdventureContent.Tier1Expedition).Won);
+            StringAssert.Contains("collected when you stop it", Hint());
+
+            session.StartExpedition(DefaultAdventureContent.Tier1Expedition);
+            StringAssert.Contains("stop the Expedition to collect", Hint());
+        }
+
+        [Test]
+        public void BossMaterialHint_SaysWhichBoss_AndThatRepeatWinsCount()
+        {
+            GameSession session = NewSession();
+            StringAssert.StartsWith("reach Tier 2", SourceHints.ForRareMaterial(session, ResourceId.GolemHeart));
+            Assert.AreEqual("beat Spore Foreman", SourceHints.ForRareMaterial(session, ResourceId.ForemanSigil));
+
+            foreach (OwnedMinion m in session.Roster.GetTeam()) LevelTo(session, m.instanceId, 16);
+            Assert.IsTrue(session.FightBoss(DefaultAdventureContent.Tier1Boss).Won);
+            StringAssert.Contains("again", SourceHints.ForRareMaterial(session, ResourceId.ForemanSigil));
+        }
+
+        [Test]
+        public void RareMaterialHint_IsNullForOrdinaryResources()
+        {
+            GameSession session = NewSession();
+            Assert.IsNull(SourceHints.ForRareMaterial(session, ResourceId.Gold));
+            Assert.IsNull(SourceHints.ForRareMaterial(session, ResourceId.BasicShard));
+        }
+
         // ---------- Smith and HQ (SCRUM-9) ----------
 
         [Test]

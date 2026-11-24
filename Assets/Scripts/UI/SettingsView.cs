@@ -3,7 +3,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Settings screen. Reads and writes GameAudioSettings; saves when the screen closes.
+/// Sound settings screen. Reads and writes GameAudioSettings; saves when the screen closes.
+/// Opened from the in-game Settings panel; Back returns to the game (SCRUM-33).
 /// </summary>
 public class SettingsView : UIView
 {
@@ -22,7 +23,7 @@ public class SettingsView : UIView
             volumeSlider.onValueChanged.AddListener(v => GameAudioSettings.MasterVolume = v);
         }
         if (muteToggle != null) muteToggle.onValueChanged.AddListener(on => GameAudioSettings.Muted = on);
-        if (backButton != null) backButton.onClick.AddListener(() => Manager.SetState(UIState.MainMenu));
+        if (backButton != null) backButton.onClick.AddListener(() => Manager.SetState(UIState.Game));
 
         GameAudioSettings.Changed += Refresh;
         Refresh();
