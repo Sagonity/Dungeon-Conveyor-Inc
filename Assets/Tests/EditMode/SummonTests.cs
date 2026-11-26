@@ -39,6 +39,8 @@ namespace Deepshaft.Tests
             Add("adv_c2", MinionKind.Adventure, Rarity.Common);
             Add("adv_u", MinionKind.Adventure, Rarity.Uncommon);
             Add("adv_r", MinionKind.Adventure, Rarity.Rare);
+            Add("adv_e", MinionKind.Adventure, Rarity.Epic);
+            Add("adv_l", MinionKind.Adventure, Rarity.Legendary);
             database = ScriptableObject.CreateInstance<GameDatabase>();
             database.EditorSetMinions(definitions);
             state = GameState.CreateNew(clock);
@@ -116,12 +118,17 @@ namespace Deepshaft.Tests
             Dictionary<Rarity, double> basic = summon.GetRates(MinionKind.Adventure, ShardType.Basic);
             Dictionary<Rarity, double> advanced = summon.GetRates(MinionKind.Adventure, ShardType.Advanced);
 
-            Assert.AreEqual(0.75, basic[Rarity.Common], 1e-6);
-            Assert.AreEqual(0.23, basic[Rarity.Uncommon], 1e-6);
-            Assert.AreEqual(0.02, basic[Rarity.Rare], 1e-6);
+            // SCRUM-38: Basic 70 / 22 / 5 / 2.5 / 0.5, Advanced 0 / 55 / 30 / 12 / 3.
+            Assert.AreEqual(0.70, basic[Rarity.Common], 1e-6);
+            Assert.AreEqual(0.22, basic[Rarity.Uncommon], 1e-6);
+            Assert.AreEqual(0.05, basic[Rarity.Rare], 1e-6);
+            Assert.AreEqual(0.025, basic[Rarity.Epic], 1e-6);
+            Assert.AreEqual(0.005, basic[Rarity.Legendary], 1e-6);
             Assert.AreEqual(0.0, advanced[Rarity.Common], 1e-6);
-            Assert.AreEqual(0.85, advanced[Rarity.Uncommon], 1e-6);
-            Assert.AreEqual(0.15, advanced[Rarity.Rare], 1e-6);
+            Assert.AreEqual(0.55, advanced[Rarity.Uncommon], 1e-6);
+            Assert.AreEqual(0.30, advanced[Rarity.Rare], 1e-6);
+            Assert.AreEqual(0.12, advanced[Rarity.Epic], 1e-6);
+            Assert.AreEqual(0.03, advanced[Rarity.Legendary], 1e-6);
         }
 
         [Test]
@@ -129,13 +136,18 @@ namespace Deepshaft.Tests
         {
             var rng = new System.Random(12345);
             const int n = 20000;
-            var counts = new Dictionary<Rarity, int> { [Rarity.Common] = 0, [Rarity.Uncommon] = 0, [Rarity.Rare] = 0 };
+            var counts = new Dictionary<Rarity, int>
+            {
+                [Rarity.Common] = 0, [Rarity.Uncommon] = 0, [Rarity.Rare] = 0, [Rarity.Epic] = 0, [Rarity.Legendary] = 0,
+            };
             wallet.Add(ResourceId.BasicShard, 10L * n);
             for (int i = 0; i < n; i++) counts[summon.TrySummon(MinionKind.Adventure, ShardType.Basic, wallet, rng).Definition.Rarity]++;
 
-            Assert.AreEqual(0.75, counts[Rarity.Common] / (double)n, 0.015);
-            Assert.AreEqual(0.23, counts[Rarity.Uncommon] / (double)n, 0.015);
-            Assert.AreEqual(0.02, counts[Rarity.Rare] / (double)n, 0.005);
+            Assert.AreEqual(0.70, counts[Rarity.Common] / (double)n, 0.015);
+            Assert.AreEqual(0.22, counts[Rarity.Uncommon] / (double)n, 0.015);
+            Assert.AreEqual(0.05, counts[Rarity.Rare] / (double)n, 0.005);
+            Assert.AreEqual(0.025, counts[Rarity.Epic] / (double)n, 0.004);
+            Assert.AreEqual(0.005, counts[Rarity.Legendary] / (double)n, 0.002);
         }
 
         [Test]
@@ -158,8 +170,9 @@ namespace Deepshaft.Tests
             Dictionary<Rarity, double> basic = summon.GetRates(MinionKind.Adventure, ShardType.Basic);
 
             Assert.AreEqual(0.0, basic[Rarity.Rare]);
-            Assert.AreEqual(75.0 / 98.0, basic[Rarity.Common], 1e-6);
-            Assert.AreEqual(23.0 / 98.0, basic[Rarity.Uncommon], 1e-6);
+            Assert.AreEqual(70.0 / 95.0, basic[Rarity.Common], 1e-6);
+            Assert.AreEqual(22.0 / 95.0, basic[Rarity.Uncommon], 1e-6);
+            Assert.AreEqual(2.5 / 95.0, basic[Rarity.Epic], 1e-6);
         }
 
         [Test]
@@ -211,6 +224,8 @@ namespace Deepshaft.Tests
             Assert.AreEqual(5, database.Summoning.GetEssence(Rarity.Common));
             Assert.AreEqual(15, database.Summoning.GetEssence(Rarity.Uncommon));
             Assert.AreEqual(50, database.Summoning.GetEssence(Rarity.Rare));
+            Assert.AreEqual(120, database.Summoning.GetEssence(Rarity.Epic));
+            Assert.AreEqual(300, database.Summoning.GetEssence(Rarity.Legendary));
         }
 
         [Test]

@@ -291,6 +291,20 @@ namespace Deepshaft.Session
         }
 
         /// <summary>
+        /// Debug (playtest builds): adds resources to the wallet, e.g. shards to try summoning. Logged as
+        /// <c>debug_give</c>, so a playtest log shows that progress was helped.
+        /// </summary>
+        public void DebugGive(IEnumerable<ResourceAmount> amounts)
+        {
+            var given = new List<ResourceAmount>();
+            if (amounts != null) foreach (ResourceAmount a in amounts) if (a.amount > 0) given.Add(a);
+            if (given.Count == 0) return;
+            Wallet.Add(given);
+            Playtest.Add("debug_give", Describe(given));
+            Done(true);
+        }
+
+        /// <summary>
         /// For the UI: records something the player looked at (e.g. the tab they opened), so the
         /// playtest log shows where they went after a loss. Doesn't save by itself.
         /// </summary>

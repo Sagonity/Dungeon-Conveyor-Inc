@@ -35,13 +35,15 @@ namespace Deepshaft.Minions
     }
 
     /// <summary>
-    /// Prototype rarities (v3.4 §6). Epic/Legendary may be added later with new numbers.
-    /// Renumbered in v3.4 (was Common/Rare/Epic) before any Minion assets existed.
+    /// Rarities (v3.4 §6). Epic and Legendary were added in SCRUM-38 (team decision 2026-11-27).
+    /// Stored as numbers in Minion assets: never renumber, only add.
     /// </summary>
     public enum Rarity
     {
         Common = 0,
         Uncommon = 1,
         Rare = 2,
+        Epic = 3,
+        Legendary = 4,
     }
 }

@@ -22,8 +22,8 @@ namespace Deepshaft.Tests
     /// seeds, and prints when each step was first cleared. Run it after every tuning change and read
     /// the output (Test Runner → select the test → output pane).
     ///
-    /// The roster is the prototype's: the 7 starter Commons plus the Uncommon (+25% stats) and Rare
-    /// (+60%) Minions that summons can give (Content/Minions).
+    /// The roster is the prototype's: the 7 starter Commons plus the Uncommon (+25% stats), Rare (+60%),
+    /// Epic (×2.0) and Legendary (×2.6) Minions that summons can give (Content/Minions).
     ///
     /// Each check-in the player: collects the Mine and the automated Expedition (stops it), learns
     /// Smith ranks, summons with every shard, puts its best Minions to work, does every breakthrough
@@ -61,6 +61,11 @@ namespace Deepshaft.Tests
             {
                 Add("Minion_" + role + ":R", A, role, Rarity.Rare);
             }
+            // SCRUM-38: the Epic and Legendary Minions in Content/Minions.
+            Add("Minion_Miner:E", M, MinionRole.None, Rarity.Epic, MinerTrait.Gold);
+            Add("Minion_Miner_Ore:L", M, MinionRole.None, Rarity.Legendary, MinerTrait.Ore);
+            foreach (MinionRole role in new[] { MinionRole.Tank, MinionRole.Mage, MinionRole.Fighter }) Add("Minion_" + role + ":E", A, role, Rarity.Epic);
+            foreach (MinionRole role in new[] { MinionRole.Mage, MinionRole.Archer }) Add("Minion_" + role + ":L", A, role, Rarity.Legendary);
 
             database = ScriptableObject.CreateInstance<GameDatabase>();
             database.EditorSetMinions(definitions);
@@ -83,8 +88,21 @@ namespace Deepshaft.Tests
         {
             var d = ScriptableObject.CreateInstance<MinionDefinition>();
             d.EditorSetup(id, kind, role, rarity, trait);
-            d.EditorScaleStats(rarity == Rarity.Common ? 1f : rarity == Rarity.Uncommon ? 1.25f : 1.6f);
+            d.EditorScaleStats(StatScale(rarity));
             definitions.Add(d);
+        }
+
+        /// <summary>The stat multiplier of the Minion assets per rarity (SCRUM-38: Epic ×2.0, Legendary ×2.6).</summary>
+        static float StatScale(Rarity rarity)
+        {
+            switch (rarity)
+            {
+                case Rarity.Uncommon: return 1.25f;
+                case Rarity.Rare: return 1.6f;
+                case Rarity.Epic: return 2.0f;
+                case Rarity.Legendary: return 2.6f;
+                default: return 1f;
+            }
         }
 
         /// <param name="checkInEveryHours">1 = very active; 8 = about three sessions a day; 24 = once a day.</param>

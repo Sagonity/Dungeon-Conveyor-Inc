@@ -241,6 +241,23 @@ namespace Deepshaft.Tests
             Assert.AreEqual(1, session.State.FindMinion(minerId).level);
         }
 
+        // ---------- Debug give (SCRUM-38) ----------
+
+        [Test]
+        public void DebugGive_AddsToTheWallet_AndIsLogged()
+        {
+            GameSession session = NewSession();
+
+            session.DebugGive(new[] { new ResourceAmount(ResourceId.BasicShard, 100), new ResourceAmount(ResourceId.SporeSilk, 10) });
+
+            Assert.AreEqual(100, session.Wallet.Get(ResourceId.BasicShard));
+            Assert.AreEqual(10, session.Wallet.Get(ResourceId.SporeSilk));
+            PlaytestEvent last = session.Playtest.Events[session.Playtest.Events.Count - 1];
+            Assert.AreEqual("debug_give", last.type);
+            StringAssert.Contains("100 BasicShard", last.detail);
+            Assert.AreEqual(100, NewSession().Wallet.Get(ResourceId.BasicShard), "Saved.");
+        }
+
         // ---------- Playtest fixes (SCRUM-32) ----------
 
         [Test]

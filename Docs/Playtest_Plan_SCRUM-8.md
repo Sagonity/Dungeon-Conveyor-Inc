@@ -206,6 +206,7 @@ is kept in the save, so it survives app restarts. **Reset game deletes it**, so 
 | `assign_*` / `remove_team` / `unassign_miner` | `Minion_Archer:C#7 Ok` / `NoFreeSlot` | |
 | `swap_team` / `swap_miner` | `Minion_Archer:R#9 for Minion_Fighter:C#4 Ok` | Team changes in one tap |
 | `debug_skip` | `hours=8` | Same-day break (session 2) |
+| `debug_give` | `100 BasicShard` | Resources added from Settings → Debug (SCRUM-38): progress was helped |
 
 The `minutes` column counts from the first event and includes debug skips, so a skipped break shows up as a jump.
 
