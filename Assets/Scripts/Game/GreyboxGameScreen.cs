@@ -1071,33 +1071,55 @@ public class GreyboxGameScreen : MonoBehaviour
     {
         if (Event.current.type != EventType.Repaint) return;
         Color rarity = RarityColor(d.Rarity);
+
+        // Rare: a soft halo around the whole portrait.
         if (d.Rarity == Rarity.Rare)
         {
-            DrawTinted(new Rect(portrait.x - 8f, portrait.y - 8f, portrait.width + 16f, portrait.height + 16f), s.roundedWhite,
-                new Color(rarity.r, rarity.g, rarity.b, 0.35f));
+            DrawStyleTinted(new Rect(portrait.x - 22f, portrait.y - 22f, portrait.width + 44f, portrait.height + 44f), s.portraitHalo,
+                new Color(rarity.r, rarity.g, rarity.b, 0.85f));
         }
-        DrawTinted(portrait, s.roundedWhite, rarity);
 
-        const float border = 5f;
+        // Rounded styles are 9-sliced, so their corners stay round at any size (a stretched texture made an oval).
+        DrawStyleTinted(portrait, s.portraitFill, Hex("1C1722"));
+        const float border = 6f;
         var inner = new Rect(portrait.x + border, portrait.y + border, portrait.width - 2f * border, portrait.height - 2f * border);
         Texture2D texture = Art(!string.IsNullOrEmpty(d.Portrait) ? d.Portrait : d.Kind == MinionKind.Miner ? MinerPortraitFallback : null);
+        GUI.BeginGroup(inner); // clips the glow and the picture to the portrait
+        var local = new Rect(0f, 0f, inner.width, inner.height);
         if (texture != null)
         {
-            // A dark backdrop with the rarity colour glowing through, then the picture, cropped from the top.
-            GUI.DrawTexture(inner, s.Solid(Color.Lerp(Hex("241E2C"), rarity, 0.35f)));
-            DrawCover(inner, texture, 0f);
+            // The rarity colour glowing behind the Minion, then the picture, cropped from the top.
+            Color old = GUI.color;
+            GUI.color = new Color(rarity.r, rarity.g, rarity.b, 0.75f);
+            GUI.DrawTexture(new Rect(local.width * 0.1f, -local.height * 0.2f, local.width, local.height * 1.3f), s.glow);
+            GUI.color = old;
+            DrawCover(local, texture, 0f);
         }
         else
         {
-            GUI.DrawTexture(inner, s.Solid(Color.Lerp(Hex("241E2C"), ClassColor(d), 0.55f)));
-            GUI.Label(inner, Initial(d.DisplayName), s.portraitLetter);
+            GUI.DrawTexture(local, s.Solid(Color.Lerp(Hex("241E2C"), ClassColor(d), 0.55f)));
+            GUI.Label(local, Initial(d.DisplayName), s.portraitLetter);
         }
+        GUI.EndGroup();
+
+        // The frame in the rarity colour, on top of the picture's edges.
+        DrawStyleTinted(portrait, s.portraitFrame, rarity);
 
         string label = d.Rarity.ToString().ToUpperInvariant();
         float labelWidth = 26f + label.Length * 15f;
         var tag = new Rect(inner.x + 6f, inner.yMax - 38f, labelWidth, 32f);
-        DrawTinted(tag, s.roundedWhite, rarity);
+        DrawStyleTinted(tag, s.portraitFill, rarity);
         GUI.Label(tag, label, s.rarityLabel);
+    }
+
+    /// <summary>Draws a 9-sliced style (rounded corners stay round) in a colour. Repaint only.</summary>
+    static void DrawStyleTinted(Rect r, GUIStyle style, Color color)
+    {
+        if (Event.current.type != EventType.Repaint) return;
+        Color old = GUI.color;
+        GUI.color = GUI.enabled ? color : new Color(color.r, color.g, color.b, color.a * 0.5f);
+        style.Draw(r, false, false, false, false);
+        GUI.color = old;
     }
 
     // ================================================================ Next goal and guidance (SCRUM-36)
@@ -2363,6 +2385,7 @@ public class GreyboxGameScreen : MonoBehaviour
         public readonly Texture2D circle = Shapes.Rounded(Color.white, Color.white, 32, 0, 68);
         public readonly Texture2D diamond = Shapes.Diamond(64);
         public readonly Texture2D roundedWhite = Shapes.Rounded(Color.white, Color.white, 16, 0);
+        public readonly Texture2D glow = Shapes.Glow(128);
         readonly Dictionary<Color, Texture2D> solids = new Dictionary<Color, Texture2D>();
 
         public readonly GUIStyle card, artCard, row, panel, title, header, body, bodyRight, small, smallRed;
@@ -2370,6 +2393,7 @@ public class GreyboxGameScreen : MonoBehaviour
         public readonly GUIStyle goldButton, darkButton, iconButton, segment, segmentOn;
         public readonly GUIStyle chip, chipInline, iconLetter, nav, navSelected;
         public readonly GUIStyle minionCard, minionCardOn, minionName, minionSub, portraitLetter, rarityLabel, bossLetter;
+        public readonly GUIStyle portraitFill, portraitFrame, portraitHalo;
         public readonly GUIStyle tagGreen, tagPurple, tagMuted, slot, slotOn, slotLetter, slotBusy;
         public readonly GUIStyle toast, toastGood, toastBad, panelHeading, panelText, artLabel;
 
@@ -2431,6 +2455,11 @@ public class GreyboxGameScreen : MonoBehaviour
             minionSub = Font(24, Muted, FontStyle.Normal);
             portraitLetter = Font(110, new Color(1f, 1f, 1f, 0.85f), FontStyle.Bold);
             portraitLetter.alignment = TextAnchor.MiddleCenter;
+            // White, tinted when drawn (DrawStyleTinted). 9-sliced, so the corners stay round at any size.
+            portraitFill = Box(Color.white, Color.white, 12, 0, 0);
+            portraitFrame = Box(new Color(1f, 1f, 1f, 0f), Color.white, 12, 6, 0);
+            portraitHalo = new GUIStyle { border = new RectOffset(34, 34, 34, 34) };
+            portraitHalo.normal.background = Shapes.Halo(80, 12, 20);
             rarityLabel = Font(20, Hex("15121A"), FontStyle.Bold);
             rarityLabel.alignment = TextAnchor.MiddleCenter;
             bossLetter = Font(200, new Color(1f, 1f, 1f, 0.8f), FontStyle.Bold);
@@ -2559,6 +2588,56 @@ public class GreyboxGameScreen : MonoBehaviour
                     Color c = Color.Lerp(fill, border, edge);
                     c.a *= alpha;
                     tex.SetPixel(x, y, c);
+                }
+            }
+            tex.Apply();
+            return tex;
+        }
+
+        /// <summary>A soft round glow: white, fully opaque in the middle, fading to nothing at the edge.</summary>
+        public static Texture2D Glow(int size)
+        {
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                hideFlags = HideFlags.HideAndDontSave,
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp,
+            };
+            float half = size / 2f;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float d = new Vector2(x + 0.5f - half, y + 0.5f - half).magnitude / half;
+                    float a = Mathf.Clamp01(1f - d);
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, a * a));
+                }
+            }
+            tex.Apply();
+            return tex;
+        }
+
+        /// <summary>A soft halo around a rounded rectangle inset by <paramref name="blur"/>, for 9-slicing.</summary>
+        public static Texture2D Halo(int size, int radius, int blur)
+        {
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                hideFlags = HideFlags.HideAndDontSave,
+                filterMode = FilterMode.Bilinear,
+                wrapMode = TextureWrapMode.Clamp,
+            };
+            float half = size / 2f;
+            float inner = half - blur;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float qx = Mathf.Abs(x + 0.5f - half) - (inner - radius);
+                    float qy = Mathf.Abs(y + 0.5f - half) - (inner - radius);
+                    float distance = new Vector2(Mathf.Max(qx, 0f), Mathf.Max(qy, 0f)).magnitude +
+                                     Mathf.Min(Mathf.Max(qx, qy), 0f) - radius;
+                    float a = Mathf.Clamp01(1f - Mathf.Max(distance, 0f) / blur);
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, a * a));
                 }
             }
             tex.Apply();
