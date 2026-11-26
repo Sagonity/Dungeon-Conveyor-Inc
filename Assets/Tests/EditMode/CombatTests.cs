@@ -323,7 +323,7 @@ namespace Deepshaft.Tests
             }
         }
 
-        [TestCase(0, 10, 3)]
+        [TestCase(0, 10, 1)]
         [TestCase(1, 23, 12)]
         [TestCase(2, 46, 28)]
         public void DefaultExpeditions_AreWonAboveRecommendedPower_AndLostWellBelowIt(int index, int strongLevel, int weakLevel)

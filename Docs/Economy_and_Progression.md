@@ -39,7 +39,7 @@ run `PlaythroughTests` (§9) to see the effect on pacing.
 
 | | Value | Where |
 |---|---|---|
-| Starting resources | 300 Gold, 120 Iron (once, new games only) | GameDatabase → New Game Resources |
+| Starting resources | 400 Gold, 150 Iron (once, new games only; was 300 + 120 before SCRUM-36) | GameDatabase → New Game Resources |
 | Starter Minions | Common Miner (Gold trait), Common Ore Miner; Common Tank, Fighter, Support, Mage, Archer | GameDatabase → Starter Minions |
 | Slots | 3 Miners, 3 in the Adventure team | GameDatabase → Roster |
 | Starting tier | Tier 1 (Gold Shallows) | |
@@ -133,9 +133,9 @@ Smith ranks are learned **once each** (team decision 2026-11-19).
 
 | Tier | Boss | Recommended | Every win | First win also |
 |---|---|---|---|---|
-| 1 | Spore Foreman | 80 | 1 Foreman Sigil | 20 Basic + 10 Advanced Shards, **200 Gold** |
-| 2 | Slag Golem | 135 | 1 Golem Heart | 30 Basic + 10 Advanced Shards |
-| 3 | Prism Wyrm | 240 | 1 Wyrm Scale | 40 Basic + 10 Advanced Shards |
+| 1 | Vein Warden | 80 | 1 Foreman Sigil | 20 Basic + 10 Advanced Shards, **200 Gold** |
+| 2 | The Rooted Elder | 135 | 1 Golem Heart | 30 Basic + 10 Advanced Shards |
+| 3 | Crystal Burrower | 240 | 1 Wyrm Scale | 40 Basic + 10 Advanced Shards |
 
 Beating a tier's boss **unlocks the next mine tier** (team decision 17) and that tier's Expedition.
 
@@ -143,7 +143,7 @@ Beating a tier's boss **unlocks the next mine tier** (team decision 17) and that
 
 | Tier | Expedition | Recommended | First clear (once) | Automated, per hour (never fails, no cap) |
 |---|---|---|---|---|
-| 1 | Spore Caverns | 100 | 500 Gold, 10 Basic Shards, 5 Spore Silk | 2 Spore Silk |
+| 1 | Spore Caverns | 85 (was 100 before SCRUM-36) | 500 Gold, 10 Basic Shards, 5 Spore Silk | 2 Spore Silk |
 | 2 | Magma Works | 175 | 1,200 Gold, 15 Basic Shards, 5 Ember Core | 2 Ember Core + 1 Spore Silk |
 | 3 | Crystal Depths | 300 | 2,500 Gold, 20 Basic Shards, 5 Prism Dust | 2 Prism Dust + 1 Ember Core |
 
@@ -182,13 +182,24 @@ Automated loot reaches the wallet when the Expedition is **stopped**.
 
 `PlaythroughTests` plays the whole prototype as a free player with the defaults above. It runs check-ins every
 1 h, every 8 h and once a day, with 5 seeds each, and prints the hour each step was first cleared. It plays
-perfectly, so real players are slower. Results on 2026-11-24 (with the SCRUM-32 starting resources):
+perfectly, so real players are slower. Results on 2026-11-26 (after the SCRUM-36 Spore Caverns fix):
 
 | Check-in | T1 boss | T1 Exped. | T2 boss | T2 Exped. | T3 boss | **T3 Exped. (end)** |
 |---|---|---|---|---|---|---|
-| Every 1 h | 0 | 1–2 | 2–4 | 3–5 | 5–8 | **7–14 h** |
-| Every 8 h | 0 | 8 | 8 | 8–16 | 16 | **24–32 h** |
+| Every 1 h | 0 | 1 | 2–3 | 3–5 | 4–6 | **7–11 h** |
+| Every 8 h | 0 | 8 | 8 | 8 | 16 | **16–32 h** |
 | Once a day | 0 | 24 | 24 | 24 | 24–48 | **48–72 h** |
+
+**The Spore Caverns wall (SCRUM-36).** In the SCRUM-8 playtest every tester who got that far stalled at the Tier 1
+Expedition's first clear (power ~66–90 vs 100); one quit there. A scratch simulation of a real first session
+(spend the starting resources on the team and Miners, collect every minute) showed why: spending well gets the
+team to ~86 power, and the first clear was only won at ~97. With **85 recommended** and **400 Gold + 150 Iron**
+it's won about 1 minute after the Tier 1 boss; the first attempt at 66 power still loses, so the "lose, upgrade,
+win" moment stays. The rest of the pacing barely moved (table above).
+
+`PlaythroughTests` also has a **player who only follows the next goal** (SCRUM-36): it does exactly what the
+NEXT GOAL card says, never levels Miners, and stops a visit after a lost fight. It must clear all 3 tiers; with
+hourly check-ins it finishes in 12–25 h, with 8-hourly check-ins in 24–192 h.
 
 **Before → after the SCRUM-32 playtest fixes** (starting resources, Tier 1 first-win Gold; rerun 2026-11-25):
 
@@ -222,3 +233,5 @@ Expedition rates, rerun `PlaythroughTests`, and repeat.
 |---|---|---|
 | 1.0 | 2026-11-11 | First pass for the v1.1 design, with a Python simulator. |
 | 2.0 | 2026-11-24 | Rewritten to describe the numbers in the current build (v3.4 design, SCRUM-5 to SCRUM-32). The v1.1 simulator and its report are replaced by `PlaythroughTests`. |
+| 2.1 | 2026-11-26 | SCRUM-36: Spore Caverns 100 → 85, starting resources 400 Gold + 150 Iron, pacing rerun, next-goal follower. |
+| 2.2 | 2026-11-26 | SCRUM-37: bosses renamed (Vein Warden, The Rooted Elder, Crystal Burrower); ids, materials and numbers unchanged. |

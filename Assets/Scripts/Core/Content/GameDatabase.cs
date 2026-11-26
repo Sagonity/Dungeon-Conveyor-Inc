@@ -85,8 +85,8 @@ namespace Deepshaft.Content
         /// <summary>The first-pass starting resources: enough for a few level-ups in the first minutes.</summary>
         public static List<ResourceAmount> DefaultNewGameResources() => new List<ResourceAmount>
         {
-            new ResourceAmount(ResourceId.Gold, 300),
-            new ResourceAmount(ResourceId.Iron, 120),
+            new ResourceAmount(ResourceId.Gold, 400),
+            new ResourceAmount(ResourceId.Iron, 150),
         };
 
         /// <summary>Minion definition ids a new game starts with (SCRUM-30).</summary>

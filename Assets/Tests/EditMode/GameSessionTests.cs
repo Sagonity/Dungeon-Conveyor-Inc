@@ -249,10 +249,10 @@ namespace Deepshaft.Tests
             database.EditorSetNewGameResources(GameDatabase.DefaultNewGameResources());
 
             GameSession session = NewSession();
-            Assert.AreEqual(300, session.Wallet.Get(ResourceId.Gold));
-            Assert.AreEqual(120, session.Wallet.Get(ResourceId.Iron));
+            Assert.AreEqual(400, session.Wallet.Get(ResourceId.Gold));
+            Assert.AreEqual(150, session.Wallet.Get(ResourceId.Iron));
 
-            session.Wallet.TrySpend(ResourceId.Gold, 300);
+            session.Wallet.TrySpend(ResourceId.Gold, 400);
             session.Save();
             GameSession reloaded = NewSession();
             Assert.AreEqual(0, reloaded.Wallet.Get(ResourceId.Gold), "A loaded save doesn't get them again.");
@@ -335,7 +335,7 @@ namespace Deepshaft.Tests
             GameSession session = NewSession();
             string Hint() => SourceHints.ForRareMaterial(session, ResourceId.SporeSilk);
 
-            StringAssert.StartsWith("beat Spore Foreman to open Spore Caverns", Hint());
+            StringAssert.StartsWith("beat Vein Warden to open Spore Caverns", Hint());
 
             foreach (OwnedMinion m in session.Roster.GetTeam()) LevelTo(session, m.instanceId, 16);
             Assert.IsTrue(session.FightBoss(DefaultAdventureContent.Tier1Boss).Won);
@@ -353,7 +353,7 @@ namespace Deepshaft.Tests
         {
             GameSession session = NewSession();
             StringAssert.StartsWith("reach Tier 2", SourceHints.ForRareMaterial(session, ResourceId.GolemHeart));
-            Assert.AreEqual("beat Spore Foreman", SourceHints.ForRareMaterial(session, ResourceId.ForemanSigil));
+            Assert.AreEqual("beat Vein Warden", SourceHints.ForRareMaterial(session, ResourceId.ForemanSigil));
 
             foreach (OwnedMinion m in session.Roster.GetTeam()) LevelTo(session, m.instanceId, 16);
             Assert.IsTrue(session.FightBoss(DefaultAdventureContent.Tier1Boss).Won);

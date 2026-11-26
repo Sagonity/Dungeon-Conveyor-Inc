@@ -136,11 +136,11 @@ MonoBehaviour:
       healsAllies: 1
   bosses:
   - id: spore_foreman
-    displayName: Spore Foreman
+    displayName: Vein Warden
     tier: 1
     recommendedPower: 80
     enemy:
-      displayName: Spore Foreman
+      displayName: Vein Warden
       hp: 880
       atk: 26
       attackInterval: 2
@@ -157,12 +157,17 @@ MonoBehaviour:
     repeatWinRewards:
     - id: 40
       amount: 1
+    spriteSheet: Art/Bosses/vein_warden_sheet
+    sheetColumns: 7
+    sheetRows: 2
+    sheetFrames: 14
+    sheetFramesPerSecond: 10
   - id: slag_golem
-    displayName: Slag Golem
+    displayName: The Rooted Elder
     tier: 2
     recommendedPower: 135
     enemy:
-      displayName: Slag Golem
+      displayName: The Rooted Elder
       hp: 1485
       atk: 43
       attackInterval: 2
@@ -177,12 +182,17 @@ MonoBehaviour:
     repeatWinRewards:
     - id: 41
       amount: 1
+    spriteSheet: Art/Bosses/rooted_elder_sheet
+    sheetColumns: 7
+    sheetRows: 2
+    sheetFrames: 14
+    sheetFramesPerSecond: 10
   - id: prism_wyrm
-    displayName: Prism Wyrm
+    displayName: Crystal Burrower
     tier: 3
     recommendedPower: 240
     enemy:
-      displayName: Prism Wyrm
+      displayName: Crystal Burrower
       hp: 2640
       atk: 77
       attackInterval: 2
@@ -197,30 +207,35 @@ MonoBehaviour:
     repeatWinRewards:
     - id: 42
       amount: 1
+    spriteSheet: Art/Bosses/crystal_burrower_sheet
+    sheetColumns: 7
+    sheetRows: 2
+    sheetFrames: 14
+    sheetFramesPerSecond: 10
   expeditions:
   - id: spore_caverns
     displayName: Spore Caverns
     tier: 1
     unlockedByBoss: spore_foreman
-    recommendedPower: 100
+    recommendedPower: 85
     enemies:
     - displayName: Spore Crawler
-      hp: 300
+      hp: 255
       atk: 10.5
       attackInterval: 1.6
       areaAttackEvery: 0
     - displayName: Spore Crawler
-      hp: 300
+      hp: 255
       atk: 10.5
       attackInterval: 1.6
       areaAttackEvery: 0
     - displayName: Spore Crawler
-      hp: 300
+      hp: 255
       atk: 10.5
       attackInterval: 1.6
       areaAttackEvery: 0
     - displayName: Spore Crawler
-      hp: 300
+      hp: 255
       atk: 10.5
       attackInterval: 1.6
       areaAttackEvery: 0
@@ -323,9 +338,9 @@ MonoBehaviour:
     cost: []
   newGameResources:
   - id: 0
-    amount: 300
+    amount: 400
   - id: 11
-    amount: 120
+    amount: 150
   starterMinions:
   - Minion_Miner:C
   - Minion_Miner_Ore:C

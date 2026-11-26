@@ -32,14 +32,15 @@ namespace Deepshaft.Content
 
         public static List<BossDefinition> Bosses() => new List<BossDefinition>
         {
-            Boss(Tier1Boss, "Spore Foreman", 1, 80, 26, ResourceId.ForemanSigil, 20, firstWinGold: 200),
-            Boss(Tier2Boss, "Slag Golem", 2, 135, 43, ResourceId.GolemHeart, 30),
-            Boss(Tier3Boss, "Prism Wyrm", 3, 240, 77, ResourceId.WyrmScale, 40),
+            // Display names from SCRUM-37 (were Spore Foreman, Slag Golem, Prism Wyrm); the ids stay.
+            Boss(Tier1Boss, "Vein Warden", 1, 80, 26, ResourceId.ForemanSigil, 20, "Art/Bosses/vein_warden_sheet", firstWinGold: 200),
+            Boss(Tier2Boss, "The Rooted Elder", 2, 135, 43, ResourceId.GolemHeart, 30, "Art/Bosses/rooted_elder_sheet"),
+            Boss(Tier3Boss, "Crystal Burrower", 3, 240, 77, ResourceId.WyrmScale, 40, "Art/Bosses/crystal_burrower_sheet"),
         };
 
         public static List<ExpeditionDefinition> Expeditions() => new List<ExpeditionDefinition>
         {
-            Expedition(Tier1Expedition, "Spore Caverns", 1, Tier1Boss, 100, "Spore Crawler", 10.5f,
+            Expedition(Tier1Expedition, "Spore Caverns", 1, Tier1Boss, 85, "Spore Crawler", 10.5f,
                 new[] { R(ResourceId.Gold, 500), R(ResourceId.BasicShard, 10), R(ResourceId.SporeSilk, 5) },
                 new[] { R(ResourceId.SporeSilk, 2) }),
             Expedition(Tier2Expedition, "Magma Works", 2, Tier2Boss, 175, "Magma Imp", 18f,
@@ -61,7 +62,7 @@ namespace Deepshaft.Content
         };
 
         static BossDefinition Boss(string id, string name, int tier, float recommended, float atk,
-            ResourceId material, long shards, long firstWinGold = 0) => new BossDefinition
+            ResourceId material, long shards, string spriteSheet, long firstWinGold = 0) => new BossDefinition
         {
             id = id,
             displayName = name,
@@ -72,6 +73,7 @@ namespace Deepshaft.Content
             // The Tier 1 boss's first win also gives Gold, so the first session keeps going (SCRUM-32).
             firstWinRewards = FirstWin(material, shards, firstWinGold),
             repeatWinRewards = new List<ResourceAmount> { R(material, 1) },
+            spriteSheet = spriteSheet,
         };
 
         static List<ResourceAmount> FirstWin(ResourceId material, long shards, long gold)

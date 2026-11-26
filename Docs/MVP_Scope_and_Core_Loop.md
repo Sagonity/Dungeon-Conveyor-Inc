@@ -363,6 +363,11 @@ from a simulated free player (all 3 tiers cleared in about 11 hours of play), fo
 - **Playtest fixes (SCRUM-32):** new games start with 300 Gold + 120 Iron and the Tier 1 boss's first win gives
   200 Gold; "Max ×N" buttons for Minion levels and gear; a hint card after a lost fight; a "Start automation"
   card after a won first clear.
+- **First art (SCRUM-37):** a background, animated boss sprite sheets and a Miner placeholder portrait with rarity
+  frames; the bosses are now Vein Warden, The Rooted Elder and Crystal Burrower (same ids).
+- **Playtest fixes after the playtest (SCRUM-36):** Spore Caverns recommends 85 (was 100) and new games start with
+  400 Gold + 150 Iron; a NEXT GOAL card on every tab with a guided start; a "You beat …!" card and "Fight anyway?"
+  when far too weak; a "Level up your team" card and a swap prompt after a summon lands on the bench.
 - **Playtest tools (SCRUM-8):** a local playtest event log (every action and tab, saved with the game);
   Settings → Debug → Copy log / Save log file exports it as CSV.
 
