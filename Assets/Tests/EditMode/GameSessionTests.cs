@@ -249,10 +249,10 @@ namespace Deepshaft.Tests
             database.EditorSetNewGameResources(GameDatabase.DefaultNewGameResources());
 
             GameSession session = NewSession();
-            Assert.AreEqual(300, session.Wallet.Get(ResourceId.Gold));
-            Assert.AreEqual(120, session.Wallet.Get(ResourceId.Iron));
+            Assert.AreEqual(400, session.Wallet.Get(ResourceId.Gold));
+            Assert.AreEqual(150, session.Wallet.Get(ResourceId.Iron));
 
-            session.Wallet.TrySpend(ResourceId.Gold, 300);
+            session.Wallet.TrySpend(ResourceId.Gold, 400);
             session.Save();
             GameSession reloaded = NewSession();
             Assert.AreEqual(0, reloaded.Wallet.Get(ResourceId.Gold), "A loaded save doesn't get them again.");

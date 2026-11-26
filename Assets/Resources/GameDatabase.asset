@@ -202,25 +202,25 @@ MonoBehaviour:
     displayName: Spore Caverns
     tier: 1
     unlockedByBoss: spore_foreman
-    recommendedPower: 100
+    recommendedPower: 85
     enemies:
     - displayName: Spore Crawler
-      hp: 300
+      hp: 255
       atk: 10.5
       attackInterval: 1.6
       areaAttackEvery: 0
     - displayName: Spore Crawler
-      hp: 300
+      hp: 255
       atk: 10.5
       attackInterval: 1.6
       areaAttackEvery: 0
     - displayName: Spore Crawler
-      hp: 300
+      hp: 255
       atk: 10.5
       attackInterval: 1.6
       areaAttackEvery: 0
     - displayName: Spore Crawler
-      hp: 300
+      hp: 255
       atk: 10.5
       attackInterval: 1.6
       areaAttackEvery: 0
@@ -323,9 +323,9 @@ MonoBehaviour:
     cost: []
   newGameResources:
   - id: 0
-    amount: 300
+    amount: 400
   - id: 11
-    amount: 120
+    amount: 150
   starterMinions:
   - Minion_Miner:C
   - Minion_Miner_Ore:C

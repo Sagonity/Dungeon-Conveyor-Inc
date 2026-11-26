@@ -444,6 +444,29 @@ placement: the player only picks Minions for slots.
   CSV, delete) and Vercel functions in `Website/api/playtest/` (no npm packages; Upstash Redis over REST).
   Setup and build steps: `Website/playtest/README.md`.
 
+### SCRUM-36: playtest fixes (next goal, boss flow, levelling)
+
+- **Numbers:** Spore Caverns recommends 85 (was 100; enemy HP 3 × recommended) and new games start with 400 Gold +
+  150 Iron, in `DefaultAdventureContent`, `GameDatabase.DefaultNewGameResources` and the asset.
+- **`NextGoal`** (`Core/Session`, pure): `NextGoal.For(session)` gives the one next thing to do, in this order: swap
+  a stronger benched Adventurer in → the next fight (Tier 1 boss, its Expedition's first clear, Tier 2 boss, …) if
+  the team has ≥ 90% of its recommended power (`WithinReach`) → otherwise automate the deepest cleared Expedition →
+  summon → level / gear → breakthrough → Smith → collect the Mine → collect the running Expedition → wait. It has a
+  `Kind`, a `Place` (tab), a title, a short title for the header, a one-line detail and the target id.
+  `NextGoal.IsFarBelow` (< 75% of recommended) drives "Fight anyway?".
+- **`GameSession.LastLossId` / `LastLossPower`:** the last lost boss fight or first clear, not saved. After a loss
+  the goal says "get stronger" until the team's power is higher than when it lost.
+- **Grey-box screen:** a NEXT GOAL card at the top of every tab (with Go / Collect / Swap in, logged as
+  `view goal <Kind>`) and in the header pill; the goal's tab pulses in the tab bar until the first Expedition is
+  cleared; a welcome line for new games. After a boss win: a "You beat …!" card with the next boss's power, and
+  Fight is disabled for 1.5 s. Below 75% of the recommended power, Fight (and First clear) first says "Too weak …"
+  (logged as `view too_weak <id>`) and becomes "Fight anyway". The Minions tab starts with "Level up your team /
+  Miners" (Level up and Max ×N per working Minion); benched Minions say they don't fight; a summon that lands on
+  the bench shows "Swap with …" at the top. The Smith marks bench rows and explains Max ×N.
+- Tests: `NextGoalTests`; `PlaythroughTests.PlayerWhoOnlyFollowsTheNextGoal_ClearsAllThreeTiers` (a player who
+  only does what the goal says must clear everything; it found the "fight again at the same power" loop that
+  `LastLossId` fixes).
+
 ## 12. Team decisions (2026-11-17)
 
 1. **Branch naming:** `SCRUM-<n>-<topic>`, as in §10.

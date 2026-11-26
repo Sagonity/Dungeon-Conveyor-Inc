@@ -119,6 +119,14 @@ namespace Deepshaft.Session
         /// <summary>False after loading a save from a newer build: nothing will be written.</summary>
         public bool SavingAllowed => saves.SavingAllowed;
 
+        /// <summary>
+        /// The last lost boss fight or first clear (its id) and the team power it was lost with (SCRUM-36),
+        /// so <see cref="NextGoal"/> says "get stronger" instead of "fight" until the team has improved.
+        /// A win clears it. Not saved: after a restart the goal may suggest one more try.
+        /// </summary>
+        public string LastLossId { get; private set; } = "";
+        public float LastLossPower { get; private set; }
+
         /// <summary>Raised after every action, so screens can refresh.</summary>
         public event Action Changed;
 
@@ -175,6 +183,7 @@ namespace Deepshaft.Session
             float recommended = Database.FindBoss(bossId)?.recommendedPower ?? 0f;
             Playtest.Add("boss_fight", bossId + " " + (result.Check != BossCheck.Ok ? result.Check.ToString() : result.Won ? "won" : "lost") +
                                        " power=" + Num(power) + " rec=" + Num(recommended) + (result.FirstWin ? " first_win" : ""));
+            if (result.Check == BossCheck.Ok) RememberFight(bossId, result.Won, power);
             return Done(result);
         }
 
@@ -185,6 +194,7 @@ namespace Deepshaft.Session
             float recommended = Database.FindExpedition(expeditionId)?.recommendedPower ?? 0f;
             Playtest.Add("first_clear", expeditionId + " " + (result.Check != ExpeditionCheck.Ok ? result.Check.ToString() : result.Won ? "won" : "lost") +
                                         " power=" + Num(power) + " rec=" + Num(recommended));
+            if (result.Check == ExpeditionCheck.Ok) RememberFight(expeditionId, result.Won, power);
             return Done(result);
         }
 
@@ -285,6 +295,17 @@ namespace Deepshaft.Session
         /// playtest log shows where they went after a loss. Doesn't save by itself.
         /// </summary>
         public void LogView(string what) => Playtest.Add("view", what);
+
+        void RememberFight(string id, bool won, float power)
+        {
+            if (won)
+            {
+                if (LastLossId == id) LastLossId = "";
+                return;
+            }
+            LastLossId = id;
+            LastLossPower = power;
+        }
 
         AssignResult LogAssign(string type, int instanceId, AssignResult result)
         {

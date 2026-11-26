@@ -10,6 +10,7 @@ using Deepshaft.Minions;
 using Deepshaft.Mining;
 using Deepshaft.Progression;
 using Deepshaft.Roster;
+using Deepshaft.Save;
 using Deepshaft.Session;
 using Deepshaft.Smith;
 using Deepshaft.Summoning;
@@ -71,6 +72,13 @@ public class GreyboxGameScreen : MonoBehaviour
     string lossName = "";
     float lossPower, lossRecommended;
     string automatePromptId = "";
+
+    // SCRUM-36: the next goal, the card after a boss win, "Fight anyway?" and the swap prompt after a summon.
+    NextGoal goal;
+    string bossWinName = "";
+    float fightLockUntil;
+    string confirmFightId = "";
+    int swapPromptId;
     UIManager ui;
 
     Vector2 pressStart;
@@ -100,6 +108,9 @@ public class GreyboxGameScreen : MonoBehaviour
         playtestNote = "";
         lossName = "";
         automatePromptId = "";
+        bossWinName = "";
+        confirmFightId = "";
+        swapPromptId = 0;
         overlay = Overlay.None;
     }
 
@@ -118,6 +129,7 @@ public class GreyboxGameScreen : MonoBehaviour
             loggedTab = tab;
         }
         if (s == null) s = new Styles();
+        goal = NextGoal.For(game);
 
         float scale = Mathf.Min(Screen.width, Screen.height) / ReferenceSize;
         GUI.matrix = Matrix4x4.Scale(new Vector3(scale, scale, 1f));
@@ -151,6 +163,7 @@ public class GreyboxGameScreen : MonoBehaviour
         GUILayout.BeginArea(content);
         scroll = GUILayout.BeginScrollView(scroll, false, false, GUIStyle.none, GUIStyle.none);
         DrawMessage();
+        DrawGoalCard(game);
         switch (tab)
         {
             case Tab.HQ: DrawHQ(game); break;
@@ -212,7 +225,8 @@ public class GreyboxGameScreen : MonoBehaviour
         GUI.Label(new Rect(header.x + Side, header.y, header.width * 0.55f, header.height),
             "<color=#A59C8C>TIER " + tier + " ·</color> " + TierName(tier).ToUpperInvariant(), s.header);
 
-        string next = DescribeNextGoal(game);
+        string title = goal.ShortTitle.Length > 26 ? goal.ShortTitle.Substring(0, 25).TrimEnd() + "…" : goal.ShortTitle;
+        string next = "Next: " + title;
         Vector2 size = s.pill.CalcSize(new GUIContent(next));
         var pill = new Rect(header.xMax - Side - size.x, header.y + (header.height - size.y) / 2f, size.x, size.y);
         GUI.Label(pill, next, s.pill);
@@ -229,9 +243,16 @@ public class GreyboxGameScreen : MonoBehaviour
             bool selected = (int)tab == i;
             if (selected) GUI.DrawTexture(new Rect(cell.x + w * 0.2f, cell.y, w * 0.6f, 6f), s.Solid(Gold));
 
-            Color iconColor = selected ? Gold : Muted;
+            // Guided start (SCRUM-36): the tab where the next goal is done pulses until the first Expedition is cleared.
+            bool guide = !selected && IsGuidedStart(game) && GoalTab(goal) == (Tab)i;
+            if (guide)
+            {
+                float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 4f);
+                DrawTinted(new Rect(cell.center.x - 46f, cell.y + 10f, 92f, 92f), s.circle, new Color(Gold.r, Gold.g, Gold.b, 0.15f + 0.3f * pulse));
+            }
+            Color iconColor = selected || guide ? Gold : Muted;
             DrawTinted(new Rect(cell.center.x - 26f, cell.y + 30f, 52f, 52f), s.diamond, iconColor);
-            GUI.Label(new Rect(cell.x, cell.y + 92f, w, 50f), TabNames[i], selected ? s.navSelected : s.nav);
+            GUI.Label(new Rect(cell.x, cell.y + 92f, w, 50f), TabNames[i], selected || guide ? s.navSelected : s.nav);
 
             if (NeedsAttention(game, (Tab)i))
             {
@@ -503,11 +524,21 @@ public class GreyboxGameScreen : MonoBehaviour
                     detail = "automated · running";
                     break;
             }
+            bool farBelow = status == ExpeditionStatus.FirstClearAvailable && NextGoal.IsFarBelow(expeditions.GetTeamPower(), e.recommendedPower);
+            if (farBelow && confirmFightId == e.id) action = "Fight anyway";
             GUILayout.Label("<b>" + e.displayName + "</b> <color=#A59C8C>· " + detail + "</color>", s.body,
                 GUILayout.ExpandWidth(true));
 
             if (action != null && SmallGoldButton(action, enabled))
             {
+                if (farBelow && confirmFightId != e.id)
+                {
+                    confirmFightId = e.id;
+                    game.LogView("too_weak " + e.id);
+                    Say(TooWeak(e.displayName, expeditions.GetTeamPower(), e.recommendedPower), Mood.Bad);
+                    Exit();
+                }
+                confirmFightId = "";
                 if (status == ExpeditionStatus.FirstClearAvailable)
                 {
                     float powerBefore = game.Expeditions.GetTeamPower();
@@ -554,6 +585,9 @@ public class GreyboxGameScreen : MonoBehaviour
         RosterService roster = game.Roster;
         MinionKind kind = showMiners ? MinionKind.Miner : MinionKind.Adventure;
         int ownedOther = Count(game, showMiners ? MinionKind.Adventure : MinionKind.Miner);
+
+        DrawNewSummonPrompt(game);
+        DrawQuickLevelCard(game);
 
         BeginCard();
         GUILayout.BeginHorizontal();
@@ -670,9 +704,15 @@ public class GreyboxGameScreen : MonoBehaviour
         int max = minions.GetMaxLevel(m);
         int next = Math.Min(m.level + 1, max);
 
+        bool working = game.Roster.IsAssigned(m.instanceId);
         BeginCard();
         CardHeader(d.DisplayName.ToUpperInvariant(), d.Rarity + " · " + (isMiner ? d.MinerTrait + " Miner" : d.Role.ToString()), s.pill);
         GUILayout.Label("<b>Lv " + m.level + " / " + max + "</b> <color=#A59C8C>· breakthroughs " + m.breakthroughs + "/" + minions.MaxBreakthroughs + "</color>", s.body);
+        if (!working)
+        {
+            // SCRUM-36 (finding 5): testers levelled Minions that weren't fighting or mining.
+            GUILayout.Label(isMiner ? "Resting: levels only help once it's in the Mine." : "On the bench: levels only help once it's in the team.", s.smallRed);
+        }
 
         if (isMiner)
         {
@@ -706,13 +746,14 @@ public class GreyboxGameScreen : MonoBehaviour
         if (levelMax.Levels >= 2 && GoldButton("Max ×" + levelMax.Levels, 240f))
         {
             BulkPurchase bought = game.LevelUpMinionMax(m.instanceId);
-            Say(d.DisplayName + " +" + bought.Levels + " levels, now level " + bought.ToLevel + ". Paid " + Describe(bought.Cost) + ".", Mood.Good);
+            Say(d.DisplayName + " +" + bought.Levels + " levels, now level " + bought.ToLevel + ". Paid " + Describe(bought.Cost) + "." +
+                BenchNote(isMiner, working), working ? Mood.Good : Mood.Neutral);
             Exit();
         }
         if (GoldButton("Level Up", 300f, level.CanDo))
         {
             MinionUpgradeCheck result = game.LevelUpMinion(m.instanceId);
-            if (result.CanDo) Say(d.DisplayName + " is now level " + result.Level + ".", Mood.Good);
+            if (result.CanDo) Say(d.DisplayName + " is now level " + result.Level + "." + BenchNote(isMiner, working), working ? Mood.Good : Mood.Neutral);
             else Say(Explain(result.Status), Mood.Bad);
             Exit();
         }
@@ -869,9 +910,16 @@ public class GreyboxGameScreen : MonoBehaviour
             else if (result.IsDuplicate) Say(result.Definition.Rarity + " " + result.Definition.DisplayName + " again: +" + result.Essence + " Minion Essence.", Mood.Neutral);
             else
             {
+                bool working = game.Roster.IsAssigned(result.Added.instanceId);
                 Say("NEW! " + result.Definition.DisplayName + " (" + result.Definition.Rarity + ") joined " +
-                    (game.Roster.IsAssigned(result.Added.instanceId) ? (showMiners ? "the Mine." : "the team.") : "the bench."), Mood.Good);
+                    (working ? (showMiners ? "the Mine." : "the team.") : (showMiners ? "the resting Miners." : "the bench.")), Mood.Good);
                 selectedMinionId = result.Added.instanceId;
+                // SCRUM-36: a new Minion on the bench does nothing; offer the swap at the top of the tab.
+                if (!working)
+                {
+                    swapPromptId = result.Added.instanceId;
+                    scroll = Vector2.zero;
+                }
             }
             Exit();
         }
@@ -885,6 +933,276 @@ public class GreyboxGameScreen : MonoBehaviour
     // ================================================================ Smith
 
     // ================================================================ Playtest fixes (SCRUM-32)
+
+    // ================================================================ Next goal and guidance (SCRUM-36)
+
+    /// <summary>
+    /// The one next thing to do, at the top of every tab (playtest finding 2: testers didn't know where
+    /// to start or what to do next). The button goes there, or does it when it's a single tap.
+    /// </summary>
+    void DrawGoalCard(GameSession game)
+    {
+        if (goal == null) return;
+        Tab? target = GoalTab(goal);
+        string pill = goal.Recommended > 0f ? "Power " + Format(Math.Floor(goal.Power)) + " / " + Format(goal.Recommended) : "";
+        bool ready = goal.Power >= goal.Recommended * NextGoal.WithinReach;
+
+        BeginCard();
+        CardHeader("NEXT GOAL", pill, ready ? s.pillGreen : s.pillRed);
+        GUILayout.Label("<b>" + goal.Title + "</b>", s.body);
+        GUILayout.BeginHorizontal();
+        GUILayout.Label(goal.Detail, s.small, GUILayout.ExpandWidth(true));
+        string action = GoalAction(target);
+        if (action != null)
+        {
+            GUILayout.Space(12f);
+            if (GoldButton(action, 300f))
+            {
+                DoGoal(game, target);
+                Exit();
+            }
+        }
+        GUILayout.EndHorizontal();
+        EndCard();
+    }
+
+    string GoalAction(Tab? target)
+    {
+        switch (goal.Kind)
+        {
+            case GoalKind.CollectMine:
+            case GoalKind.CollectExpedition: return "Collect";
+            case GoalKind.SwapIn: return "Swap in";
+            case GoalKind.Wait:
+            case GoalKind.AllDone: return null;
+            default: return target.HasValue && target.Value != tab ? "Go" : null;
+        }
+    }
+
+    void DoGoal(GameSession game, Tab? target)
+    {
+        game.LogView("goal " + goal.Kind);
+        switch (goal.Kind)
+        {
+            case GoalKind.CollectMine:
+                List<ResourceAmount> collected = game.CollectMine();
+                Say(collected.Count > 0 ? "Collected " + Describe(collected) + ". Now level up your team." : "Nothing to collect yet.", Mood.Good);
+                return;
+            case GoalKind.CollectExpedition:
+                // Stop & collect, then start the same Expedition again: one tap instead of three.
+                string expeditionId = goal.TargetId;
+                ExpeditionCollectResult stopped = game.StopExpedition();
+                ExpeditionCheck restarted = game.StartExpedition(expeditionId);
+                Say("Collected " + Describe(stopped.Collected) + "." + (restarted == ExpeditionCheck.Ok ? " The Expedition is running again." : ""), Mood.Good);
+                return;
+            case GoalKind.SwapIn:
+                if (!int.TryParse(goal.TargetId, out int incoming)) return;
+                string name = MinionName(game, incoming);
+                AssignResult result = goal.SwapOutId != 0 ? game.SwapIntoTeam(incoming, goal.SwapOutId) : game.AssignToTeam(incoming);
+                Say(result == AssignResult.Ok ? name + " is in the team." : Explain(result), result == AssignResult.Ok ? Mood.Good : Mood.Bad);
+                return;
+        }
+        if (!target.HasValue) return;
+        tab = target.Value;
+        if (tab == Tab.Minions || tab == Tab.Smith) showMiners = false;
+        scroll = Vector2.zero;
+    }
+
+    static Tab? GoalTab(NextGoal g)
+    {
+        if (g == null) return null;
+        switch (g.Place)
+        {
+            case GoalPlace.Boss: return Tab.Boss;
+            case GoalPlace.Expeditions: return Tab.Expeditions;
+            case GoalPlace.Minions: return Tab.Minions;
+            case GoalPlace.Smith: return Tab.Smith;
+            case GoalPlace.Mine: return Tab.Mine;
+            default: return null;
+        }
+    }
+
+    /// <summary>The first minutes: until an Expedition is cleared (and while the first one waits to be automated).</summary>
+    bool IsGuidedStart(GameSession game)
+    {
+        if (goal == null || goal.Kind == GoalKind.Wait) return false;
+        if (goal.Kind == GoalKind.Automate) return !game.Expeditions.IsRunning;
+        foreach (ExpeditionDefinition e in game.Database.Expeditions)
+        {
+            if (e != null && game.Expeditions.IsCleared(e.id)) return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// After a boss win (finding 3): the Boss tab now shows the next, much stronger boss. Say what
+    /// just happened and how far away the next one is, before the player taps Fight again.
+    /// </summary>
+    void DrawBossWinCard(GameSession game, BossDefinition next)
+    {
+        if (string.IsNullOrEmpty(bossWinName)) return;
+        float power = game.Bosses.GetTeamPower();
+        BeginCard();
+        CardHeader("YOU BEAT " + bossWinName.ToUpperInvariant() + "!", "Victory", s.pillGreen);
+        if (next == null || next.displayName == bossWinName || game.Bosses.IsDefeated(next.id))
+        {
+            GUILayout.Label("Its material is yours. Check the next goal at the top.", s.body);
+        }
+        else
+        {
+            GUILayout.Label("Next up: <b>" + next.displayName + "</b> recommends <b>" + Format(next.recommendedPower) +
+                            "</b> power. Your team has <b>" + Format(Math.Floor(power)) + "</b>.", s.body);
+            if (NextGoal.IsFarBelow(power, next.recommendedPower))
+            {
+                GUILayout.Label("That's a big step up. Clear the new Expedition and get stronger first.", s.small);
+            }
+        }
+        GUILayout.BeginHorizontal();
+        Tab? target = GoalTab(goal);
+        if (target.HasValue && target.Value != Tab.Boss && GoldButton("Next goal", 320f))
+        {
+            bossWinName = "";
+            DoGoal(game, target);
+            Exit();
+        }
+        GUILayout.FlexibleSpace();
+        if (DarkButton("Close")) { bossWinName = ""; Exit(); }
+        GUILayout.EndHorizontal();
+        EndCard();
+    }
+
+    static string TooWeak(string name, float power, float recommended) =>
+        "Too weak: your team has " + Format(Math.Floor(power)) + " power, " + name + " recommends " + Format(recommended) +
+        ". You'll very likely lose. Get stronger first, or tap Fight anyway.";
+
+    static string BenchNote(bool isMiner, bool working) =>
+        working ? "" : isMiner ? " It's resting: put it in the Mine to use it." : " It's on the bench: put it in the team to use it.";
+
+    static string MinionName(GameSession game, int instanceId)
+    {
+        OwnedMinion m = game.State.FindMinion(instanceId);
+        MinionDefinition d = m != null ? game.Database.FindMinion(m.definitionId) : null;
+        return d != null ? d.DisplayName : "The Minion";
+    }
+
+    /// <summary>Mining power for Miners, combat power for Adventurers.</summary>
+    static float Strength(GameSession game, OwnedMinion m)
+    {
+        MinionDefinition d = game.Database.FindMinion(m.definitionId);
+        if (d == null) return 0f;
+        return d.Kind == MinionKind.Miner ? MinionStatCalculator.GetMiningPower(d, m.level) : NextGoal.MemberPower(game, m);
+    }
+
+    /// <summary>
+    /// Level up the Minions that work, right at the top of the Minions tab (finding 4: a tester opened
+    /// this tab 6 times and never found Level Up; Max ×N was often missed).
+    /// </summary>
+    void DrawQuickLevelCard(GameSession game)
+    {
+        bool miners = showMiners;
+        List<OwnedMinion> working = miners ? game.Roster.GetMiners() : game.Roster.GetTeam();
+        if (working.Count == 0) return;
+
+        BeginCard();
+        CardHeader(miners ? "LEVEL UP YOUR MINERS" : "LEVEL UP YOUR TEAM", Short(game.Wallet.Get(ResourceId.Gold)) + " Gold", s.pillGold);
+        foreach (OwnedMinion m in working)
+        {
+            MinionDefinition d = game.Database.FindMinion(m.definitionId);
+            if (d == null) continue;
+            int id = m.instanceId;
+            MinionUpgradeCheck level = game.Minions.CheckLevelUp(id, game.Wallet);
+            BulkPurchase max = game.Minions.CheckLevelUpMax(id, game.Wallet);
+            bool atCap = level.Status == MinionUpgradeStatus.AtLevelCap;
+
+            GUILayout.BeginHorizontal(s.row);
+            GUILayout.BeginVertical();
+            string stat = miners ? Format(Strength(game, m)) + " mining power" : Format(Math.Floor(Strength(game, m))) + " power";
+            GUILayout.Label("<b>" + d.DisplayName + "</b> <color=#A59C8C>· Lv " + m.level + "/" + game.Minions.GetMaxLevel(m) + " · " + stat + "</color>", s.body);
+            if (atCap) GUILayout.Label("At the level cap: tap it below to break through.", s.small);
+            else if (level.CanDo) GUILayout.Label("Next level: " + Describe(level.Cost), s.small);
+            else GUILayout.Label("Need " + Describe(level.Shortfall) + " more", s.smallRed);
+            GUILayout.EndVertical();
+            GUILayout.FlexibleSpace();
+            if (max.Levels >= 2 && GoldButton("Max ×" + max.Levels, 220f))
+            {
+                BulkPurchase bought = game.LevelUpMinionMax(id);
+                Say(d.DisplayName + " +" + bought.Levels + " levels, now level " + bought.ToLevel + ". Paid " + Describe(bought.Cost) + ".", Mood.Good);
+                Exit();
+            }
+            if (SmallGoldButton("Level up", level.CanDo))
+            {
+                MinionUpgradeCheck result = game.LevelUpMinion(id);
+                if (result.CanDo) Say(d.DisplayName + " is now level " + result.Level + ".", Mood.Good);
+                else Say(Explain(result.Status), Mood.Bad);
+                Exit();
+            }
+            GUILayout.EndHorizontal();
+        }
+        GUILayout.Label(miners ? "Only Miners in the Mine produce. <b>Max ×N</b> buys as many levels as you can afford."
+                               : "Only the team fights. <b>Max ×N</b> buys as many levels as you can afford.", s.small);
+        EndCard();
+    }
+
+    /// <summary>After a summon puts a new Minion on the bench (finding 5): offer the swap straight away.</summary>
+    void DrawNewSummonPrompt(GameSession game)
+    {
+        if (swapPromptId == 0) return;
+        OwnedMinion m = game.State.FindMinion(swapPromptId);
+        MinionDefinition d = m != null ? game.Database.FindMinion(m.definitionId) : null;
+        if (d == null || game.Roster.IsAssigned(m.instanceId))
+        {
+            swapPromptId = 0;
+            return;
+        }
+        bool isMiner = d.Kind == MinionKind.Miner;
+        RosterService roster = game.Roster;
+        List<OwnedMinion> members = isMiner ? roster.GetMiners() : roster.GetTeam();
+        bool full = members.Count >= (isMiner ? roster.MinerSlots : roster.AdventureSlots);
+        bool busy = !isMiner && roster.IsTeamBusy;
+
+        OwnedMinion weakest = null;
+        foreach (OwnedMinion other in members)
+        {
+            if (weakest == null || Strength(game, other) < Strength(game, weakest)) weakest = other;
+        }
+        string unit = isMiner ? " mining power" : " power";
+
+        BeginCard();
+        CardHeader("NEW: " + d.DisplayName.ToUpperInvariant(), d.Rarity.ToString(),
+            d.Rarity == Rarity.Rare ? s.pillPurple : d.Rarity == Rarity.Uncommon ? s.pillGreen : s.pill);
+        GUILayout.Label(isMiner ? d.DisplayName + " is resting: it won't mine until you put it in the Mine."
+                                : d.DisplayName + " is on the bench: it won't fight until you put it in the team.", s.body);
+        if (busy) GUILayout.Label("The team is on an Expedition. Stop it to change the team.", s.small);
+        else if (full && weakest != null)
+        {
+            GUILayout.Label(d.DisplayName + ": " + Format(Math.Floor(Strength(game, m))) + unit + ". Weakest " + (isMiner ? "Miner" : "in the team") +
+                            ": " + MinionName(game, weakest.instanceId) + ", " + Format(Math.Floor(Strength(game, weakest))) + unit + ".", s.small);
+        }
+        GUILayout.BeginHorizontal();
+        if (!busy)
+        {
+            if (!full && GoldButton(isMiner ? "Put in the Mine" : "Put in the team", 440f))
+            {
+                AssignResult result = isMiner ? game.AssignMiner(m.instanceId) : game.AssignToTeam(m.instanceId);
+                Say(result == AssignResult.Ok ? d.DisplayName + " is in." : Explain(result), result == AssignResult.Ok ? Mood.Good : Mood.Bad);
+                swapPromptId = 0;
+                Exit();
+            }
+            if (full && weakest != null && GoldButton("Swap with " + MinionName(game, weakest.instanceId), 560f))
+            {
+                string outName = MinionName(game, weakest.instanceId);
+                AssignResult result = isMiner ? game.SwapMiner(m.instanceId, weakest.instanceId) : game.SwapIntoTeam(m.instanceId, weakest.instanceId);
+                Say(result == AssignResult.Ok ? d.DisplayName + " is in; " + outName + (isMiner ? " is resting." : " is on the bench.") : Explain(result),
+                    result == AssignResult.Ok ? Mood.Good : Mood.Bad);
+                swapPromptId = 0;
+                Exit();
+            }
+        }
+        GUILayout.FlexibleSpace();
+        if (DarkButton(isMiner ? "Keep resting" : "Keep on bench")) { swapPromptId = 0; Exit(); }
+        GUILayout.EndHorizontal();
+        EndCard();
+    }
 
     /// <summary>Remembers a lost fight for the hint card; a win clears it.</summary>
     void RememberFight(bool won, string name, float power, float recommended)
@@ -1028,12 +1346,14 @@ public class GreyboxGameScreen : MonoBehaviour
         var minions = new List<OwnedMinion>(showMiners ? roster.GetMiners() : roster.GetTeam());
         minions.AddRange(roster.GetUnassigned(kind));
         if (minions.Count == 0) GUILayout.Label("No Minions of this kind yet.", s.body);
+        else GUILayout.Label("<b>Max ×N</b> buys as many levels as you can afford in one tap.", s.small);
         foreach (OwnedMinion m in minions)
         {
             MinionDefinition d = game.Database.FindMinion(m.definitionId);
             if (d == null) continue;
             GUILayout.Space(10f);
-            GUILayout.Label("<b>" + d.DisplayName + "</b> <color=#A59C8C>· " + (roster.IsAssigned(m.instanceId) ? (showMiners ? "Mining" : "Team") : "Bench") + "</color>", s.body);
+            GUILayout.Label("<b>" + d.DisplayName + "</b> <color=#A59C8C>· " + (roster.IsAssigned(m.instanceId) ? (showMiners ? "Mining" : "Team")
+                : (showMiners ? "Resting · doesn't mine" : "Bench · doesn't fight")) + "</color>", s.body);
             foreach (EquipmentSlot slot in EquipmentRules.SlotsFor(d.Kind)) GearRow(game, m, d, slot);
         }
         EndCard();
@@ -1106,7 +1426,7 @@ public class GreyboxGameScreen : MonoBehaviour
         GUILayout.EndVertical();
         GUILayout.FlexibleSpace();
         BulkPurchase gearMax = atCap ? BulkPurchase.None : smith.CheckUpgradeMax(m.instanceId, slot, game.Wallet);
-        if (gearMax.Levels >= 2 && GoldButton("Max ×" + gearMax.Levels, 200f))
+        if (gearMax.Levels >= 2 && GoldButton("Max ×" + gearMax.Levels, 240f))
         {
             BulkPurchase bought = game.UpgradeGearMax(m.instanceId, slot);
             Say(d.DisplayName + "'s " + rules.displayName + " +" + bought.Levels + " levels, now level " + bought.ToLevel + ".", Mood.Good);
@@ -1185,6 +1505,7 @@ public class GreyboxGameScreen : MonoBehaviour
         }
 
         DrawLossHint(game);
+        DrawBossWinCard(game, boss);
 
         // Art placeholder (SCRUM-13).
         Rect art = GUILayoutUtility.GetRect(100f, 380f, GUILayout.ExpandWidth(true), GUILayout.Height(380f));
@@ -1202,10 +1523,23 @@ public class GreyboxGameScreen : MonoBehaviour
         BossCheck check = game.Bosses.CanFight(boss.id);
         GUILayout.Label(busy ? "Team on Expedition" : check == BossCheck.Ok ? "Ready" : Explain(check), s.small);
         GUILayout.FlexibleSpace();
-        string label = busy ? "Stop Exp. & Fight" : game.Bosses.IsDefeated(boss.id) ? "Fight again" : "Fight";
-        bool canPress = busy || check == BossCheck.Ok;
+        // SCRUM-36: right after a win, the next (much stronger) boss is here; don't let a second tap fight it,
+        // and ask "Fight anyway?" when the team is far below the recommended power.
+        bool farBelow = !game.Bosses.IsDefeated(boss.id) && NextGoal.IsFarBelow(power, boss.recommendedPower);
+        bool armed = confirmFightId == boss.id;
+        bool locked = Time.unscaledTime < fightLockUntil;
+        string label = farBelow && armed ? "Fight anyway" : busy ? "Stop Exp. & Fight" : game.Bosses.IsDefeated(boss.id) ? "Fight again" : "Fight";
+        bool canPress = (busy || check == BossCheck.Ok) && !locked;
         if (GoldButton(label, 420f, canPress))
         {
+            if (farBelow && !armed)
+            {
+                confirmFightId = boss.id;
+                game.LogView("too_weak " + boss.id);
+                Say(TooWeak(boss.displayName, power, boss.recommendedPower), Mood.Bad);
+                Exit();
+            }
+            confirmFightId = "";
             string prefix = "";
             if (busy)
             {
@@ -1216,9 +1550,16 @@ public class GreyboxGameScreen : MonoBehaviour
             BossFightResult result = game.FightBoss(boss.id);
             Say(prefix + DescribeFight(game, boss, result), result.Won ? Mood.Good : Mood.Bad);
             if (result.Check == BossCheck.Ok) RememberFight(result.Won, boss.displayName, powerBefore, boss.recommendedPower);
+            bossWinName = result.Won ? boss.displayName : "";
+            if (result.Won) fightLockUntil = Time.unscaledTime + 1.5f;
             Exit();
         }
         GUILayout.EndHorizontal();
+        if (farBelow)
+        {
+            GUILayout.Label("<color=#FF5A4E>Too weak for now: " + Format(power) + " vs " + Format(boss.recommendedPower) +
+                            ".</color> Get stronger first.", s.small);
+        }
         EndCard();
 
         DrawTeamSlotsCard(game, "YOUR TEAM", null);
@@ -1534,19 +1875,6 @@ public class GreyboxGameScreen : MonoBehaviour
 
     // ================================================================ Text
 
-    static string DescribeNextGoal(GameSession game)
-    {
-        TierUnlockCheck check = game.Tiers.CheckNext(game.Wallet);
-        switch (check.Status)
-        {
-            case TierUnlockStatus.BossNotDefeated: return "Next: beat " + BossNames(game, check.MissingBosses);
-            case TierUnlockStatus.ExpeditionNotCleared: return "Next: clear " + ExpeditionNames(game, check.MissingFirstClears);
-            case TierUnlockStatus.CantAfford: return "Next: gather for " + TierName(check.Tier);
-            case TierUnlockStatus.Ok: return "Next: unlock " + TierName(check.Tier);
-            default: return "Deepest tier reached";
-        }
-    }
-
     static string TeamVsRecommended(float power, float recommended)
     {
         string team = power < recommended ? "<color=#FF5A4E>" + Format(power) + " ▲</color>" : "<color=#5FD88C>" + Format(power) + "</color>";
@@ -1568,6 +1896,10 @@ public class GreyboxGameScreen : MonoBehaviour
     static string DescribeWelcome(GameSession session)
     {
         OfflineReport offline = session.Offline;
+        if (session.LoadStatus == LoadStatus.NewGame)
+        {
+            return "Welcome to the mine! The NEXT GOAL card at the top always shows what to do next.  (tap to close)";
+        }
         if (offline == null || offline.HoursAway < 1.0 / 60.0) return "";
         string text = "Welcome back! You were away " + Hours(offline.HoursAway) + ". Mine: " +
                       Describe(offline.Mine) + " waiting.";

@@ -107,6 +107,110 @@ namespace Deepshaft.Tests
             }
         }
 
+        /// <summary>
+        /// SCRUM-36: a player who does only what the next goal says (and stops a visit after a lost fight
+        /// or when told to wait) must still clear everything. Catches a goal that points nowhere.
+        /// </summary>
+        [TestCase(1)]
+        [TestCase(8)]
+        public void PlayerWhoOnlyFollowsTheNextGoal_ClearsAllThreeTiers(int checkInEveryHours)
+        {
+            TestContext.WriteLine("Follows the next goal, check-in every " + checkInEveryHours + " h. Hour each step was first cleared:");
+            for (int seed = 1; seed <= 3; seed++)
+            {
+                var clock = new ManualClock(Start);
+                var game = new GameSession(database, new MemorySaveStorage(), clock, seed);
+                var cleared = new int?[6];
+                for (int hour = 0; hour <= MaxHours && !cleared[5].HasValue; hour += checkInEveryHours)
+                {
+                    if (hour > 0) clock.Advance(TimeSpan.FromHours(checkInEveryHours));
+                    FollowTheGoal(game);
+                    for (int step = 0; step < NextStep(game) && step < 6; step++) if (!cleared[step].HasValue) cleared[step] = hour;
+                }
+                TestContext.WriteLine(seed + " | " + string.Join(" | ", cleared.Select(h => h.HasValue ? h.Value.ToString() : "-")));
+                Assert.IsTrue(cleared.All(h => h.HasValue), "Seed " + seed + ": following the next goal got stuck. Last goal: " + NextGoal.For(game).Title);
+            }
+        }
+
+        static void FollowTheGoal(GameSession game)
+        {
+            for (int i = 0; i < 500; i++)
+            {
+                NextGoal goal = NextGoal.For(game);
+                switch (goal.Kind)
+                {
+                    case GoalKind.BeatBoss:
+                        if (!game.FightBoss(goal.TargetId).Won) return;
+                        break;
+                    case GoalKind.ClearExpedition:
+                        if (!game.FirstClearExpedition(goal.TargetId).Won) return;
+                        break;
+                    case GoalKind.Automate:
+                        game.StartExpedition(goal.TargetId);
+                        break;
+                    case GoalKind.StopExpedition:
+                        game.StopExpedition();
+                        break;
+                    case GoalKind.CollectExpedition:
+                        game.StopExpedition();
+                        game.StartExpedition(goal.TargetId);
+                        break;
+                    case GoalKind.SwapIn:
+                        int incoming = int.Parse(goal.TargetId);
+                        if (goal.SwapOutId != 0) game.SwapIntoTeam(incoming, goal.SwapOutId); else game.AssignToTeam(incoming);
+                        break;
+                    case GoalKind.Summon:
+                        game.Summon(MinionKind.Adventure, game.Summoning.Check(MinionKind.Adventure, ShardType.Advanced, game.Wallet).Ok ? ShardType.Advanced : ShardType.Basic);
+                        break;
+                    case GoalKind.GetStronger:
+                        GetStronger(game, goal.Place);
+                        break;
+                    case GoalKind.CollectMine:
+                        game.CollectMine();
+                        break;
+                    default:
+                        return; // Wait or AllDone
+                }
+            }
+            Assert.Fail("The next goal kept asking for something in one visit: " + NextGoal.For(game).Title);
+        }
+
+        /// <summary>What a player does on the tab the goal points to: the obvious affordable upgrade for the team.</summary>
+        static void GetStronger(GameSession game, GoalPlace place)
+        {
+            List<OwnedMinion> team = game.Roster.GetTeam();
+            if (place == GoalPlace.Smith)
+            {
+                if (game.Smith.CheckRankUp(game.Wallet).CanDo) { game.UpgradeSmith(); return; }
+                foreach (OwnedMinion m in team)
+                {
+                    foreach (EquipmentSlot slot in new[] { EquipmentSlot.Weapon, EquipmentSlot.Armor })
+                    {
+                        if (game.Smith.CheckBreakthrough(m.instanceId, slot, game.Wallet).CanDo) { game.BreakthroughGear(m.instanceId, slot); return; }
+                    }
+                }
+                return;
+            }
+            foreach (OwnedMinion m in team)
+            {
+                if (game.Minions.CheckBreakthrough(m.instanceId, game.Wallet).CanDo) { game.BreakthroughMinion(m.instanceId); return; }
+            }
+            long best = long.MaxValue;
+            Action buy = null;
+            foreach (OwnedMinion m in team)
+            {
+                int id = m.instanceId;
+                MinionUpgradeCheck level = game.Minions.CheckLevelUp(id, game.Wallet);
+                if (level.CanDo && Gold(level.Cost) < best) { best = Gold(level.Cost); buy = () => game.LevelUpMinion(id); }
+                foreach (EquipmentSlot slot in new[] { EquipmentSlot.Weapon, EquipmentSlot.Armor })
+                {
+                    var gear = game.Smith.CheckUpgrade(id, slot, game.Wallet);
+                    if (gear.CanDo && Gold(gear.Cost) < best) { best = Gold(gear.Cost); EquipmentSlot s = slot; buy = () => game.UpgradeGear(id, s); }
+                }
+            }
+            buy?.Invoke();
+        }
+
         sealed class RunResult
         {
             public readonly int?[] ClearedAt = new int?[6];

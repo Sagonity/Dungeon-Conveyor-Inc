@@ -39,7 +39,7 @@ namespace Deepshaft.Content
 
         public static List<ExpeditionDefinition> Expeditions() => new List<ExpeditionDefinition>
         {
-            Expedition(Tier1Expedition, "Spore Caverns", 1, Tier1Boss, 100, "Spore Crawler", 10.5f,
+            Expedition(Tier1Expedition, "Spore Caverns", 1, Tier1Boss, 85, "Spore Crawler", 10.5f,
                 new[] { R(ResourceId.Gold, 500), R(ResourceId.BasicShard, 10), R(ResourceId.SporeSilk, 5) },
                 new[] { R(ResourceId.SporeSilk, 2) }),
             Expedition(Tier2Expedition, "Magma Works", 2, Tier2Boss, 175, "Magma Imp", 18f,

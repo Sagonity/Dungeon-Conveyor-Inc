@@ -264,7 +264,7 @@ the codes and device IDs link to the testers.
   game resends them at the next start). Seen once (T3). Duplicates are exact copies and can be dropped.
 - If the send at close fails and the tester never returns, up to about a minute at the end is missing.
 
-### Proposed fixes (to be approved as a fix ticket)
+### Proposed fixes (findings 1–5 built in SCRUM-36; tooling not scheduled)
 
 | Finding | Fix |
 |---|---|
