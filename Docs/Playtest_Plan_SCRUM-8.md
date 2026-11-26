@@ -1,6 +1,6 @@
 # Expedition: Deepshaft — Core Loop Playtest Plan
 
-**Jira:** SCRUM-8 (Step A milestone) · **Status:** Ready to run with **v0.0.5** (2026-11-25)
+**Jira:** SCRUM-8 (Step A milestone) · **Status:** Run 2026-11-25 → 26 with **v0.0.6** (web playtest). Results in §8
 **Build:** grey-box (IMGUI) · **Testers:** 5+ people who haven't seen the game
 **Success criteria from:** [MVP Scope](MVP_Scope_and_Core_Loop.md) §8 · **Feeds:** SCRUM-2 (economy), SCRUM-19 (balancing)
 
@@ -211,21 +211,70 @@ The `minutes` column counts from the first event and includes debug skips, so a 
 
 ---
 
-## 8. Results template
+## 8. Results (2026-11-25 → 26, v0.0.6, web playtest)
 
-Fill in after all testers; attach the logs and sheets to SCRUM-8.
+**Testers:** 6 codes played. **T1–T4 are outside testers** and count for the criteria. 005-WSVO and 005-6HNU
+are **internal** (developer and co-developer); their logs are used as extra evidence, their answers are not
+counted. The plan expected 5 outside testers, so the targets below are read as "of 4" (4 of 5 = 80 %).
+Logs: downloaded from the admin page and kept offline with the code list (not in the repo or Jira), because
+the codes and device IDs link to the testers.
 
-| Criterion | T1 | T2 | T3 | T4 | T5 | Result | Notes |
-|---|---|---|---|---|---|---|---|
-| C1 explains the loop at 10 min | | | | | | _/5 | |
-| C2 back to upgrading after a loss | | | | | | _/5 | |
-| C3 knows Expedition materials → breakthroughs | | | | | | _/5 | |
-| C4 every session ends with an upgrade | | | | | | | |
-| C5 return feels rewarding | | | | | | _/5 | |
-| C6 no dead end | | | | | | | |
-| C7 stopping the Expedition: fair or chore | | | | | | | |
-| Time to first boss win (min) | | | | | | | |
-| Tier reached in session 1 | | | | | | | |
+| Criterion | T1 005-Q39O | T2 005-Q8LP | T3 005-J4R9 | T4 005-OFV3 | Result | Notes |
+|---|---|---|---|---|---|---|
+| C1 explains the loop at 10 min | ✅ 4 of 5 (asked ~15 min) | ❌ 3 of 5 (10 min) | ❌ 2 of 5 (10 min; had played 7) | – no answer | **Fail** (1 of 3 answers; 4 of 4 needed) | Mine and upgrade always named. Expeditions missing 2 of 3, breakthroughs 3 of 3 (often not reached by 10 min). T3 had beaten a boss and didn't mention bosses |
+| C2 back to upgrading after a loss | ✅ loss card → Level up | ✅ loss card → 7 level-ups | ✅ both sessions, via the loss card | ❌ quit 3 s after the loss | **3 of 4** (Fail, close) | Loss card used by everyone who continued (5 of 5 logs incl. internal) |
+| C3 knows Expedition materials → breakthroughs | ✅ correct; gear breakthroughs in log | – | – (answers not received) | – | 1 of 1 answered | Too few answers to judge |
+| C4 every session ends with an upgrade | ✅ | ✅ | ✅ both sessions | ❌ no upgrade at all | **Fail** (T4) | T4 played about 1 minute |
+| C5 return feels rewarding | ✅ "felt rewarding for progression to take a break" | – never returned | – returned after 21 h, answer not received | – never returned | 1 of 1 answered | Internal 005-6HNU: "I did feel rewarded!" |
+| C6 no dead end | ✅ Tier 3 reached | – quit at Tier 1 (Spore Caverns) | ✅ Tier 3 boss reached | – quit after 1 min | **Pass** (no dead end seen) | But 2 of 4 quit early, one at the Spore Caverns wall |
+| C7 stopping the Expedition: fair or chore | "I did not try that" | – | Stopped after 23 s, for nothing, to fight; answer not received | – | No data | Internal 005-6HNU: "pretty alright, but it feels like a bit of a loss" |
+| Time to first boss win (min) | 1.8 | 0.8 | 2.1 | 1.0 | | Everyone wins Tier 1 at once (66 vs 80) |
+| Tier reached in session 1 | 2 (Spore Caverns cleared at 92 min) | 2 (stopped at Spore Caverns) | 2 (stopped at Spore Caverns) | 2 (stopped after the Slag Golem loss) | | |
+| Real play time | ~1.5 h real + debug skips | ~4 min, 1 session | 7 min + 4 min next day | ~1 min | | |
 
-**Decisions to take afterwards** (record them in the scope doc §9): team sizes, tier pacing (§3 findings),
-Ascension (what Essence is for), whether Expedition loot should reach the wallet without stopping.
+### Findings (most important first)
+
+1. **The Spore Caverns first clear is a wall** (power ~66–90 vs 100). Hit by **5 of 5** testers who got that far (T4 stopped before it). T2 quit there
+   after ~4 minutes; T3 ended session 1 there and only passed after a 21-hour break; T1 waited 25 minutes and
+   used the +1 h debug skip out of boredom; internal 005-6HNU retried 8 times in 3 seconds.
+2. **Testers don't know what to do or where to go next.** Said outright by T1 ("didn't know where to start or
+   what I should be focusing on") and T3 ("not always clear what you need to upgrade or where to go next");
+   005-6HNU was confused about needing Expeditions for Spore Silk. T3 spent the first 2 minutes on the locked
+   Expeditions tab. C1 failed.
+3. **After the Tier 1 win, testers fight the next boss straight away and lose badly.** T1, T2 and T4 pressed
+   Fight on Slag Golem 2–6 seconds after beating the Tier 1 boss (66 vs 135); T3 did the same with Prism Wyrm
+   after Slag Golem (181 vs 240). For T4 it was the last thing they did. The Boss tab shows the next, much
+   stronger boss with the same Fight button in the same place.
+4. **Levelling Minions isn't obvious.** T3 opened the Minions tab 6 times through the loss card in session 1
+   and never levelled anyone. Single taps instead of Max in 3 of 6 logs (~60 single taps for T1); gear Max
+   never used.
+5. **Benched Minions get levelled or forgotten.** 3 of 6 logs levelled a benched Minion; T3's Rare Mage sat on
+   the bench through two losses until a swap took power from 82 to 181. New Minions from a summon go to the
+   bench without a prompt.
+6. **The loss card works as a pointer** (used in every log that continued after a loss), but it can't close a
+   power gap the player can't afford yet (finding 1).
+7. **Automation is understood:** everyone who cleared an Expedition started automating it within seconds.
+8. **Testers use Settings → Debug** (T1 skipped time out of boredom).
+9. **Wishes:** login bonuses (T1, added to SCRUM-16); music, animations, seeing the fight, rarity-specific
+   animations and summon animations (T1); "the graphics" (005-6HNU).
+
+### Playtest tooling notes
+
+- Closing the tab right after the last minute-upload can make the website store the last lines twice (the
+  game resends them at the next start). Seen once (T3). Duplicates are exact copies and can be dropped.
+- If the send at close fails and the tester never returns, up to about a minute at the end is missing.
+
+### Proposed fixes (to be approved as a fix ticket)
+
+| Finding | Fix |
+|---|---|
+| 1 | Lower Spore Caverns' recommended power (100 → ~85) and/or raise the starting resources; re-run `PlaythroughTests` |
+| 2 | A "next goal" line (e.g. "Clear Spore Caverns: power 84 / 100 → level up your team") and a short guided start |
+| 3 | After a boss win, show the victory and the next boss's power before Fight is pressable again; "Too weak (66 vs 135). Fight anyway?" |
+| 4 | Make Level up and Max ×N obvious on the Minions tab; gear Max more visible |
+| 5 | Warn when levelling a benched Minion; "Swap into the team?" after a new summon |
+| 8 + tooling | Hide Debug in web playtests; send the last lines with `sendBeacon` on close; drop duplicate lines in the admin CSV |
+
+**Decisions to take afterwards** (record them in the scope doc §9): team sizes, tier pacing (§3 findings and
+finding 1 above), Ascension (what Essence is for: duplicates give Essence that can't be spent yet), whether
+Expedition loot should reach the wallet without stopping.
