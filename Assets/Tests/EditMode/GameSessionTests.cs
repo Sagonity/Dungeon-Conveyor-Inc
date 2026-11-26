@@ -335,7 +335,7 @@ namespace Deepshaft.Tests
             GameSession session = NewSession();
             string Hint() => SourceHints.ForRareMaterial(session, ResourceId.SporeSilk);
 
-            StringAssert.StartsWith("beat Spore Foreman to open Spore Caverns", Hint());
+            StringAssert.StartsWith("beat Vein Warden to open Spore Caverns", Hint());
 
             foreach (OwnedMinion m in session.Roster.GetTeam()) LevelTo(session, m.instanceId, 16);
             Assert.IsTrue(session.FightBoss(DefaultAdventureContent.Tier1Boss).Won);
@@ -353,7 +353,7 @@ namespace Deepshaft.Tests
         {
             GameSession session = NewSession();
             StringAssert.StartsWith("reach Tier 2", SourceHints.ForRareMaterial(session, ResourceId.GolemHeart));
-            Assert.AreEqual("beat Spore Foreman", SourceHints.ForRareMaterial(session, ResourceId.ForemanSigil));
+            Assert.AreEqual("beat Vein Warden", SourceHints.ForRareMaterial(session, ResourceId.ForemanSigil));
 
             foreach (OwnedMinion m in session.Roster.GetTeam()) LevelTo(session, m.instanceId, 16);
             Assert.IsTrue(session.FightBoss(DefaultAdventureContent.Tier1Boss).Won);

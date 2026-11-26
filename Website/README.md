@@ -37,6 +37,14 @@ Open `Website/index.html` in a browser. It works straight from the folder, with 
 | Change the key art | Replace `images/placeholder-hero.svg` (or change the `src` of `.hero-art` in `index.html`) |
 | Add an event | Copy the example at the top of `content/events.js` into the list. Dates are `YYYY-MM-DD`; the page sorts events into live, upcoming and ended by itself |
 
+## Analytics
+
+Vercel Web Analytics (enabled in the Vercel project, SCRUM-37) counts visits on `index.html`, `privacy.html` and
+`terms.html`, with a small script tag in each page's `<head>`. It uses no cookies. The numbers are in the Vercel
+project's **Analytics** tab. `/playtest` and the admin page don't load it. When the site is opened from the folder
+(no server), the script just doesn't load. The privacy page mentions it; keep that when the real policy is
+written (SCRUM-25).
+
 ## Placeholders to replace
 
 - **Screenshots and key art** (`images/placeholder-*.svg`) are drawn mock-ups marked "PLACEHOLDER". Replace them with real screenshots of the game, or with real art after SCRUM-13.

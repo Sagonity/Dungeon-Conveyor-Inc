@@ -8,12 +8,18 @@
   <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
   <script src="content/site.js"></script>
+  <!-- Vercel Web Analytics (SCRUM-37): page views without cookies. Only on the public pages, not /playtest. -->
+  <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+  <script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
   <main class="legal">
     <p><a href="index.html">← Back</a></p>
     <h1>Privacy policy</h1>
     <p class="note"><strong>Placeholder.</strong> The privacy policy for <span data-site="name"></span> hasn't been written yet. It will be published here before the game is released (SCRUM-25).</p>
+    <h2>Website analytics</h2>
+    <p>This website counts visits with Vercel Web Analytics. It uses no cookies and stores no personal data: it records
+      which pages are viewed, where visitors came from, and their country, device type and browser, as anonymous totals.</p>
   </main>
   <script>
     document.querySelectorAll("[data-site]").forEach(function (n) { n.textContent = (window.SITE || {})[n.getAttribute("data-site")] || ""; });

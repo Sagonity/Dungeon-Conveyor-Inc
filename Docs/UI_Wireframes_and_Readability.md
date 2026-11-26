@@ -72,7 +72,7 @@ wide, inside the device safe area.
 - **Six tabs**, always one tap away: HQ, Mine, Exped., Minions, Smith, Boss.
 - **Red dots** on tabs: Mine has something to collect · an Expedition can be first-cleared or automated ·
   the current tier's boss isn't beaten · there's a free team slot and a benched Adventurer.
-- **Header:** the current mine tier and a pill with the next goal ("Next: beat Slag Golem").
+- **Header:** the current mine tier and a pill with the next goal ("Next: beat The Rooted Elder").
 - **Messages** (results, errors) appear as a toast at the top of the content; tap to close.
 - **Overlays:** the resource bar opens the Resources panel; the ≡ button opens Settings. Tapping outside closes them.
 
@@ -91,7 +91,7 @@ wide, inside the device safe area.
 
 Tap it for the **Resources panel**: every resource by group (Mine, Shards, Expedition materials, Boss materials,
 Other). Each rare material has a line under it saying where it comes from, following the player's progress
-(SCRUM-33). For example: "From: beat Spore Foreman to open Spore Caverns, clear it once, then automate it", or
+(SCRUM-33). For example: "From: beat Vein Warden to open Spore Caverns, clear it once, then automate it", or
 "From: automate Spore Caverns (collected when you stop it)". There's deliberately no "earned so far" for rare
 materials (team decision 2026-11-24).
 
@@ -123,7 +123,7 @@ missing resource comes from:
 
 - **Mine resources:** "Iron: Mine", or "Silver: Mine from Silver Veins" if the tier isn't reached yet.
 - **Rare Expedition materials:** the same progress-aware hint as §3.1.
-- **Boss materials:** "beat Slag Golem", "beat Spore Foreman again (every win gives one)", or "reach Tier 3 and beat Prism Wyrm".
+- **Boss materials:** "beat The Rooted Elder", "beat Vein Warden again (every win gives one)", or "reach Tier 3 and beat Crystal Burrower".
 
 ---
 
@@ -132,9 +132,9 @@ missing resource comes from:
 ### 4.1 HQ (home)
 
 ```
-┌ LOST TO SLAG GOLEM ─────────────── Free retries ┐   only after a lost fight (SCRUM-32)
-│ Your team has 120 power; Slag Golem recommends  │
-│ 135. You need about 15 more.                    │
+┌ LOST TO THE ROOTED ELDER ──────── Free retries ┐   only after a lost fight (SCRUM-32)
+│ Your team has 120 power; The Rooted Elder       │
+│ recommends 135. You need about 15 more.         │
 │ You can afford upgrades right now.              │
 │ [Level up] [Upgrade gear]               [Close] │
 └─────────────────────────────────────────────────┘
@@ -160,7 +160,7 @@ missing resource comes from:
 
 - **MINE** card: what's waiting to collect, the rates per hour ("no limit": there's no stockpile cap), **Collect**.
 - **MINERS (2/3)**: the Minion grid of Miners. Tapping one selects it; its detail card (level up, Mine button) is on the Minions tab.
-- **NEXT TIER**: what unlocks the next tier ("Iron Seams: beat Spore Foreman"), or "the deepest tier in the prototype".
+- **NEXT TIER**: what unlocks the next tier ("Iron Seams: beat Vein Warden"), or "the deepest tier in the prototype".
 
 ### 4.3 Exped.
 
@@ -177,7 +177,7 @@ missing resource comes from:
 ┌ EXPEDITIONS ────────────────────── Power 120 ──┐
 │ ● Spore Caverns · cleared · 2 Spore Silk/h  [Automate]
 │ ● Magma Works · first clear needed · Rec. 175 [First clear]
-│ ● Crystal Depths · beat Slag Golem             │
+│ ● Crystal Depths · beat The Rooted Elder        │
 └────────────────────────────────────────────────┘
 ```
 
@@ -235,7 +235,7 @@ decision 2026-11-24). The rewards reach the wallet when the Expedition is stoppe
 ┌ SMITH ──────────────────────────── Rank 1/3 ────┐
 │ Golem Tempering · opens gear breakthrough 2     │
 │ Costs 1 Golem Heart (once)                      │
-│ Need 1 Golem Heart more · Golem Heart: beat Slag Golem
+│ Need 1 Golem Heart more · Golem Heart: beat The Rooted Elder
 │                                        [Learn]  │
 └─────────────────────────────────────────────────┘
 ┌ WEAPONS & ARMOR ──────────────── [Miner tools] ─┐  toggle
@@ -258,9 +258,9 @@ decision 2026-11-24). The rewards reach the wallet when the Expedition is stoppe
 ```
 ┌ LOST TO … ┐  the SCRUM-32 card, after a loss
 ┌─────────────────────────────────────────────────┐
-│              [ Slag Golem art ]                 │  placeholder (SCRUM-13)
+│        [ boss sprite sheet, ~10 fps ]           │  art (SCRUM-37); a placeholder if none
 └─────────────────────────────────────────────────┘
-┌ BOSS · SLAG GOLEM ─────── Free · unlimited tries ┐
+┌ BOSS · THE ROOTED ELDER ─ Free · unlimited tries ┐
 │ Team 120 / Rec. 135                              │
 │ Win: unique boss material + new Expeditions      │
 │ Ready                          [Fight]           │  "Stop Exp. & Fight" while the team is busy

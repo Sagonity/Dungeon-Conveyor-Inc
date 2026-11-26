@@ -35,12 +35,18 @@ namespace Deepshaft.Minions
         [SerializeField, Min(0)] float baseAtk = 10f;
         [SerializeField, Min(0)] float atkPerLevel = 1f;
 
+        [Header("Art (SCRUM-37)")]
+        [Tooltip("Portrait in a Resources folder, without the extension, e.g. \"Art/Minions/miner_placeholder\". " +
+                 "Empty: the shared placeholder for its kind.")]
+        [SerializeField] string portrait = "";
+
         public string Id => id;
         public string DisplayName => displayName;
         public MinionKind Kind => kind;
         public MinionRole Role => kind == MinionKind.Miner ? MinionRole.None : role;
         public MinerTrait MinerTrait => kind == MinionKind.Miner ? minerTrait : MinerTrait.None;
         public Rarity Rarity => rarity;
+        public string Portrait => portrait ?? "";
 
         public int GetMaxLevel(int breakthroughs) =>
             maxLevelBeforeBreakthrough + Mathf.Max(0, breakthroughs) * maxLevelPerBreakthrough;

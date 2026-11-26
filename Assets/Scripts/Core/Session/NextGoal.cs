@@ -57,7 +57,7 @@ namespace Deepshaft.Session
 
         /// <summary>
         /// Below this share of the recommended power the UI asks "Fight anyway?" (SCRUM-36, finding 3:
-        /// testers fought Slag Golem at 66 vs 135 straight after the Tier 1 win).
+        /// testers fought the Tier 2 boss at 66 vs 135 straight after the Tier 1 win).
         /// </summary>
         public const float FarBelow = 0.75f;
 

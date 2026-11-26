@@ -467,6 +467,25 @@ placement: the player only picks Minions for slots.
   only does what the goal says must clear everything; it found the "fight again at the same power" loop that
   `LastLossId` fixes).
 
+### SCRUM-37: first art and website analytics
+
+- **Art in `Assets/Resources/Art`**, loaded with `Resources.Load` (and cached) by `GreyboxGameScreen`; anything
+  missing falls back to a drawn placeholder:
+  - `Background/mine_tunnel.jpg` fills the screen behind the UI (cropped, not stretched), darkened by
+    `backgroundDarkening` (Inspector, default 0.55).
+  - `Bosses/<boss>_sheet.png`: 7 × 2 frames on an even grid. `BossDefinition.spriteSheet` (Resources path),
+    `sheetColumns`, `sheetRows`, `sheetFrames`, `sheetFramesPerSecond` (10). The boss frame plays it with a slow
+    "breathing" scale; a fight shakes and flashes it, a win fades the beaten boss out and the next in, a loss pulses
+    red. No sheet: a breathing disc with the boss's initial.
+  - `Minions/miner_placeholder.png`: the portrait of every Miner until `MinionDefinition.portrait` (Resources path)
+    is set. Portraits have a frame and a label in the rarity colour (Common grey, Uncommon green, Rare blue with
+    a glow); Adventurers keep the class colour and initial until they get art.
+  - Textures import without mipmaps or power-of-two scaling, max 2048; sizes are multiples of 4 so they compress.
+    The sheets were cut from the artist's files onto an even grid with the cell borders removed.
+- **Boss names** (display names only; ids, materials, Expeditions and saves unchanged): `spore_foreman` → Vein
+  Warden, `slag_golem` → The Rooted Elder, `prism_wyrm` → Crystal Burrower.
+- **Website:** Vercel Web Analytics script on `index.html`, `privacy.html` and `terms.html` (not `/playtest`).
+
 ## 12. Team decisions (2026-11-17)
 
 1. **Branch naming:** `SCRUM-<n>-<topic>`, as in §10.

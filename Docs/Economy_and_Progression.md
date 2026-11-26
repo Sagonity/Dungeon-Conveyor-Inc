@@ -133,9 +133,9 @@ Smith ranks are learned **once each** (team decision 2026-11-19).
 
 | Tier | Boss | Recommended | Every win | First win also |
 |---|---|---|---|---|
-| 1 | Spore Foreman | 80 | 1 Foreman Sigil | 20 Basic + 10 Advanced Shards, **200 Gold** |
-| 2 | Slag Golem | 135 | 1 Golem Heart | 30 Basic + 10 Advanced Shards |
-| 3 | Prism Wyrm | 240 | 1 Wyrm Scale | 40 Basic + 10 Advanced Shards |
+| 1 | Vein Warden | 80 | 1 Foreman Sigil | 20 Basic + 10 Advanced Shards, **200 Gold** |
+| 2 | The Rooted Elder | 135 | 1 Golem Heart | 30 Basic + 10 Advanced Shards |
+| 3 | Crystal Burrower | 240 | 1 Wyrm Scale | 40 Basic + 10 Advanced Shards |
 
 Beating a tier's boss **unlocks the next mine tier** (team decision 17) and that tier's Expedition.
 
@@ -234,3 +234,4 @@ Expedition rates, rerun `PlaythroughTests`, and repeat.
 | 1.0 | 2026-11-11 | First pass for the v1.1 design, with a Python simulator. |
 | 2.0 | 2026-11-24 | Rewritten to describe the numbers in the current build (v3.4 design, SCRUM-5 to SCRUM-32). The v1.1 simulator and its report are replaced by `PlaythroughTests`. |
 | 2.1 | 2026-11-26 | SCRUM-36: Spore Caverns 100 → 85, starting resources 400 Gold + 150 Iron, pacing rerun, next-goal follower. |
+| 2.2 | 2026-11-26 | SCRUM-37: bosses renamed (Vein Warden, The Rooted Elder, Crystal Burrower); ids, materials and numbers unchanged. |

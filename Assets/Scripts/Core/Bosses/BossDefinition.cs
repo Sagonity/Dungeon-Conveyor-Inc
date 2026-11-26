@@ -31,5 +31,15 @@ namespace Deepshaft.Bosses
 
         [Tooltip("Given on every later win. Attempts are free and unlimited, so keep this small (or empty).")]
         public List<ResourceAmount> repeatWinRewards = new List<ResourceAmount>();
+
+        [Header("Art (SCRUM-37)")]
+        [Tooltip("Sprite sheet in a Resources folder, without the extension, e.g. \"Art/Bosses/vein_warden_sheet\". " +
+                 "Frames left to right, top to bottom, on an even grid. Empty: an animated placeholder.")]
+        public string spriteSheet = "";
+        [Min(1)] public int sheetColumns = 7;
+        [Min(1)] public int sheetRows = 2;
+        [Tooltip("Frames used, counted from the top left. Can be fewer than columns × rows.")]
+        [Min(1)] public int sheetFrames = 14;
+        [Min(1)] public float sheetFramesPerSecond = 10f;
     }
 }
