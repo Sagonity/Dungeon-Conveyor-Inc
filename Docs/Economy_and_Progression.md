@@ -60,7 +60,7 @@ Miners always mine the highest unlocked tier; there's **no stockpile cap**.
 | 5 (post-prototype) | 450 | 170 | 45 | 5 |
 | 6 (post-prototype) | 600 | 230 | 75 | 15 |
 
-- **Mining power:** 10 at level 1, +2 per level (Common). Uncommon ×1.25, Rare ×1.6.
+- **Mining power:** 10 at level 1, +2 per level (Common). Uncommon ×1.25, Rare ×1.6, Epic ×2.0, Legendary ×2.6.
 - **Traits:** Gold +25% Gold · Ore +25% on everything except Gold · Speed +15% on everything.
 - **Tool (Pickaxe):** +10% output per level above 1.
 
@@ -154,11 +154,19 @@ Automated loot reaches the wallet when the Expedition is **stopped**.
 ## 7. Summoning
 
 - **10 shards** a summon; the player picks the **Miner or Adventure pool** and the shard.
-- **Basic:** Common 75% · Uncommon 23% · Rare 2%. **Advanced:** Uncommon 85% · Rare 15%. If a pool has no
-  Minion of a rarity, that rarity is left out and the others keep their proportions. No pity.
-- One of each Minion: a **duplicate** gives Minion Essence: Common 5, Uncommon 15, Rare 50.
-- Prototype roster: 20 Minions (7 Miners, 13 Adventurers): every class as Common and Uncommon, Rare Tank,
-  Archer and Mage, and Gold/Ore/Speed Miners across the rarities.
+- **Five rarities** (Epic and Legendary added in SCRUM-38, team decision 2026-11-27). Rates are generous for the
+  follow-up playtest:
+
+  | Shard | Common | Uncommon | Rare | Epic | Legendary |
+  |---|---|---|---|---|---|
+  | Basic | 70% | 22% | 5% | 2.5% | 0.5% |
+  | Advanced | – | 55% | 30% | 12% | 3% |
+
+  If a pool has no Minion of a rarity, that rarity is left out and the others keep their proportions. No pity.
+- One of each Minion: a **duplicate** gives Minion Essence: Common 5, Uncommon 15, Rare 50, Epic 120, Legendary 300.
+- Prototype roster: 27 Minions (9 Miners, 18 Adventurers): every class as Common and Uncommon; Rare Tank, Archer
+  and Mage; Epic Tank, Mage and Fighter; Legendary Mage and Archer; Gold/Ore/Speed Miners up to Rare, an Epic Gold
+  Miner and a Legendary Ore Miner.
 
 ---
 
@@ -182,12 +190,13 @@ Automated loot reaches the wallet when the Expedition is **stopped**.
 
 `PlaythroughTests` plays the whole prototype as a free player with the defaults above. It runs check-ins every
 1 h, every 8 h and once a day, with 5 seeds each, and prints the hour each step was first cleared. It plays
-perfectly, so real players are slower. Results on 2026-11-26 (after the SCRUM-36 Spore Caverns fix):
+perfectly, so real players are slower. Results on 2026-11-27 (with the SCRUM-36 Spore Caverns fix and the SCRUM-38
+Epic and Legendary Minions; lucky summons make hourly players about an hour faster):
 
 | Check-in | T1 boss | T1 Exped. | T2 boss | T2 Exped. | T3 boss | **T3 Exped. (end)** |
 |---|---|---|---|---|---|---|
-| Every 1 h | 0 | 1 | 2–3 | 3–5 | 4–6 | **7–11 h** |
-| Every 8 h | 0 | 8 | 8 | 8 | 16 | **16–32 h** |
+| Every 1 h | 0 | 1 | 2–3 | 3–4 | 3–6 | **6–10 h** |
+| Every 8 h | 0 | 8 | 8 | 8 | 8–16 | **16–32 h** |
 | Once a day | 0 | 24 | 24 | 24 | 24–48 | **48–72 h** |
 
 **The Spore Caverns wall (SCRUM-36).** In the SCRUM-8 playtest every tester who got that far stalled at the Tier 1
@@ -235,3 +244,4 @@ Expedition rates, rerun `PlaythroughTests`, and repeat.
 | 2.0 | 2026-11-24 | Rewritten to describe the numbers in the current build (v3.4 design, SCRUM-5 to SCRUM-32). The v1.1 simulator and its report are replaced by `PlaythroughTests`. |
 | 2.1 | 2026-11-26 | SCRUM-36: Spore Caverns 100 → 85, starting resources 400 Gold + 150 Iron, pacing rerun, next-goal follower. |
 | 2.2 | 2026-11-26 | SCRUM-37: bosses renamed (Vein Warden, The Rooted Elder, Crystal Burrower); ids, materials and numbers unchanged. |
+| 2.3 | 2026-11-27 | SCRUM-38: Epic (×2.0) and Legendary (×2.6) rarities, 7 new Minions, new summon rates and Essence, pacing rerun. |

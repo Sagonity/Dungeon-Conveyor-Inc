@@ -33,6 +33,13 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 97fb9586435e4453bcddbb1851f4c3e1, type: 2}
   - {fileID: 11400000, guid: 97a1e02cea23410dbeb312077fb181c7, type: 2}
   - {fileID: 11400000, guid: 27e1acc42a984cb2b0288bd38c644a75, type: 2}
+  - {fileID: 11400000, guid: 7188dbc58f6749d5a7adaea37cdfa1d6, type: 2}
+  - {fileID: 11400000, guid: fa8efa6047204a779eb4ebcdae306b97, type: 2}
+  - {fileID: 11400000, guid: 2da27f3431164a35af1241af064ccf95, type: 2}
+  - {fileID: 11400000, guid: 44cd62668f054c5099f135ce14f5ee7c, type: 2}
+  - {fileID: 11400000, guid: 1e40191244b84e37a4e3bc2bbfd283b5, type: 2}
+  - {fileID: 11400000, guid: 30899d1f90774ec68c1d5652275be6a1, type: 2}
+  - {fileID: 11400000, guid: 4d7e5e2097a2423fb46b369e72d19690, type: 2}
   mining:
     referenceMiningPower: 10
     goldTraitBonus: 0.25

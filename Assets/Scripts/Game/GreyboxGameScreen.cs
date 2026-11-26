@@ -56,6 +56,10 @@ public class GreyboxGameScreen : MonoBehaviour
     static readonly Color Purple = Hex("B48CFF");
     static readonly Color Red = Hex("FF5A4E");
     static readonly Color Blue = Hex("4FA3FF");
+    // SCRUM-38: rarity colours above Rare. Epic is a deeper violet than the Expedition purple; Legendary is a warmer
+    // gold than the buttons.
+    static readonly Color EpicPurple = Hex("A35CFF");
+    static readonly Color LegendaryGold = Hex("FFB02E");
 
     Tab tab = Tab.HQ;
     Tab? loggedTab; // last tab written to the playtest log (SCRUM-8)
@@ -893,12 +897,17 @@ public class GreyboxGameScreen : MonoBehaviour
 
         // Rates shown on the screen itself (store compliance, SCRUM-25): the real chances for this pool.
         Dictionary<Rarity, double> rates = game.Summoning.GetRates(pool, shard);
-        GUILayout.Label("Common " + Pct(rates[Rarity.Common]) + " · <color=#5FD88C>Uncommon " + Pct(rates[Rarity.Uncommon]) +
-                        "</color> · <color=#4FA3FF>Rare " + Pct(rates[Rarity.Rare]) + "</color>", s.body);
-        GUILayout.Label("You own one of each Minion: duplicates become Minion Essence (" +
-                        game.Database.Summoning.GetEssence(Rarity.Common) + " / " +
-                        game.Database.Summoning.GetEssence(Rarity.Uncommon) + " / " +
-                        game.Database.Summoning.GetEssence(Rarity.Rare) + " by rarity). No pity.", s.small);
+        var rateParts = new List<string>();
+        var essenceParts = new List<string>();
+        foreach (Rarity r in AllRarities)
+        {
+            essenceParts.Add(game.Database.Summoning.GetEssence(r).ToString(CultureInfo.InvariantCulture));
+            if (rates[r] <= 0.0 && r != Rarity.Common) continue; // not in this pool, or not from this shard
+            rateParts.Add("<color=#" + ColorHex(RarityColor(r)) + ">" + r + " " + Pct(rates[r]) + "</color>");
+        }
+        GUILayout.Label(string.Join(" · ", rateParts), s.body);
+        GUILayout.Label("You own one of each Minion: duplicates become Minion Essence (" + string.Join(" / ", essenceParts) +
+                        " by rarity). No pity.", s.small);
 
         SummonResult check = game.Summoning.Check(pool, shard, game.Wallet);
         GUILayout.BeginHorizontal();
@@ -1060,24 +1069,44 @@ public class GreyboxGameScreen : MonoBehaviour
         if (fx && t < 0.3f) GUI.DrawTexture(area, s.Solid(new Color(1f, 1f, 1f, 0.35f * (1f - t / 0.3f))));
     }
 
-    static Color RarityColor(Rarity rarity) =>
-        rarity == Rarity.Rare ? Blue : rarity == Rarity.Uncommon ? Green : Hex("9A948C");
+    static readonly Rarity[] AllRarities = { Rarity.Common, Rarity.Uncommon, Rarity.Rare, Rarity.Epic, Rarity.Legendary };
+
+    static Color RarityColor(Rarity rarity)
+    {
+        switch (rarity)
+        {
+            case Rarity.Uncommon: return Green;
+            case Rarity.Rare: return Blue;
+            case Rarity.Epic: return EpicPurple;
+            case Rarity.Legendary: return LegendaryGold;
+            default: return Hex("9A948C");
+        }
+    }
+
+    static string ColorHex(Color c) =>
+        ((int)Math.Round(c.r * 255)).ToString("X2") + ((int)Math.Round(c.g * 255)).ToString("X2") + ((int)Math.Round(c.b * 255)).ToString("X2");
+
+    GUIStyle RarityPill(Rarity rarity)
+    {
+        switch (rarity)
+        {
+            case Rarity.Uncommon: return s.pillGreen;
+            case Rarity.Rare: return s.pillBlue;
+            case Rarity.Epic: return s.pillEpic;
+            case Rarity.Legendary: return s.pillLegendary;
+            default: return s.pill;
+        }
+    }
 
     /// <summary>
     /// A Minion portrait: its own art, or the shared placeholder for its kind (Miners), or the class colour and
-    /// initial. A frame and a label in the rarity colour (Common grey, Uncommon green, Rare blue with a glow).
+    /// initial. A frame, a soft glow behind the picture and a label, all in the rarity colour (Common grey,
+    /// Uncommon green, Rare blue, Epic purple, Legendary gold).
     /// </summary>
     void DrawPortrait(MinionDefinition d, Rect portrait)
     {
         if (Event.current.type != EventType.Repaint) return;
         Color rarity = RarityColor(d.Rarity);
-
-        // Rare: a soft halo around the whole portrait.
-        if (d.Rarity == Rarity.Rare)
-        {
-            DrawStyleTinted(new Rect(portrait.x - 22f, portrait.y - 22f, portrait.width + 44f, portrait.height + 44f), s.portraitHalo,
-                new Color(rarity.r, rarity.g, rarity.b, 0.85f));
-        }
 
         // Rounded styles are 9-sliced, so their corners stay round at any size (a stretched texture made an oval).
         DrawStyleTinted(portrait, s.portraitFill, Hex("1C1722"));
@@ -1357,7 +1386,7 @@ public class GreyboxGameScreen : MonoBehaviour
 
         BeginCard();
         CardHeader("NEW: " + d.DisplayName.ToUpperInvariant(), d.Rarity.ToString(),
-            d.Rarity == Rarity.Rare ? s.pillPurple : d.Rarity == Rarity.Uncommon ? s.pillGreen : s.pill);
+            RarityPill(d.Rarity));
         GUILayout.Label(isMiner ? d.DisplayName + " is resting: it won't mine until you put it in the Mine."
                                 : d.DisplayName + " is on the bench: it won't fight until you put it in the team.", s.body);
         if (busy) GUILayout.Label("The team is on an Expedition. Stop it to change the team.", s.small);
@@ -2389,11 +2418,11 @@ public class GreyboxGameScreen : MonoBehaviour
         readonly Dictionary<Color, Texture2D> solids = new Dictionary<Color, Texture2D>();
 
         public readonly GUIStyle card, artCard, row, panel, title, header, body, bodyRight, small, smallRed;
-        public readonly GUIStyle pill, pillGreen, pillPurple, pillRed, pillGold, pillButton;
+        public readonly GUIStyle pill, pillGreen, pillPurple, pillRed, pillGold, pillBlue, pillEpic, pillLegendary, pillButton;
         public readonly GUIStyle goldButton, darkButton, iconButton, segment, segmentOn;
         public readonly GUIStyle chip, chipInline, iconLetter, nav, navSelected;
         public readonly GUIStyle minionCard, minionCardOn, minionName, minionSub, portraitLetter, rarityLabel, bossLetter;
-        public readonly GUIStyle portraitFill, portraitFrame, portraitHalo;
+        public readonly GUIStyle portraitFill, portraitFrame;
         public readonly GUIStyle tagGreen, tagPurple, tagMuted, slot, slotOn, slotLetter, slotBusy;
         public readonly GUIStyle toast, toastGood, toastBad, panelHeading, panelText, artLabel;
 
@@ -2420,6 +2449,9 @@ public class GreyboxGameScreen : MonoBehaviour
             pillPurple = Pill(Hex("2A1838"), Hex("8A5CC7"), Purple);
             pillRed = Pill(Hex("3A1414"), Hex("A33A30"), Red);
             pillGold = Pill(Hex("3A2808"), Hex("B98522"), Gold);
+            pillBlue = Pill(Hex("10243A"), Hex("2F6FB0"), Blue);
+            pillEpic = Pill(Hex("26123D"), Hex("7A3FCC"), EpicPurple);
+            pillLegendary = Pill(Hex("3A2606"), Hex("C98418"), LegendaryGold);
             pillButton = Pill(Hex("1A1620"), Hex("4A4050"), Text);
             pillButton.fixedHeight = 0;
             pillButton.padding = new RectOffset(28, 28, 18, 18);
@@ -2458,8 +2490,6 @@ public class GreyboxGameScreen : MonoBehaviour
             // White, tinted when drawn (DrawStyleTinted). 9-sliced, so the corners stay round at any size.
             portraitFill = Box(Color.white, Color.white, 12, 0, 0);
             portraitFrame = Box(new Color(1f, 1f, 1f, 0f), Color.white, 12, 6, 0);
-            portraitHalo = new GUIStyle { border = new RectOffset(34, 34, 34, 34) };
-            portraitHalo.normal.background = Shapes.Halo(80, 12, 20);
             rarityLabel = Font(20, Hex("15121A"), FontStyle.Bold);
             rarityLabel.alignment = TextAnchor.MiddleCenter;
             bossLetter = Font(200, new Color(1f, 1f, 1f, 0.8f), FontStyle.Bold);
@@ -2610,33 +2640,6 @@ public class GreyboxGameScreen : MonoBehaviour
                 {
                     float d = new Vector2(x + 0.5f - half, y + 0.5f - half).magnitude / half;
                     float a = Mathf.Clamp01(1f - d);
-                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, a * a));
-                }
-            }
-            tex.Apply();
-            return tex;
-        }
-
-        /// <summary>A soft halo around a rounded rectangle inset by <paramref name="blur"/>, for 9-slicing.</summary>
-        public static Texture2D Halo(int size, int radius, int blur)
-        {
-            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
-            {
-                hideFlags = HideFlags.HideAndDontSave,
-                filterMode = FilterMode.Bilinear,
-                wrapMode = TextureWrapMode.Clamp,
-            };
-            float half = size / 2f;
-            float inner = half - blur;
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    float qx = Mathf.Abs(x + 0.5f - half) - (inner - radius);
-                    float qy = Mathf.Abs(y + 0.5f - half) - (inner - radius);
-                    float distance = new Vector2(Mathf.Max(qx, 0f), Mathf.Max(qy, 0f)).magnitude +
-                                     Mathf.Min(Mathf.Max(qx, qy), 0f) - radius;
-                    float a = Mathf.Clamp01(1f - Mathf.Max(distance, 0f) / blur);
                     tex.SetPixel(x, y, new Color(1f, 1f, 1f, a * a));
                 }
             }

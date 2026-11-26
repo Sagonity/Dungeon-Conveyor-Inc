@@ -22,15 +22,20 @@ namespace Deepshaft.Summoning
         public ResourceId currency = ResourceId.BasicShard;
         [Min(1)] public long costPerSummon = 10;
 
-        [Tooltip("Chance in percent. The three don't need to add up to 100; they're used as weights.")]
+        [Tooltip("Chance in percent. They don't need to add up to 100; they're used as weights.")]
         [Min(0)] public float common = 75f;
         [Min(0)] public float uncommon = 23f;
         [Min(0)] public float rare = 2f;
+        [Min(0)] public float epic;
+        [Min(0)] public float legendary;
 
         public ShardRates() { }
 
-        public ShardRates(ShardType shard, ResourceId currency, long costPerSummon, float common, float uncommon, float rare)
+        public ShardRates(ShardType shard, ResourceId currency, long costPerSummon, float common, float uncommon, float rare,
+            float epic = 0f, float legendary = 0f)
         {
+            this.epic = epic;
+            this.legendary = legendary;
             this.shard = shard;
             this.currency = currency;
             this.costPerSummon = costPerSummon;
@@ -46,6 +51,8 @@ namespace Deepshaft.Summoning
                 case Rarity.Common: return Math.Max(0f, common);
                 case Rarity.Uncommon: return Math.Max(0f, uncommon);
                 case Rarity.Rare: return Math.Max(0f, rare);
+                case Rarity.Epic: return Math.Max(0f, epic);
+                case Rarity.Legendary: return Math.Max(0f, legendary);
                 default: return 0f;
             }
         }
@@ -55,8 +62,9 @@ namespace Deepshaft.Summoning
 
     /// <summary>
     /// Summoning numbers (SCRUM-11; Game Design Summary v3.4 §6), on the GameDatabase asset.
-    /// Proposed rates from the design until SCRUM-2: Basic 75 / 23 / 2, Advanced 0 / 85 / 15, 10 shards a summon.
-    /// Duplicates give Minion Essence by rarity (team decision 2026-11-19): 5 / 15 / 50.
+    /// Rates (Common / Uncommon / Rare / Epic / Legendary, SCRUM-38, generous for the follow-up playtest):
+    /// Basic 70 / 22 / 5 / 2.5 / 0.5, Advanced 0 / 55 / 30 / 12 / 3, 10 shards a summon.
+    /// Duplicates give Minion Essence by rarity (team decisions 2026-11-19 and 2026-11-27): 5 / 15 / 50 / 120 / 300.
     /// No pity in the prototype.
     /// </summary>
     [Serializable]
@@ -68,13 +76,15 @@ namespace Deepshaft.Summoning
         [Min(0)] public long essenceCommon = 5;
         [Min(0)] public long essenceUncommon = 15;
         [Min(0)] public long essenceRare = 50;
+        [Min(0)] public long essenceEpic = 120;
+        [Min(0)] public long essenceLegendary = 300;
 
         public static SummonRules CreateDefault() => new SummonRules
         {
             shards = new List<ShardRates>
             {
-                new ShardRates(ShardType.Basic, ResourceId.BasicShard, 10, 75f, 23f, 2f),
-                new ShardRates(ShardType.Advanced, ResourceId.AdvancedShard, 10, 0f, 85f, 15f),
+                new ShardRates(ShardType.Basic, ResourceId.BasicShard, 10, 70f, 22f, 5f, 2.5f, 0.5f),
+                new ShardRates(ShardType.Advanced, ResourceId.AdvancedShard, 10, 0f, 55f, 30f, 12f, 3f),
             },
         };
 
@@ -92,6 +102,8 @@ namespace Deepshaft.Summoning
             {
                 case Rarity.Uncommon: return essenceUncommon;
                 case Rarity.Rare: return essenceRare;
+                case Rarity.Epic: return essenceEpic;
+                case Rarity.Legendary: return essenceLegendary;
                 default: return essenceCommon;
             }
         }

@@ -478,13 +478,24 @@ placement: the player only picks Minions for slots.
     "breathing" scale; a fight shakes and flashes it, a win fades the beaten boss out and the next in, a loss pulses
     red. No sheet: a breathing disc with the boss's initial.
   - `Minions/miner_placeholder.png`: the portrait of every Miner until `MinionDefinition.portrait` (Resources path)
-    is set. Portraits have a frame and a label in the rarity colour (Common grey, Uncommon green, Rare blue with
-    a glow); Adventurers keep the class colour and initial until they get art.
+    is set. Portraits have a frame, a soft glow behind the picture and a label in the rarity colour (9-sliced
+    styles, so the corners stay round); Adventurers keep the class colour and initial until they get art.
   - Textures import without mipmaps or power-of-two scaling, max 2048; sizes are multiples of 4 so they compress.
     The sheets were cut from the artist's files onto an even grid with the cell borders removed.
 - **Boss names** (display names only; ids, materials, Expeditions and saves unchanged): `spore_foreman` → Vein
   Warden, `slag_golem` → The Rooted Elder, `prism_wyrm` → Crystal Burrower.
 - **Website:** Vercel Web Analytics script on `index.html`, `privacy.html` and `terms.html` (not `/playtest`).
+
+### SCRUM-38: Epic and Legendary rarities
+
+- `Rarity` gains `Epic = 3` and `Legendary = 4` (stored as numbers in Minion assets: only ever add).
+- `ShardRates` has `epic` and `legendary` weights; `SummonRules` has `essenceEpic` (120) and `essenceLegendary`
+  (300). Defaults: Basic 70 / 22 / 5 / 2.5 / 0.5, Advanced 0 / 55 / 30 / 12 / 3 (generous, for the follow-up
+  playtest). The GameDatabase asset doesn't store the summoning block, so it uses these defaults.
+- 7 new Minion assets in `Content/Minions` (stats ×2.0 / ×2.6 of a Common): Epic Gold Miner, Tank, Mage, Fighter;
+  Legendary Ore Miner, Mage, Archer. Added to the GameDatabase's Minion list.
+- Grey-box screen: rarity colours Epic purple (`A35CFF`) and Legendary gold (`FFB02E`) on portrait frames, glows,
+  labels, pills and the summon rates line. The Rare halo around the portrait is gone.
 
 ## 12. Team decisions (2026-11-17)
 

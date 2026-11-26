@@ -195,6 +195,6 @@ namespace Deepshaft.Summoning
             return false;
         }
 
-        static readonly Rarity[] AllRarities = { Rarity.Common, Rarity.Uncommon, Rarity.Rare };
+        static readonly Rarity[] AllRarities = { Rarity.Common, Rarity.Uncommon, Rarity.Rare, Rarity.Epic, Rarity.Legendary };
     }
 }
