@@ -84,6 +84,7 @@ public class GreyboxGameScreen : MonoBehaviour
     float fightLockUntil;
     string confirmFightId = "";
     int swapPromptId;
+    Vector2 settingsScroll;
 
     // SCRUM-37: art from Resources, the background's darkening, and the boss frame's hit / win / loss effect.
     [SerializeField, Range(0f, 1f), Tooltip("How much the background picture is darkened behind the UI.")]
@@ -1871,7 +1872,7 @@ public class GreyboxGameScreen : MonoBehaviour
     Rect GetOverlayRect(Rect topBar)
     {
         float w = Mathf.Min(680f, topBar.width - 2 * Side);
-        float h = overlay == Overlay.Settings ? 1080f : 1000f;
+        float h = overlay == Overlay.Settings ? 1400f : 1000f;
         return new Rect(topBar.xMax - Side - w, topBar.yMax - 10f, w, h);
     }
 
@@ -1921,6 +1922,8 @@ public class GreyboxGameScreen : MonoBehaviour
     {
         GameSessionRunner runner = GameSessionRunner.Instance;
         GUILayout.BeginArea(r, s.panel);
+        // Scrolls (mouse wheel, or drag the bar) when the panel is taller than the screen, e.g. a phone held sideways.
+        settingsScroll = GUILayout.BeginScrollView(settingsScroll);
         GUILayout.Label("Settings", s.title);
         if (ui != null && DarkButton("Sound")) { overlay = Overlay.None; ui.ShowSettings(); Exit(); }
 
@@ -1933,6 +1936,22 @@ public class GreyboxGameScreen : MonoBehaviour
         if (DarkButton("+8 h")) { Skip(runner, 8); Exit(); }
         if (DarkButton("+24 h")) { Skip(runner, 24); Exit(); }
         GUILayout.EndHorizontal();
+
+        // Give resources (SCRUM-38): to try summons, breakthroughs and the Smith without playing for hours. Logged.
+        GUILayout.Label("Give (logged as debug_give):", s.small);
+        GUILayout.BeginHorizontal();
+        if (DarkButton("+100 Basic Shards")) { Give(game, R(ResourceId.BasicShard, 100)); Exit(); }
+        if (DarkButton("+50 Advanced Shards")) { Give(game, R(ResourceId.AdvancedShard, 50)); Exit(); }
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        if (DarkButton("+10 Exped. materials")) { Give(game, R(ResourceId.SporeSilk, 10), R(ResourceId.EmberCore, 10), R(ResourceId.PrismDust, 10)); Exit(); }
+        if (DarkButton("+3 Boss materials")) { Give(game, R(ResourceId.ForemanSigil, 3), R(ResourceId.GolemHeart, 3), R(ResourceId.WyrmScale, 3)); Exit(); }
+        GUILayout.EndHorizontal();
+        if (DarkButton("+10,000 Gold, 5,000 Iron, 2,000 Silver"))
+        {
+            Give(game, R(ResourceId.Gold, 10000), R(ResourceId.Iron, 5000), R(ResourceId.Silver, 2000));
+            Exit();
+        }
 
         GUILayout.Space(16f);
         GUILayout.Label("Playtest log (SCRUM-8): " + game.Playtest.Events.Count + " events on this device", s.small);
@@ -1977,7 +1996,16 @@ public class GreyboxGameScreen : MonoBehaviour
             Say("New game started.", Mood.Neutral);
             Exit();
         }
+        GUILayout.EndScrollView();
         GUILayout.EndArea();
+    }
+
+    static ResourceAmount R(ResourceId id, long amount) => new ResourceAmount(id, amount);
+
+    void Give(GameSession game, params ResourceAmount[] amounts)
+    {
+        game.DebugGive(amounts);
+        Say("Debug: +" + Describe(amounts) + ".", Mood.Neutral);
     }
 
     /// <summary>Writes the playtest log as CSV next to the save and returns where it went.</summary>

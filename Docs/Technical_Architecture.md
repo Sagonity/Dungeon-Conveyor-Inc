@@ -496,6 +496,9 @@ placement: the player only picks Minions for slots.
   Legendary Ore Miner, Mage, Archer. Added to the GameDatabase's Minion list.
 - Grey-box screen: rarity colours Epic purple (`A35CFF`) and Legendary gold (`FFB02E`) on portrait frames, glows,
   labels, pills and the summon rates line. The Rare halo around the portrait is gone.
+- **Debug give:** Settings → Debug has buttons for +100 Basic / +50 Advanced Shards, +10 of each Expedition material,
+  +3 of each boss material and +10,000 Gold / 5,000 Iron / 2,000 Silver, through `GameSession.DebugGive` (saves and
+  logs `debug_give`). The Settings panel scrolls when it's taller than the screen.
 
 ## 12. Team decisions (2026-11-17)
 
