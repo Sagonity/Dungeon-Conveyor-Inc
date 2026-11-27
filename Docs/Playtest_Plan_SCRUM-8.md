@@ -279,3 +279,75 @@ the codes and device IDs link to the testers.
 **Decisions to take afterwards** (record them in the scope doc §9): team sizes, tier pacing (§3 findings and
 finding 1 above), Ascension (what Essence is for: duplicates give Essence that can't be spent yet), whether
 Expedition loot should reach the wallet without stopping.
+
+---
+
+## 9. Round 2 plan (v0.0.8, SCRUM-39)
+
+A small follow-up round to check the SCRUM-36 / 37 / 38 changes before SCRUM-8 is closed. Same setup as round 1:
+remote testers at `/playtest` with a tester code, logs sent automatically, questions by message or video call.
+
+### What changed since round 1
+
+| Change | Ticket | Round 1 finding it answers |
+|---|---|---|
+| NEXT GOAL card on every tab, pulsing tab in the first minutes, welcome line | SCRUM-36 | 2 (didn't know what to do) |
+| Spore Caverns 100 → 85, start with 400 Gold + 150 Iron | SCRUM-36 | 1 (the wall) |
+| "You beat …!" card, 1.5 s Fight lock, "Too weak … Fight anyway?" | SCRUM-36 | 3 (next boss straight after a win) |
+| "Level up your team" card with Max ×N, bench warnings, swap prompt after a summon | SCRUM-36 | 4, 5 (levelling, benched Minions) |
+| Background, animated bosses, Miner portraits with rarity frames; bosses renamed | SCRUM-37 | 9 (wishes: graphics, animations) |
+| Epic and Legendary rarities, generous summon rates | SCRUM-38 | 9 (incentive to summon) |
+| Debug hidden for testers; send on close with sendBeacon; duplicate lines dropped in the CSV | SCRUM-39 | Tooling |
+
+### What we want to learn
+
+| # | Question | How we check it | Pass if |
+|---|---|---|---|
+| R1 | Do testers know what to do now? | C1 at 10 min (same as round 1), and "Did you use the NEXT GOAL card?"; log: `view goal …` | Most name at least 4 of the 5 steps; nobody says they didn't know where to start |
+| R2 | Is Spore Caverns still a wall? | Log: minutes from the Tier 1 `boss_fight … won` to `first_clear spore_caverns won` | Under 10 minutes for most; nobody quits there |
+| R3 | Do testers still fight the next boss straight after a win? | Log: `view too_weak …` and `boss_fight … lost` with power under 75% of rec | Few or no lost fights far below the recommended power |
+| R4 | Do testers level up their team and use Max? | Log: `level_up_max`, `level_up` on team Minions, `swap_team` after a summon | Max used by most; no long runs of levels on a benched Minion |
+| R5 | How does an Epic or Legendary pull feel? | New question; log: `summon … Epic/Legendary` | Notes only |
+| R6 | Does the new look help? | New question | Notes only |
+
+C2–C7 from §1 are still recorded the same way.
+
+### Questions
+
+| When | # | Question |
+|---|---|---|
+| 10 min in | Q1 | "In your own words, what do you do in this game?" (write it down word for word, note the minute) |
+| After session 1 | Q2 | "Was there a moment you didn't know what to do? What was it?" |
+| | Q3 | "Did you use the NEXT GOAL card at the top? Did it help?" |
+| | Q4 | "What are Spore Silk, Ember Core and Prism Dust for?" |
+| | Q5 | "Did you summon an Epic or Legendary Minion? How did that feel?" |
+| After a break (next day) | Q6 | "How did it feel to come back? Rewarded, or that you'd missed out?" |
+| | Q7 | "If you stopped an Expedition to fight a boss: how did that feel?" |
+| | Q8 | "What would make you open the game again tomorrow?" / "One thing you'd change?" |
+
+### Setup
+
+1. Build web and Android **0.0.8** from `main` and replace `Website/playtest/game/` (including `index.html`).
+2. Add the round 2 tester codes to `PLAYTEST_CODES` in Vercel and redeploy. Keep the code → person list offline.
+3. Tell each tester: open `https://<site>/playtest`, enter the code, play in **one browser on one device** (a new
+   browser or device starts a new save), play ~30 minutes, come back the next day for ~10 minutes.
+4. **Debug:** testers don't see Settings → Debug (time skips, give buttons, reset). Internal testers and
+   facilitators open `/playtest/?debug=1` to keep it, e.g. for a same-day +8 h break.
+5. After the round: download every CSV, then Delete all logs and empty `PLAYTEST_CODES`.
+
+### Results (fill in)
+
+| | T1 | T2 | T3 | T4 | T5 | Notes |
+|---|---|---|---|---|---|---|
+| R1 explains the loop at 10 min (steps named) | | | | | | |
+| R1 used the NEXT GOAL card | | | | | | |
+| R2 minutes from Tier 1 boss to Spore Caverns cleared | | | | | | |
+| R3 fights far below recommended (`too_weak`, losses) | | | | | | |
+| R4 Max used / benched levels / swap after summon | | | | | | |
+| R5 Epic / Legendary pulled, reaction | | | | | | |
+| R6 the new look | | | | | | |
+| C2 back to upgrading after a loss | | | | | | |
+| C4 every session ends with an upgrade | | | | | | |
+| C5 return feels rewarding | | | | | | |
+| Tier reached / still playing on day 2 | | | | | | |
+

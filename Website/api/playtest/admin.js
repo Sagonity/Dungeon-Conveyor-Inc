@@ -1,7 +1,8 @@
 // Admin API for /playtest/admin.html (SCRUM-35). Every request needs the header
 // "x-admin-password: <ADMIN_PASSWORD>".
 //   GET    /api/playtest/admin              → { testers: [{ code, events, first, last }] }
-//   GET    /api/playtest/admin?code=DS-7K4Q → that tester's log as CSV (utc,minutes,type,detail,device,version)
+//   GET    /api/playtest/admin?code=DS-7K4Q → that tester's log as CSV (utc,minutes,type,detail,device,version),
+//                                            without exact duplicate lines
 //   DELETE /api/playtest/admin?code=DS-7K4Q → deletes that tester's log
 //   DELETE /api/playtest/admin?all=yes      → deletes every log (after the playtest)
 "use strict";
@@ -16,7 +17,20 @@ function csvField(value) {
   return /[",\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
 }
 
+// The same line can be stored twice, e.g. when a tab closes before the game hears back and it sends again
+// on the next start (seen in round 1). Exact copies (same time to the ms, event, detail and device) are dropped.
+function withoutDuplicates(events) {
+  const seen = new Set();
+  return events.filter((e) => {
+    const key = [e.t, e.type, e.detail, e.device].join("\u0001");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function toCsv(events) {
+  events = withoutDuplicates(events);
   events.sort((a, b) => a.t - b.t);
   const first = events.length ? events[0].t : 0;
   const rows = ["utc,minutes,type,detail,device,version"];

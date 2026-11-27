@@ -55,7 +55,8 @@ codes are anonymous everywhere else.
 - Send each tester the link `https://<your site>/playtest` and their code. The browser remembers the code
   and the consent; **"Not your code?"** clears them.
 - It works best in a desktop browser (Chrome, Edge, Firefox, Safari). Phone browsers work but load slower.
-- Testers shouldn't use Settings → Debug (time skips and Reset are logged, but they change the test).
+- Testers don't see Settings → Debug (time skips, give buttons, Reset) since SCRUM-39. Internal testers and
+  facilitators open `/playtest/?debug=1` to keep it.
 - **When the playtest is over:** on the admin page, **Delete all logs**, and empty `PLAYTEST_CODES`.
 
 ## How it works
@@ -66,6 +67,9 @@ codes are anonymous everywhere else.
   the Unity editor never send. It sends log lines it hasn't sent yet, in batches of up to 500, and
   remembers the last one it sent.
 - `/api/playtest/log` refuses unknown codes, so the database only holds data from your testers.
+- When the tab is hidden or closed, the game sends the last lines with the browser's `sendBeacon`, which finishes
+  even while the tab closes, and marks them as sent. **Download CSV** drops exact duplicate lines (same time,
+  event, detail and device), which could happen in round 1.
 - In a browser the save lives in the browser's storage (IndexedDB). `WebSaveStorage` syncs it after
   every save, so a reload or a closed tab keeps progress. Clearing the browser's site data deletes it.
 - **Limit:** the game files in `/playtest/game/` are static, so someone who knows that address can load the

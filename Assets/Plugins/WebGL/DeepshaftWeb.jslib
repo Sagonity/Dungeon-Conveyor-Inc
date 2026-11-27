@@ -19,4 +19,16 @@ mergeInto(LibraryManager.library, {
     });
     window.addEventListener("pagehide", function () { SendMessage(objectName, "OnWebPageHidden"); });
   },
+
+  // Sends a JSON body with navigator.sendBeacon (SCRUM-39): the browser finishes it even when the tab is
+  // closing. Returns 1 if the browser accepted it (it can't report whether the server stored it), else 0.
+  DeepshaftSendBeacon: function (urlPtr, bodyPtr) {
+    if (typeof navigator === "undefined" || !navigator.sendBeacon) return 0;
+    try {
+      var blob = new Blob([UTF8ToString(bodyPtr)], { type: "application/json" });
+      return navigator.sendBeacon(UTF8ToString(urlPtr), blob) ? 1 : 0;
+    } catch (e) {
+      return 0;
+    }
+  },
 });
