@@ -38,7 +38,9 @@
   function startGame() {
     fetch("/playtest/game/index.html", { method: "HEAD" }).then(function (r) {
       if (!r.ok) { $("missing-build").hidden = false; return; }
-      $("frame").src = "/playtest/game/index.html?code=" + encodeURIComponent(saved.code);
+      // ?debug=1 on /playtest keeps Settings → Debug in the game, for internal testers (SCRUM-39).
+      var debug = /[?&]debug=1(&|$)/.test(location.search) ? "&debug=1" : "";
+      $("frame").src = "/playtest/game/index.html?code=" + encodeURIComponent(saved.code) + debug;
       show("game");
     }, function () { $("missing-build").hidden = false; });
   }

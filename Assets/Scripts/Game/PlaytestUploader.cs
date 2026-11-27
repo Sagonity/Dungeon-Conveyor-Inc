@@ -17,6 +17,9 @@ using UnityEngine.Networking;
 /// - Every <see cref="uploadEverySeconds"/> seconds, and when the tab is hidden, it posts the log lines
 ///   that haven't been sent yet to <c>/api/playtest/log</c> on the same site.
 /// - It remembers the last line it sent (in PlayerPrefs), so lines are sent once, also after a reload.
+/// - When the tab is hidden it sends with the browser's sendBeacon (SCRUM-39), which finishes even if the
+///   tab closes, and marks the lines as sent straight away so they aren't sent twice.
+/// - Testers don't see Settings → Debug (SCRUM-39) unless the URL also has <c>debug=1</c>.
 /// </summary>
 public class PlaytestUploader : MonoBehaviour
 {
@@ -31,6 +34,12 @@ public class PlaytestUploader : MonoBehaviour
     public string Code { get; private set; } = "";
     public bool Active => !string.IsNullOrEmpty(Code);
 
+    /// <summary>
+    /// False for testers (a tester code without <c>debug=1</c>): the grey-box screen then hides Settings → Debug.
+    /// True in the editor, phone builds and the web build without a code.
+    /// </summary>
+    public bool DebugAllowed { get; private set; } = true;
+
     /// <summary>For the Settings panel: when the last upload succeeded (UTC), and the last error.</summary>
     public DateTime? LastUploadUtc { get; private set; }
     public string LastError { get; private set; } = "";
@@ -43,8 +52,10 @@ public class PlaytestUploader : MonoBehaviour
 
 #if UNITY_WEBGL && !UNITY_EDITOR
     [DllImport("__Internal")] static extern void DeepshaftListenForPageHidden(string objectName);
+    [DllImport("__Internal")] static extern int DeepshaftSendBeacon(string url, string body);
 #else
     static void DeepshaftListenForPageHidden(string objectName) { }
+    static int DeepshaftSendBeacon(string url, string body) => 0;
 #endif
 
     static PlaytestLog Log => GameSessionRunner.Instance != null ? GameSessionRunner.Instance.Session?.Playtest : null;
@@ -54,6 +65,7 @@ public class PlaytestUploader : MonoBehaviour
         Instance = this;
         string url = Application.absoluteURL ?? "";
         Code = ReadCode(url);
+        DebugAllowed = !Active || ReadFlag(url, "debug");
         if (!Active) return;
 
         origin = ReadOrigin(url);
@@ -84,7 +96,24 @@ public class PlaytestUploader : MonoBehaviour
     public void OnWebPageHidden()
     {
         GameSessionRunner.Instance?.Session?.Save();
-        if (Active && !uploading) UploadNow();
+        if (!Active) return;
+        if (!SendWithBeacon() && !uploading) UploadNow();
+    }
+
+    /// <summary>
+    /// Sends the unsent lines with sendBeacon, which the browser completes even while the tab closes, and marks
+    /// them as sent at once (a beacon gets no answer). False if there was nothing to send or no beacon support.
+    /// </summary>
+    bool SendWithBeacon()
+    {
+        PlaytestLog log = Log;
+        if (log == null) return false;
+        List<PlaytestEvent> unsent = CollectUnsent(log);
+        if (unsent.Count == 0) return true;
+        if (unsent.Count > MaxEventsPerUpload) unsent = unsent.GetRange(0, MaxEventsPerUpload);
+        if (DeepshaftSendBeacon(origin + Endpoint, BuildBody(unsent)) != 1) return false;
+        MarkSent(unsent);
+        return true;
     }
 
     /// <summary>Sends the unsent log lines now (also from the Settings panel).</summary>
@@ -101,12 +130,9 @@ public class PlaytestUploader : MonoBehaviour
     IEnumerator Send(List<PlaytestEvent> events)
     {
         uploading = true;
-        var body = new UploadBody { code = Code, device = device, version = Application.version };
-        foreach (PlaytestEvent e in events) body.events.Add(new UploadEvent { t = e.atUnixMs, type = e.type, detail = e.detail });
-
         using (var request = new UnityWebRequest(origin + Endpoint, UnityWebRequest.kHttpVerbPOST))
         {
-            request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(JsonUtility.ToJson(body)));
+            request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(BuildBody(events)));
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader("Content-Type", "application/json");
             request.timeout = 20;
@@ -114,8 +140,8 @@ public class PlaytestUploader : MonoBehaviour
 
             if (request.result == UnityWebRequest.Result.Success)
             {
-                PlayerPrefs.SetString(SentKey, Signature(events[events.Count - 1]));
-                PlayerPrefs.Save();
+                // A beacon may have sent later lines meanwhile: never move the marker backwards.
+                if (IsAfterMarker(events[events.Count - 1])) MarkSent(events);
                 LastUploadUtc = DateTime.UtcNow;
                 LastError = "";
             }
@@ -128,6 +154,29 @@ public class PlaytestUploader : MonoBehaviour
     }
 
     string SentKey => "playtest.lastSent." + Code;
+
+    string BuildBody(List<PlaytestEvent> events)
+    {
+        var body = new UploadBody { code = Code, device = device, version = Application.version };
+        foreach (PlaytestEvent e in events) body.events.Add(new UploadEvent { t = e.atUnixMs, type = e.type, detail = e.detail });
+        return JsonUtility.ToJson(body);
+    }
+
+    void MarkSent(List<PlaytestEvent> events)
+    {
+        PlayerPrefs.SetString(SentKey, Signature(events[events.Count - 1]));
+        PlayerPrefs.Save();
+        LastUploadUtc = DateTime.UtcNow;
+    }
+
+    /// <summary>True if this line comes after the last line marked as sent (or nothing is marked).</summary>
+    bool IsAfterMarker(PlaytestEvent e)
+    {
+        PlaytestLog log = Log;
+        if (log == null) return true;
+        foreach (PlaytestEvent unsent in CollectUnsent(log)) if (unsent.atUnixMs == e.atUnixMs && Signature(unsent) == Signature(e)) return true;
+        return false;
+    }
 
     /// <summary>
     /// The log lines after the last one that was sent. If that line isn't in the log any more (a reset
@@ -166,6 +215,18 @@ public class PlaytestUploader : MonoBehaviour
             return clean.Length <= 32 ? clean.ToString() : clean.ToString(0, 32);
         }
         return "";
+    }
+
+    /// <summary>True if the URL's query has <paramref name="name"/>=1 (e.g. debug=1).</summary>
+    public static bool ReadFlag(string url, string name)
+    {
+        int q = url.IndexOf('?');
+        if (q < 0) return false;
+        foreach (string pair in url.Substring(q + 1).Split('&', '#'))
+        {
+            if (string.Equals(pair, name + "=1", StringComparison.OrdinalIgnoreCase)) return true;
+        }
+        return false;
     }
 
     /// <summary>"https://site.example" from "https://site.example/playtest/game/index.html?…".</summary>

@@ -908,7 +908,7 @@ public class GreyboxGameScreen : MonoBehaviour
         }
         GUILayout.Label(string.Join(" · ", rateParts), s.body);
         GUILayout.Label("You own one of each Minion: duplicates become Minion Essence (" + string.Join(" / ", essenceParts) +
-                        " by rarity). No pity.", s.small);
+                        " by rarity), saved for Ascension in a later version. No pity.", s.small);
 
         SummonResult check = game.Summoning.Check(pool, shard, game.Wallet);
         GUILayout.BeginHorizontal();
@@ -928,7 +928,11 @@ public class GreyboxGameScreen : MonoBehaviour
         {
             SummonResult result = game.Summon(pool, shard);
             if (!result.Ok) Say("Can't summon: " + result.Status + ".", Mood.Bad);
-            else if (result.IsDuplicate) Say(result.Definition.Rarity + " " + result.Definition.DisplayName + " again: +" + result.Essence + " Minion Essence.", Mood.Neutral);
+            else if (result.IsDuplicate)
+            {
+                Say(result.Definition.Rarity + " " + result.Definition.DisplayName + " again: +" + result.Essence +
+                    " Minion Essence. Essence is saved for Ascension, which comes in a later version.", Mood.Neutral);
+            }
             else
             {
                 bool working = game.Roster.IsAssigned(result.Added.instanceId);
@@ -1927,32 +1931,37 @@ public class GreyboxGameScreen : MonoBehaviour
         GUILayout.Label("Settings", s.title);
         if (ui != null && DarkButton("Sound")) { overlay = Overlay.None; ui.ShowSettings(); Exit(); }
 
-        GUILayout.Space(16f);
-        GUILayout.Label("Debug (playtest only)", s.panelHeading);
-        GUILayout.Label("Clock skipped ahead: " + Hours(runner.Clock.Offset.TotalHours) +
-                        (game.SavingAllowed ? "" : "\nSaving is OFF: the save on this device is from a newer build."), s.small);
-        GUILayout.BeginHorizontal();
-        if (DarkButton("+1 h")) { Skip(runner, 1); Exit(); }
-        if (DarkButton("+8 h")) { Skip(runner, 8); Exit(); }
-        if (DarkButton("+24 h")) { Skip(runner, 24); Exit(); }
-        GUILayout.EndHorizontal();
-
-        // Give resources (SCRUM-38): to try summons, breakthroughs and the Smith without playing for hours. Logged.
-        GUILayout.Label("Give (logged as debug_give):", s.small);
-        GUILayout.BeginHorizontal();
-        if (DarkButton("+100 Basic Shards")) { Give(game, R(ResourceId.BasicShard, 100)); Exit(); }
-        if (DarkButton("+50 Advanced Shards")) { Give(game, R(ResourceId.AdvancedShard, 50)); Exit(); }
-        GUILayout.EndHorizontal();
-        GUILayout.BeginHorizontal();
-        if (DarkButton("+10 Exped. materials")) { Give(game, R(ResourceId.SporeSilk, 10), R(ResourceId.EmberCore, 10), R(ResourceId.PrismDust, 10)); Exit(); }
-        if (DarkButton("+3 Boss materials")) { Give(game, R(ResourceId.ForemanSigil, 3), R(ResourceId.GolemHeart, 3), R(ResourceId.WyrmScale, 3)); Exit(); }
-        GUILayout.EndHorizontal();
-        if (DarkButton("+10,000 Gold, 5,000 Iron, 2,000 Silver"))
+        // Testers with a code don't get the debug tools (SCRUM-39): time skips and free resources would skew the playtest.
+        PlaytestUploader uploader = PlaytestUploader.Instance;
+        bool debugAllowed = uploader == null || uploader.DebugAllowed;
+        if (debugAllowed)
         {
-            Give(game, R(ResourceId.Gold, 10000), R(ResourceId.Iron, 5000), R(ResourceId.Silver, 2000));
-            Exit();
-        }
+            GUILayout.Space(16f);
+            GUILayout.Label("Debug (playtest only)", s.panelHeading);
+            GUILayout.Label("Clock skipped ahead: " + Hours(runner.Clock.Offset.TotalHours) +
+                            (game.SavingAllowed ? "" : "\nSaving is OFF: the save on this device is from a newer build."), s.small);
+            GUILayout.BeginHorizontal();
+            if (DarkButton("+1 h")) { Skip(runner, 1); Exit(); }
+            if (DarkButton("+8 h")) { Skip(runner, 8); Exit(); }
+            if (DarkButton("+24 h")) { Skip(runner, 24); Exit(); }
+            GUILayout.EndHorizontal();
 
+            // Give resources (SCRUM-38): to try summons, breakthroughs and the Smith without playing for hours. Logged.
+            GUILayout.Label("Give (logged as debug_give):", s.small);
+            GUILayout.BeginHorizontal();
+            if (DarkButton("+100 Basic Shards")) { Give(game, R(ResourceId.BasicShard, 100)); Exit(); }
+            if (DarkButton("+50 Advanced Shards")) { Give(game, R(ResourceId.AdvancedShard, 50)); Exit(); }
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (DarkButton("+10 Exped. materials")) { Give(game, R(ResourceId.SporeSilk, 10), R(ResourceId.EmberCore, 10), R(ResourceId.PrismDust, 10)); Exit(); }
+            if (DarkButton("+3 Boss materials")) { Give(game, R(ResourceId.ForemanSigil, 3), R(ResourceId.GolemHeart, 3), R(ResourceId.WyrmScale, 3)); Exit(); }
+            GUILayout.EndHorizontal();
+            if (DarkButton("+10,000 Gold, 5,000 Iron, 2,000 Silver"))
+            {
+                Give(game, R(ResourceId.Gold, 10000), R(ResourceId.Iron, 5000), R(ResourceId.Silver, 2000));
+                Exit();
+            }
+        }
         GUILayout.Space(16f);
         GUILayout.Label("Playtest log (SCRUM-8): " + game.Playtest.Events.Count + " events on this device", s.small);
         GUILayout.BeginHorizontal();
@@ -1971,7 +1980,6 @@ public class GreyboxGameScreen : MonoBehaviour
         if (!string.IsNullOrEmpty(playtestNote)) GUILayout.Label(playtestNote, s.small);
 
         // Web playtest (SCRUM-35): the log is sent to the website automatically.
-        PlaytestUploader uploader = PlaytestUploader.Instance;
         if (uploader != null && uploader.Active)
         {
             string last = uploader.LastUploadUtc.HasValue ? uploader.LastUploadUtc.Value.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture) : "not yet";
@@ -1982,7 +1990,7 @@ public class GreyboxGameScreen : MonoBehaviour
         }
 
         GUILayout.Space(16f);
-        if (DarkButton(resetArmed ? "Tap again to DELETE the save and its playtest log" : "Reset game (copy the log first)"))
+        if (debugAllowed && DarkButton(resetArmed ? "Tap again to DELETE the save and its playtest log" : "Reset game (copy the log first)"))
         {
             if (!resetArmed)
             {

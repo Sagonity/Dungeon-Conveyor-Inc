@@ -500,6 +500,16 @@ placement: the player only picks Minions for slots.
   +3 of each boss material and +10,000 Gold / 5,000 Iron / 2,000 Silver, through `GameSession.DebugGive` (saves and
   logs `debug_give`). The Settings panel scrolls when it's taller than the screen.
 
+### SCRUM-39: playtest round 2 prep
+
+- **Debug hidden for testers:** `PlaytestUploader.DebugAllowed` is false when the page URL has a tester code but
+  not `debug=1`; the Settings panel then hides the debug tools and Reset. `/playtest/?debug=1` passes `debug=1` on.
+- **sendBeacon on close:** `DeepshaftSendBeacon` in the jslib; `OnWebPageHidden` sends the unsent lines with it and
+  marks them as sent at once (falls back to the normal upload if the browser has no beacon).
+- **Admin CSV:** `/api/playtest/admin?code=…` drops exact duplicate lines.
+- **Essence text:** the duplicate message and the summon card say Essence is saved for Ascension, in a later version.
+- Round 2 plan: [Playtest Plan](Playtest_Plan_SCRUM-8.md) §9.
+
 ## 12. Team decisions (2026-11-17)
 
 1. **Branch naming:** `SCRUM-<n>-<topic>`, as in §10.
