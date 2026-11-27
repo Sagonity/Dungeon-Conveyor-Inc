@@ -224,11 +224,11 @@ the codes and device IDs link to the testers.
 |---|---|---|---|---|---|---|
 | C1 explains the loop at 10 min | ✅ 4 of 5 (asked ~15 min) | ❌ 3 of 5 (10 min) | ❌ 2 of 5 (10 min; had played 7) | – no answer | **Fail** (1 of 3 answers; 4 of 4 needed) | Mine and upgrade always named. Expeditions missing 2 of 3, breakthroughs 3 of 3 (often not reached by 10 min). T3 had beaten a boss and didn't mention bosses |
 | C2 back to upgrading after a loss | ✅ loss card → Level up | ✅ loss card → 7 level-ups | ✅ both sessions, via the loss card | ❌ quit 3 s after the loss | **3 of 4** (Fail, close) | Loss card used by everyone who continued (5 of 5 logs incl. internal) |
-| C3 knows Expedition materials → breakthroughs | ✅ correct; gear breakthroughs in log | – | – (answers not received) | – | 1 of 1 answered | Too few answers to judge |
+| C3 knows Expedition materials → breakthroughs | ✅ correct; gear breakthroughs in log | – | ❌ "for learning skills"; no breakthrough in log | – | **1 of 2** answered | T3 never reached a breakthrough |
 | C4 every session ends with an upgrade | ✅ | ✅ | ✅ both sessions | ❌ no upgrade at all | **Fail** (T4) | T4 played about 1 minute |
-| C5 return feels rewarding | ✅ "felt rewarding for progression to take a break" | – never returned | – returned after 21 h, answer not received | – never returned | 1 of 1 answered | Internal 005-6HNU: "I did feel rewarded!" |
+| C5 return feels rewarding | ✅ "felt rewarding for progression to take a break" | – never returned | ✅ rewarded, but "had to look for it to see the difference" | – never returned | **2 of 2** answered | Internal 005-6HNU: "I did feel rewarded!". The Welcome back message is easy to miss (T3) |
 | C6 no dead end | ✅ Tier 3 reached | – quit at Tier 1 (Spore Caverns) | ✅ Tier 3 boss reached | – quit after 1 min | **Pass** (no dead end seen) | But 2 of 4 quit early, one at the Spore Caverns wall |
-| C7 stopping the Expedition: fair or chore | "I did not try that" | – | Stopped after 23 s, for nothing, to fight; answer not received | – | No data | Internal 005-6HNU: "pretty alright, but it feels like a bit of a loss" |
+| C7 stopping the Expedition: fair or chore | "I did not try that" | – | "Didn't get that far", though the log shows "Stop Exp. & Fight" after 23 s: the stop went unnoticed | – | No data | Internal 005-6HNU: "pretty alright, but it feels like a bit of a loss" |
 | Time to first boss win (min) | 1.8 | 0.8 | 2.1 | 1.0 | | Everyone wins Tier 1 at once (66 vs 80) |
 | Tier reached in session 1 | 2 (Spore Caverns cleared at 92 min) | 2 (stopped at Spore Caverns) | 2 (stopped at Spore Caverns) | 2 (stopped after the Slag Golem loss) | | |
 | Real play time | ~1.5 h real + debug skips | ~4 min, 1 session | 7 min + 4 min next day | ~1 min | | |
@@ -258,6 +258,17 @@ the codes and device IDs link to the testers.
 8. **Testers use Settings → Debug** (T1 skipped time out of boredom).
 9. **Wishes:** login bonuses (T1, added to SCRUM-16); music, animations, seeing the fight, rarity-specific
    animations and summon animations (T1); "the graphics" (005-6HNU).
+10. **Late answers from T3 (005-J4R9, received 2026-11-27):**
+    - Wanted **a guide at the start** that teaches how to play (finding 2; SCRUM-36's NEXT GOAL card and guided
+      start answer it, checked in round 2).
+    - **The return reward was easy to miss**: "I did get rewarded but I felt like I had to look for it … It would
+      have been nice with a notification when I logged back." The Welcome back line is a small toast; a clear
+      "While you were away" summary is already in SCRUM-16.
+    - **Navigation feels spread out**: "I needed to navigate all over the place to improve my miners and collect
+      rewards." Input for the final UI (SCRUM-12): fewer tabs, or a main screen with the common actions.
+    - Would come back for **daily rewards and time-limited quests or missions**. That's the second tester asking for
+      daily rewards (T1: login bonuses); both are in SCRUM-16. Time limits should follow the "offline is never
+      punished" rule (e.g. missions that refresh rather than expire with a loss).
 
 ### Playtest tooling notes
 
